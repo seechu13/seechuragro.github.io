@@ -14,7 +14,7 @@
 
     body {
       background: url('hydroponic-bg.jpg') center/cover no-repeat;
-      background-attachment: scroll; /* Works better on mobile */
+      background-attachment: scroll; /* works on mobile */
       color: #f2f2f2;
       text-align: center;
       min-height: 100vh;
@@ -23,10 +23,12 @@
       justify-content: center;
       align-items: center;
       padding: 30px;
+      position: relative;
+      overflow-x: hidden;
     }
 
     .overlay {
-      background: rgba(0, 0, 0, 0.4); /* subtle dark overlay for contrast */
+      background: rgba(0, 0, 0, 0.4); /* soft dark overlay for text contrast */
       position: absolute;
       top: 0;
       left: 0;
@@ -85,22 +87,36 @@
       text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.8);
     }
 
-    .contact {
-      display: inline-block;
-      background: #1db954;
+    .contact-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    .contact-button {
+      background-color: #2e7d32;
       color: white;
-      padding: 12px 28px;
-      border-radius: 25px;
       text-decoration: none;
-      font-weight: 600;
-      letter-spacing: 0.3px;
+      padding: 14px 28px;
+      border-radius: 30px;
+      font-weight: bold;
       transition: all 0.3s ease;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
 
-    .contact:hover {
-      background: #24d46d;
-      transform: translateY(-3px);
+    .contact-button:hover {
+      background-color: #43a047;
+      transform: scale(1.05);
+    }
+
+    .contact-button.whatsapp {
+      background-color: #25D366;
+    }
+
+    .contact-button.whatsapp:hover {
+      background-color: #1EBE5D;
     }
 
     footer {
@@ -137,6 +153,16 @@
       img {
         width: 90px;
       }
+
+      .contact-buttons {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .contact-button {
+        width: 80%;
+        margin: 0 auto;
+      }
     }
   </style>
 </head>
@@ -152,8 +178,7 @@
       Our seed-stage venture aims to cultivate <b>Lakadong Turmeric</b> — a rare, high-curcumin variety native to Meghalaya —
       under controlled polyhouse conditions in Tamil Nadu.
     </p>
-
-    <p>
+<p>
       We are currently in discussions to finalize farmland and are inviting <b>like-minded investors and partners</b> to join us
       in revolutionizing the future of urban agriculture.
     </p>
@@ -164,14 +189,21 @@
       and prosperity to every farmer and consumer.
     </p>
 
-Seechu, [10/19/2025 4:42 PM]
-<div class="section-title">Our Mission</div>
+    <div class="section-title">Our Mission</div>
     <p>
       To harness hydroponic and vertical farming technologies to cultivate high-value crops like Lakadong Turmeric
       responsibly, ensuring environmental balance, resource efficiency, and consistent quality yields.
     </p>
 
-   <a href="mailto:seechu@seechuragro.in?subject=Inquiry%20from%20Website" class="contact-button">Contact Us</a>
+    <div class="contact-buttons">
+      <a href="mailto:seechu@seechuragro.in?subject=Inquiry%20from%20Seechur%20Agro%20Website" class="contact-button email">
+        ✉️ Email Us
+      </a>
+      <a href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20I%20am%20interested%20in%20learning%20more%20about%20your%20project" class="contact-button whatsapp" target="_blank">
+        💬 WhatsApp
+      </a>
+    </div>
+
     <footer>
       📞 +91 80560 21869 | ✉️ seechu@seechuragro.in <br />
       © 2025 SEECHUR AGRO PRIVATE LIMITED
