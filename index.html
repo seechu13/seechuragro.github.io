@@ -10,106 +10,45 @@
 
 <style>
   :root{
-    --text:#1c2b21;        /* Deep greenish gray for readability */
-    --light-text:#f7fff9;
-    --accent:#1f7a4d;
-    --wa:#25D366;
-    --nav-bg:rgba(10,25,10,0.7); /* translucent dark green navbar */
-    --max:1100px;
+    --text:#1c2b21; --light-text:#f7fff9; --accent:#1f7a4d; --wa:#25D366;
+    --nav-bg:rgba(10,25,10,0.7); --max:1100px;
   }
-
   *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-    color:var(--text);
-    min-height:100vh;
-  }
-
-  /* Background photo from root folder */
+  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
+  /* Background photo from root + cache-buster */
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
     background:
       linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.35)),
-      url('hydroponic-bg.jpg') center/cover no-repeat;
+      url('hydroponic-bg.jpg?v=3') center/cover no-repeat;
     filter:saturate(1.05);
   }
-
   /* Sticky transparent nav */
-  .site-nav{
-    position:sticky; top:0; z-index:50;
-    background:var(--nav-bg);
-    backdrop-filter:blur(6px);
-  }
-  .nav-inner{
-    max-width:var(--max); margin:0 auto;
-    padding:10px 18px;
-    display:flex; align-items:center; gap:14px;
-  }
-
-  /* logo only, no extra text */
-  .brand img{
-    width:80px; height:auto; object-fit:contain; display:block;
-    filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));
-  }
-
+  .site-nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);backdrop-filter:blur(6px);}
+  .nav-inner{max-width:var(--max);margin:0 auto;padding:10px 18px;display:flex;align-items:center;gap:14px;}
+  /* LOGO ONLY (bigger). Also hide any stray brand text if it exists. */
+  .brand{display:flex;align-items:center;gap:0;text-decoration:none;}
+  .brand img{width:110px;height:auto;object-fit:contain;display:block;filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
+  .brand span{display:none !important;}
   .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
-  .menu a{
-    color:var(--light-text);
-    text-decoration:none;
-    padding:6px 10px;
-    border-radius:999px;
-    transition:all .25s;
-  }
-  .menu a:hover,.menu a.active{
-    background:rgba(255,255,255,0.15);
-  }
-
+  .menu a{color:var(--light-text);text-decoration:none;padding:6px 10px;border-radius:999px;transition:.25s;}
+  .menu a:hover,.menu a.active{background:rgba(255,255,255,0.15);}
   .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
-
-  /* HERO text directly over background */
-  .hero{
-    padding:70px 0 20px;
-    text-shadow:0 1px 6px rgba(255,255,255,0.4);
-  }
-  .hero h1{
-    font-size:2.6rem;
-    font-weight:700;
-    color:#103b22;
-  }
-  .tagline{
-    font-style:italic;
-    color:#2d5133;
-    margin-bottom:12px;
-  }
+  /* Hero text on background */
+  .hero{padding:70px 0 20px;text-shadow:0 1px 6px rgba(255,255,255,0.4)}
+  .hero h1{font-size:2.6rem;font-weight:700;color:#103b22;}
+  .tagline{font-style:italic;color:#2d5133;margin-bottom:12px;}
   .hero p{color:#1c2b21;max-width:900px;line-height:1.6;}
-
   .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
-  .btn{
-    display:inline-block;padding:10px 18px;border-radius:999px;font-weight:700;
-    text-decoration:none;color:#fff;background:var(--accent);
-    box-shadow:0 4px 20px rgba(0,0,0,.25);
-  }
+  .btn{display:inline-block;padding:10px 18px;border-radius:999px;font-weight:700;text-decoration:none;color:#fff;background:var(--accent);box-shadow:0 4px 20px rgba(0,0,0,.25);}
   .btn:hover{filter:brightness(1.1);}
   .btn.wa{background:var(--wa);}
-  .btn.outline{
-    background:transparent;color:var(--accent);border:2px solid var(--accent);
-  }
-
+  .btn.outline{background:transparent;color:var(--accent);border:2px solid var(--accent);}
   .section{margin-top:30px;}
   .section h3{text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:8px;color:#144425;}
   .section p{line-height:1.7;max-width:900px;color:#1c2b21;}
-
-  footer{
-    text-align:center;color:#18462a;padding:40px 12px 60px;
-    background:rgba(255,255,255,0.7);
-    backdrop-filter:blur(4px);
-  }
-
-  @media (max-width:720px){
-    .brand img{width:64px;}
-    .hero h1{font-size:2rem;}
-    .nav-inner{padding:10px 12px;}
-  }
+  footer{text-align:center;color:#18462a;padding:40px 12px 60px;background:rgba(255,255,255,0.7);backdrop-filter:blur(4px);}
+  @media (max-width:720px){.brand img{width:84px;}.hero h1{font-size:2rem;}.nav-inner{padding:10px 12px;}}
 </style>
 </head>
 <body>
@@ -117,8 +56,8 @@
 <nav class="site-nav">
   <div class="nav-inner">
     <a class="brand" href="index.html">
-      <!-- Larger logo, no duplicate text -->
-      <img src="logo.png" alt="Seechur Agro logo">
+      <!-- Larger logo, no duplicate text. Cache-busted to break old caching. -->
+      <img src="logo.png?v=3" alt="Seechur Agro logo">
     </a>
     <div class="menu">
       <a class="active" href="index.html">Home</a>
@@ -165,7 +104,6 @@
 </footer>
 
 <script>
-  // year + active link
   (function(){
     const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
     const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
