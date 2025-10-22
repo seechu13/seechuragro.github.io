@@ -1,20 +1,140 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>About | Seechur Agro</title>
-      <link rel="stylesheet" href="assets/style.css">
-    </head>
-    <body>
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About • Seechur Agro Private Limited</title>
 
-<div class="overlay"></div>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --text:#f3fff6;
+    --muted:#cfe9d8;
+    --accent:#1f7a4d;
+    --nav-bg:rgba(10,25,10,0.7);
+    --max:1100px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--text);
+    min-height:100vh;
+  }
+
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
+      url('hydroponic-bg.jpg?v=6') center/cover no-repeat;
+    filter:saturate(1.1) brightness(0.95);
+  }
+
+  .site-nav{
+    position:sticky; top:0; z-index:50;
+    background:var(--nav-bg); backdrop-filter:blur(6px);
+  }
+  .nav-inner{
+    max-width:var(--max); margin:0 auto;
+    padding:10px 18px; display:flex; align-items:center; gap:14px;
+  }
+  .brand img{
+    width:110px; height:auto; object-fit:contain; display:block;
+    filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  }
+
+  .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+  .menu a{
+    color:#ffffff;
+    text-decoration:none;
+    padding:6px 10px;
+    border-radius:999px;
+    transition:.25s;
+  }
+  .menu a:hover,.menu a.active{
+    background:rgba(255,255,255,0.18);
+  }
+
+  .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
+  h1{
+    font-size:2.2rem;
+    font-weight:700;
+    margin-bottom:8px;
+    color:#ffffff;
+    text-shadow:0 2px 8px rgba(0,0,0,.55);
+  }
+  .intro{
+    max-width:900px;
+    line-height:1.8;
+    color:var(--muted);
+    margin-bottom:36px;
+  }
+
+  /* Image cards */
+  .photo-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:24px;
+    margin-bottom:40px;
+  }
+  figure{
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+    background:rgba(255,255,255,0.12);
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  }
+  figure img{
+    width:100%;
+    height:auto;
+    display:block;
+    transition:transform 0.4s ease;
+  }
+  figure:hover img{
+    transform:scale(1.03);
+  }
+  figcaption{
+    padding:12px;
+    font-size:0.95rem;
+    text-align:center;
+    color:#f3fff6;
+    background:rgba(0,0,0,0.35);
+    backdrop-filter:blur(4px);
+  }
+
+  .closing{
+    max-width:900px;
+    line-height:1.8;
+    color:var(--muted);
+    margin-top:20px;
+  }
+
+  footer{
+    text-align:center;
+    color:#d9ffe6;
+    padding:40px 12px 60px;
+    background:rgba(0,0,0,0.4);
+    backdrop-filter:blur(4px);
+  }
+
+  @media (max-width:720px){
+    .brand img{width:84px;}
+    h1{font-size:1.9rem;}
+    .nav-inner{padding:10px 12px;}
+  }
+</style>
+</head>
+<body>
+
 <nav class="site-nav">
   <div class="nav-inner">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Seechur Agro"><span>Seechur Agro</span></a>
+    <a class="brand" href="index.html">
+      <img src="logo.png?v=6" alt="Seechur Agro logo">
+    </a>
     <div class="menu">
       <a href="index.html">Home</a>
-      <a href="about.html">About</a>
+      <a class="active" href="about.html">About</a>
       <a href="why-lakadong.html">Why Lakadong</a>
       <a href="portfolio.html">Portfolio</a>
       <a href="market.html">Market</a>
@@ -26,45 +146,45 @@
   </div>
 </nav>
 
-
 <main class="container">
-  <div class="hero">
-    <h1 class="title">About the Project</h1>
-    <div class="tagline">Edayarpakkam Farm • Polyhouse revival • Water & Energy efficient</div>
+  <h1>About Seechur Agro</h1>
+  <p class="intro">
+    Seechur Agro Private Limited is a Chennai-based agri-tech venture dedicated to sustainable hydroponic farming and controlled-environment agriculture.
+    Our Edayarpakkam project encompasses <b>13.5 acres</b> of land, with <b>4 acres under polyhouse</b> and <b>1.25 acres under greenhouse</b> cultivation.
+    From year 3 onward, an additional <b>6 acres</b> will be utilized for <b>Lakadong turmeric</b>—a high-curcumin variety renowned for its therapeutic value.
+  </p>
+
+  <div class="photo-grid">
+    <figure>
+      <img src="edayarpakkam-before.jpg" alt="Edayarpakkam farm before cyclone">
+      <figcaption>Farm Infrastructure — Before Cyclone</figcaption>
+    </figure>
+    <figure>
+      <img src="edayarpakkam-after.jpg" alt="Edayarpakkam farm after restoration">
+      <figcaption>Farm Infrastructure — After Restoration</figcaption>
+    </figure>
   </div>
-  <div class="card">
-    <p>We are reviving an existing protected cultivation facility at Edayarpakkam. The model leverages polyhouses, fertigation and solar power to produce export‑grade crops with far lower water and input usage.</p>
-    <div class="grid">
-      <div class="card"><b>Polyhouse</b><br/>5.25 acres of structures ready</div>
-      <div class="card"><b>Water</b><br/>17,700 L/hr borewell + drip</div>
-      <div class="card"><b>Power</b><br/>38KW solar reduces grid cost</div>
-    </div>
-  </div>
 
-
-<div class="section-title">Key Challenges</div>
-<div class="card figure">
-  <img src="assets/challenges-grid.png" alt="Key challenges in India's agriculture ecosystem">
-  <div class="caption">Water stress, post-harvest loss, land degradation and labour shortage.</div>
-</div>
-
-<div class="section-title">Edayarpakkam Farm — Gallery</div>
-<div class="img-grid">
-  <div class="figure"><img src="assets/edayarpakkam-before.png" alt="Edayarpakkam farm before cyclone"><div class="caption">Before 2015 cyclone/flood — at full potential.</div></div>
-  <div class="figure"><img src="assets/edayarpakkam-after.png" alt="Edayarpakkam farm after cyclone"><div class="caption">After 2015 cyclone/flood — current condition to be revived.</div></div>
-</div>
-
-<div class="section-title">Competitive Edge</div>
-<div class="card figure">
-  <img src="assets/competitive-edge.png" alt="Competitive edge chart">
-  <div class="caption">Maximizing premium yields with capital efficiency by leveraging existing infrastructure and premium crops.</div>
-</div>
-
+  <p class="closing">
+    Our focus is to integrate modern technology with natural farming principles,
+    ensuring high productivity, resource efficiency, and environmental balance.
+    The Edayarpakkam project serves as a model unit for future expansion of hydroponic and Lakadong turmeric cultivation across India.
+  </p>
 </main>
 
-      <footer>
-        © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-      </footer>
-      <script src="assets/script.js"></script>
-    </body>
-    </html>
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+  const current=(location.pathname.split('/').pop()||'about.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+})();
+</script>
+</body>
+</html>
