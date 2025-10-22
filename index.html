@@ -10,29 +10,27 @@
 
 <style>
   :root{
-    --text:#f3fff6;            /* bright ivory-green text */
-    --muted:#cfe9d8;           /* secondary tone */
-    --accent:#1f7a4d;          /* button color */
-    --wa:#25D366;
+    --text:#f3fff6;
+    --muted:#cfe9d8;
+    --accent:#1f7a4d;    /* Brand green for buttons */
     --nav-bg:rgba(10,25,10,0.7);
     --max:1100px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
     font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
-    color:var(--text); min-height:100vh;
+    color:var(--text);
+    min-height:100vh;
   }
 
-  /* Background photo from root folder */
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
     background:
-      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)), /* subtle dark veil */
-      url('hydroponic-bg.jpg?v=4') center/cover no-repeat;
+      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
+      url('hydroponic-bg.jpg?v=5') center/cover no-repeat;
     filter:saturate(1.1) brightness(0.95);
   }
 
-  /* Sticky nav */
   .site-nav{
     position:sticky; top:0; z-index:50;
     background:var(--nav-bg); backdrop-filter:blur(6px);
@@ -48,12 +46,14 @@
 
   .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
   .menu a{
-    color:var(--text); text-decoration:none; padding:6px 10px;
-    border-radius:999px; transition:.25s;
+    color:#ffffff;
+    text-decoration:none;
+    padding:6px 10px;
+    border-radius:999px;
+    transition:.25s;
   }
   .menu a:hover,.menu a.active{
     background:rgba(255,255,255,0.18);
-    color:#ffffff;
   }
 
   .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
@@ -64,7 +64,7 @@
   .hero h1{
     font-size:2.6rem;
     font-weight:700;
-    color:#ffffff; /* full white heading */
+    color:#ffffff;
   }
   .tagline{
     font-style:italic;
@@ -73,15 +73,21 @@
   }
   .hero p{color:var(--text);max-width:900px;line-height:1.7;}
 
-  .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}
+  /* Two matching green buttons */
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
   .btn{
-    display:inline-block;padding:10px 18px;border-radius:999px;font-weight:700;
-    text-decoration:none;color:#fff;background:var(--accent);
+    display:inline-block;
+    padding:10px 20px;
+    border-radius:999px;
+    font-weight:700;
+    text-decoration:none;
+    color:#ffffff;
+    background:var(--accent);
     box-shadow:0 4px 20px rgba(0,0,0,.3);
+    transition:filter .2s;
   }
-  .btn:hover{filter:brightness(1.1);}
-  .btn.wa{background:var(--wa);}
-  .btn.outline{background:transparent;color:#ffffff;border:2px solid #ffffff;}
+  .btn:hover{filter:brightness(1.15);}
+  .btn.outline{background:transparent;border:2px solid #ffffff;}
 
   .section{margin-top:36px;}
   .section h3{
@@ -106,6 +112,7 @@
     .brand img{width:84px;}
     .hero h1{font-size:2rem;}
     .nav-inner{padding:10px 12px;}
+    .cta-row{justify-content:center;}
   }
 </style>
 </head>
@@ -114,7 +121,7 @@
 <nav class="site-nav">
   <div class="nav-inner">
     <a class="brand" href="index.html">
-      <img src="logo.png?v=4" alt="Seechur Agro logo">
+      <img src="logo.png?v=5" alt="Seechur Agro logo">
     </a>
     <div class="menu">
       <a class="active" href="index.html">Home</a>
@@ -139,9 +146,9 @@
       focusing on high-curcumin <b>Lakadong Turmeric</b> and premium vegetables from Edayarpakkam, Tamil Nadu.
     </p>
     <div class="cta-row">
-      <a class="btn" href="financials.html">Investor Snapshot</a>
-      <a class="btn wa" target="_blank" href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20I%20am%20interested">WhatsApp</a>
-      <a class="btn outline" href="mailto:seechu@seechuragro.in?subject=Inquiry%20via%20Website">Email Us</a>
+      <a class="btn" target="_blank"
+         href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20I%20am%20interested">WhatsApp</a>
+      <a class="btn" href="mailto:seechu@seechuragro.in?subject=Inquiry%20via%20Website">Email Us</a>
     </div>
   </section>
 
@@ -162,7 +169,8 @@
 
 <script>
 (function(){
-  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
   const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
   document.querySelectorAll('.menu a').forEach(a=>{
     if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
