@@ -5,75 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SEECHUR AGRO PRIVATE LIMITED</title>
 
-  <!-- Nice, readable font -->
+  <!-- Clean, professional font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --text:#eaf7f1; --muted:#b7d8cb; --accent:#18c29c; --accent-2:#25D366;
-      --overlay:rgba(4,12,10,.55); --navbg:rgba(7,18,15,.65); --border:rgba(255,255,255,.14);
-      --max: 1100px; --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.35);
+      --text:#18302a;               /* main dark text */
+      --muted:#345e50;              /* secondary text */
+      --accent:#1f7a4d;             /* brand green */
+      --accent-2:#25D366;           /* WhatsApp green */
+      --border:rgba(0,0,0,.12);
+      --shadow:0 10px 26px rgba(0,0,0,.15);
+      --glass:rgba(255,255,255,.78);/* white glass */
+      --glass-lite:rgba(255,255,255,.68);
+      --navbg:rgba(255,255,255,.85);
+      --max:1100px; --radius:18px;
     }
     *{box-sizing:border-box;margin:0;padding:0}
     body{
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-      color:var(--text); min-height:100vh; background:#0b1e18;
+      font-family:Poppins, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      color:var(--text); min-height:100vh; background:#f5fbf8;
     }
-    /* Background image + gradient overlay */
+    /* Background image with subtle LIGHT overlay so page stays bright */
     body::before{
       content:""; position:fixed; inset:0; z-index:-1;
       background:
-        linear-gradient(180deg, rgba(5,15,12,.75), rgba(5,15,12,.55)),
+        linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.30)),
         url('assets/hydroponic-bg.jpg') center/cover no-repeat;
+      filter:saturate(1.05);
     }
 
-    /* Sticky nav */
-    .site-nav{position:sticky;top:0;z-index:60;background:var(--navbg);backdrop-filter: blur(8px);border-bottom:1px solid var(--border)}
-    .nav-inner{max-width:var(--max);margin:0 auto;padding:10px 18px;display:flex;align-items:center;gap:16px}
-    .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
-    .brand img{width:48px;height:48px;object-fit:contain}
-    .brand span{font-weight:700;letter-spacing:.3px;color:var(--accent)}
-    .menu{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
-    .menu a{color:var(--text);text-decoration:none;padding:8px 12px;border-radius:12px;border:1px solid transparent;transition:.2s}
-    .menu a:hover{background:rgba(255,255,255,.06);border-color:var(--border)}
-    .menu a.active{color:var(--accent);border-color:var(--accent)}
+    /* Sticky light nav */
+    .site-nav{
+      position:sticky; top:0; z-index:60;
+      background:var(--navbg); backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--border);
+    }
+    .nav-inner{
+      max-width:var(--max); margin:0 auto; padding:12px 18px;
+      display:flex; align-items:center; gap:16px;
+    }
+    .brand{display:flex; align-items:center; gap:10px; text-decoration:none}
+    .brand img{width:48px; height:48px; object-fit:contain}
+    .brand span{font-weight:700; letter-spacing:.4px; color:var(--accent)}
+    .menu{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
+    .menu a{
+      color:var(--text); text-decoration:none; padding:8px 14px;
+      border-radius:999px; border:1px solid transparent; transition:.2s;
+    }
+    .menu a:hover{ background:var(--glass-lite); border-color:var(--border) }
+    .menu a.active{ border-color:var(--accent); color:var(--accent) }
 
-    .container{max-width:var(--max);margin:0 auto;padding:28px 18px}
+    .container{ max-width:var(--max); margin:0 auto; padding:28px 18px }
 
-    /* Hero card – your original feel with overlay box */
+    /* Hero / top card */
     .hero{
-      display:flex;align-items:center;gap:22px;padding:28px 22px;
-      background:rgba(10,24,20,.62);border:1px solid var(--border);
-      border-radius:var(--radius);box-shadow:var(--shadow);margin-top:20px
+      display:flex; align-items:center; gap:24px; padding:28px 24px;
+      background:var(--glass); border:1px solid var(--border);
+      border-radius:var(--radius); box-shadow:var(--shadow); margin-top:24px;
     }
-    .hero .logo{width:80px;height:80px;flex:0 0 auto}
-    h1{font-size:2rem;margin-bottom:6px;letter-spacing:.2px}
-    .tagline{font-style:italic;color:var(--muted);margin:2px 0 4px}
+    .hero .logo{ width:82px; height:82px; flex:0 0 auto }
+    h1{ font-size:2.05rem; letter-spacing:.3px; margin-bottom:8px }
+    .tagline{ color:var(--muted); font-style:italic; margin-bottom:6px }
 
     .card{
-      background:rgba(10,24,20,.62);border:1px solid var(--border);
-      border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-top:16px
+      background:var(--glass); border:1px solid var(--border);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:18px; margin-top:14px;
     }
-    .section-title{margin:22px 0 8px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;color:var(--accent)}
+    .section-title{
+      margin:24px 0 10px; font-weight:700; letter-spacing:.5px;
+      color:var(--accent); text-transform:uppercase;
+      text-shadow:0 1px 0 rgba(255,255,255,.6);
+    }
 
-    .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
-    .btn{display:inline-block;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:700;color:#0b1e18;background:var(--accent)}
-    .btn:hover{filter:brightness(1.07)}
-    .btn.whatsapp{background:var(--accent-2);color:#062015}
-    .btn.secondary{background:rgba(255,255,255,.12);border:1px solid var(--border);color:var(--text)}
+    .cta-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px }
+    .btn{
+      display:inline-block; padding:10px 18px; border-radius:999px; font-weight:700;
+      text-decoration:none; color:white; background:var(--accent); box-shadow:var(--shadow)
+    }
+    .btn:hover{ filter:brightness(1.05) }
+    .btn.whatsapp{ background:var(--accent-2); color:#08321f }
+    .btn.ghost{ background:transparent; color:var(--text); border:1px solid var(--border) }
 
-    footer{text-align:center;color:var(--muted);padding:30px 12px 40px}
+    footer{ text-align:center; color:var(--muted); padding:30px 12px 42px }
 
     @media (max-width:720px){
-      .hero{flex-direction:column;text-align:center}
-      .hero .logo{width:70px;height:70px}
+      .hero{ flex-direction:column; text-align:center }
+      .hero .logo{ width:72px; height:72px }
+      h1{ font-size:1.7rem }
     }
   </style>
 </head>
 <body>
 
-  <!-- Sticky navigation -->
+  <!-- Sticky light navigation -->
   <nav class="site-nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">
@@ -95,30 +122,40 @@
   </nav>
 
   <main class="container">
-    <!-- Hero: logo + headline + tagline -->
+    <!-- HERO -->
     <section class="hero">
       <img class="logo" src="assets/logo.png" alt="Seechur Agro logo">
       <div>
         <h1>SEECHUR AGRO PRIVATE LIMITED</h1>
         <div class="tagline">“Human By Chance, Farmer By Choice”</div>
-        <p>We pioneer sustainable hydroponics and protected cultivation, focusing on high-curcumin <b>Lakadong Turmeric</b> and premium vegetables from Edayarpakkam, Tamil Nadu.</p>
+        <p>
+          We pioneer sustainable hydroponics and protected cultivation,
+          focusing on high-curcumin <b>Lakadong Turmeric</b> and premium vegetables from Edayarpakkam, Tamil Nadu.
+        </p>
         <div class="cta-row">
           <a class="btn" href="financials.html">Investor Snapshot</a>
-          <a class="btn whatsapp" target="_blank" href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20I%20am%20interested">WhatsApp</a>
-          <a class="btn secondary" href="mailto:seechu@seechuragro.in?subject=Inquiry%20via%20Website">Email Us</a>
+          <a class="btn whatsapp" target="_blank"
+             href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20I%20am%20interested">WhatsApp</a>
+          <a class="btn ghost"
+             href="mailto:seechu@seechuragro.in?subject=Inquiry%20via%20Website">Email Us</a>
         </div>
       </div>
     </section>
 
-    <!-- Vision & Mission from the pitch deck -->
+    <!-- Vision & Mission (from pitch deck) -->
     <h3 class="section-title">Vision</h3>
     <div class="card">
-      <p>To be a leading agri-tech venture creating sustainable, high-value crop ecosystems with technology, trust and transparency.</p>
+      <p>
+        To be a leading agri-tech venture creating sustainable, high-value crop ecosystems with technology, trust and transparency.
+      </p>
     </div>
 
     <h3 class="section-title">Mission</h3>
     <div class="card">
-      <p>To sustainably cultivate Lakadong turmeric and high-value crops using hydroponics and controlled environment farming to deliver consistent returns to stakeholders and healthier produce to consumers.</p>
+      <p>
+        To sustainably cultivate Lakadong turmeric and high-value crops using hydroponics and controlled environment farming
+        to deliver consistent returns to stakeholders and healthier produce to consumers.
+      </p>
     </div>
   </main>
 
@@ -127,12 +164,12 @@
   </footer>
 
   <script>
-    // highlight active menu + year
+    // set copyright year & highlight current link (keeps future pages consistent)
     (function(){
-      document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
+      const y = document.getElementById('year'); if (y) y.textContent = new Date().getFullYear();
       const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
       document.querySelectorAll('.menu a').forEach(a => {
-        if(a.getAttribute('href').toLowerCase() === current) a.classList.add('active');
+        if (a.getAttribute('href').toLowerCase() === current) a.classList.add('active');
       });
     })();
   </script>
