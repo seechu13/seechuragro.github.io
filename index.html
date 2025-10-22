@@ -17,23 +17,21 @@
     font-family:Poppins, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
     color:var(--text); min-height:100vh;
   }
-  /* Full-bleed background with FALLBACKS:
-     layer 1: very light veil; layer 2: /assets/ path; layer 3: root path */
+  /* FULL background from ROOT (/hydroponic-bg.jpg) */
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
     background:
       linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.12)),
-      url('assets/hydroponic-bg.jpg') center/cover no-repeat,
       url('hydroponic-bg.jpg') center/cover no-repeat;
     filter:saturate(1.02);
   }
 
-  /* Transparent sticky nav */
+  /* transparent sticky nav */
   .site-nav{ position:sticky; top:0; z-index:50; background:transparent; }
   .nav-inner{
     max-width:var(--max); margin:0 auto; padding:16px 18px;
     display:flex; align-items:center; gap:14px;
-    text-shadow: 0 2px 10px rgba(0,0,0,.45);
+    text-shadow:0 2px 10px rgba(0,0,0,.45);
   }
   .brand{ display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); }
   .brand img{ width:46px; height:46px; object-fit:contain; display:block;
@@ -46,14 +44,17 @@
 
   .container{ max-width:var(--max); margin:0 auto; padding:32px 18px }
 
+  /* HERO text on background (NO boxes) */
   .hero{ padding:64px 0 20px; text-shadow:0 3px 16px rgba(0,0,0,.55) }
   .hero h1{ font-size:2.4rem; letter-spacing:.4px; margin-bottom:6px }
   .tagline{ font-style:italic; opacity:.95; margin-bottom:12px }
 
   .cta-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px }
-  .btn{ display:inline-block; padding:10px 18px; border-radius:999px; font-weight:700;
-        text-decoration:none; color:#0c261b; background:#c9f7da;
-        box-shadow:0 10px 30px rgba(0,0,0,.25) }
+  .btn{
+    display:inline-block; padding:10px 18px; border-radius:999px; font-weight:700;
+    text-decoration:none; color:#0c261b; background:#c9f7da;
+    box-shadow:0 10px 30px rgba(0,0,0,.25)
+  }
   .btn:hover{ filter:brightness(1.05) }
   .btn.wa{ background:var(--wa); color:#062a18 }
   .btn.outline{ background:transparent; color:#fff; border:2px solid rgba(255,255,255,.9) }
@@ -73,8 +74,8 @@
 <nav class="site-nav">
   <div class="nav-inner">
     <a class="brand" href="index.html">
-      <!-- Try assets/logo.png first, then fallback to root/logo.png -->
-      <img src="assets/logo.png" alt="" onerror="this.onerror=null; this.src='logo.png'">
+      <!-- LOGO from ROOT (/logo.png) -->
+      <img src="logo.png" alt="Seechur Agro logo">
       <span>Seechur Agro</span>
     </a>
     <div class="menu">
@@ -122,10 +123,10 @@
 </footer>
 
 <script>
-  // year + highlight current link
+  // year + active link
   (function(){
-    const y = document.getElementById('year'); if (y) y.textContent = new Date().getFullYear();
-    const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+    const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
     document.querySelectorAll('.menu a').forEach(a=>{
       if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
     });
