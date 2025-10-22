@@ -1,110 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SEECHUR AGRO PRIVATE LIMITED</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SEECHUR AGRO PRIVATE LIMITED</title>
 
-  <!-- Clean, professional font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <style>
-    :root{
-      --text:#18302a;               /* main dark text */
-      --muted:#345e50;              /* secondary text */
-      --accent:#1f7a4d;             /* brand green */
-      --accent-2:#25D366;           /* WhatsApp green */
-      --border:rgba(0,0,0,.12);
-      --shadow:0 10px 26px rgba(0,0,0,.15);
-      --glass:rgba(255,255,255,.78);/* white glass */
-      --glass-lite:rgba(255,255,255,.68);
-      --navbg:rgba(255,255,255,.85);
-      --max:1100px; --radius:18px;
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Poppins, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-      color:var(--text); min-height:100vh; background:#f5fbf8;
-    }
-    /* Background image with subtle LIGHT overlay so page stays bright */
-    body::before{
-      content:""; position:fixed; inset:0; z-index:-1;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.30)),
-        url('assets/hydroponic-bg.jpg') center/cover no-repeat;
-      filter:saturate(1.05);
-    }
+<style>
+  :root{
+    --white:#ffffff;
+    --text:#f7fff9;            /* near-white text on photo */
+    --shadow: 0 10px 30px rgba(0,0,0,.25);
+    --accent:#1f7a4d;          /* brand green */
+    --wa:#25D366;
+    --max:1100px;
+  }
 
-    /* Sticky light nav */
-    .site-nav{
-      position:sticky; top:0; z-index:60;
-      background:var(--navbg); backdrop-filter:blur(10px);
-      border-bottom:1px solid var(--border);
-    }
-    .nav-inner{
-      max-width:var(--max); margin:0 auto; padding:12px 18px;
-      display:flex; align-items:center; gap:16px;
-    }
-    .brand{display:flex; align-items:center; gap:10px; text-decoration:none}
-    .brand img{width:48px; height:48px; object-fit:contain}
-    .brand span{font-weight:700; letter-spacing:.4px; color:var(--accent)}
-    .menu{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
-    .menu a{
-      color:var(--text); text-decoration:none; padding:8px 14px;
-      border-radius:999px; border:1px solid transparent; transition:.2s;
-    }
-    .menu a:hover{ background:var(--glass-lite); border-color:var(--border) }
-    .menu a.active{ border-color:var(--accent); color:var(--accent) }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:Poppins, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    color:var(--text); min-height:100vh;
+    /* show your photo clearly with a VERY light white veil to help contrast */
+    background:#e9f5ef;
+  }
+  /* full-bleed background image (kept light) */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.12)),
+      url('assets/hydroponic-bg.jpg') center/cover no-repeat;
+    filter:saturate(1.02);
+  }
 
-    .container{ max-width:var(--max); margin:0 auto; padding:28px 18px }
+  /* transparent sticky nav */
+  .site-nav{
+    position:sticky; top:0; z-index:50; background:transparent; 
+  }
+  .nav-inner{
+    max-width:var(--max); margin:0 auto; padding:16px 18px;
+    display:flex; align-items:center; gap:14px;
+    text-shadow: 0 2px 10px rgba(0,0,0,.45);
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);
+  }
+  .brand img{
+    width:46px; height:46px; object-fit:contain; display:block;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
+  }
+  .brand span{ font-weight:700; letter-spacing:.35px }
+  .menu{ margin-left:auto; display:flex; gap:16px; flex-wrap:wrap }
+  .menu a{
+    color:var(--text); text-decoration:none; padding:6px 10px; border-radius:999px;
+    text-shadow: 0 2px 10px rgba(0,0,0,.45);
+  }
+  .menu a:hover, .menu a.active{ color:#bff3d0; }
 
-    /* Hero / top card */
-    .hero{
-      display:flex; align-items:center; gap:24px; padding:28px 24px;
-      background:var(--glass); border:1px solid var(--border);
-      border-radius:var(--radius); box-shadow:var(--shadow); margin-top:24px;
-    }
-    .hero .logo{ width:82px; height:82px; flex:0 0 auto }
-    h1{ font-size:2.05rem; letter-spacing:.3px; margin-bottom:8px }
-    .tagline{ color:var(--muted); font-style:italic; margin-bottom:6px }
+  .container{ max-width:var(--max); margin:0 auto; padding:32px 18px }
 
-    .card{
-      background:var(--glass); border:1px solid var(--border);
-      border-radius:var(--radius); box-shadow:var(--shadow);
-      padding:18px; margin-top:14px;
-    }
-    .section-title{
-      margin:24px 0 10px; font-weight:700; letter-spacing:.5px;
-      color:var(--accent); text-transform:uppercase;
-      text-shadow:0 1px 0 rgba(255,255,255,.6);
-    }
+  /* HERO — text directly over photo (no boxes) */
+  .hero{
+    padding: 64px 0 20px;
+    text-shadow: 0 3px 16px rgba(0,0,0,.55);
+  }
+  .hero h1{ font-size:2.4rem; letter-spacing:.4px; margin-bottom:6px }
+  .tagline{ font-style:italic; opacity:.95; margin-bottom:12px }
 
-    .cta-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px }
-    .btn{
-      display:inline-block; padding:10px 18px; border-radius:999px; font-weight:700;
-      text-decoration:none; color:white; background:var(--accent); box-shadow:var(--shadow)
-    }
-    .btn:hover{ filter:brightness(1.05) }
-    .btn.whatsapp{ background:var(--accent-2); color:#08321f }
-    .btn.ghost{ background:transparent; color:var(--text); border:1px solid var(--border) }
+  .cta-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px }
+  .btn{
+    display:inline-block; padding:10px 18px; border-radius:999px;
+    text-decoration:none; font-weight:700; color:#0c261b; background:#bff3d0;
+    box-shadow: var(--shadow);
+  }
+  .btn:hover{ filter:brightness(1.05) }
+  .btn.wa{ background:var(--wa); color:#062a18 }
+  .btn.outline{
+    background:transparent; color:var(--white); border:2px solid rgba(255,255,255,.9);
+  }
 
-    footer{ text-align:center; color:var(--muted); padding:30px 12px 42px }
+  /* Vision / Mission (simple, no boxes) */
+  .section{ margin-top:30px }
+  .section h3{
+    text-transform:uppercase; letter-spacing:.5px; font-weight:700; margin-bottom:8px;
+    text-shadow: 0 3px 16px rgba(0,0,0,.55);
+  }
+  .section p{ line-height:1.75; max-width: 900px }
 
-    @media (max-width:720px){
-      .hero{ flex-direction:column; text-align:center }
-      .hero .logo{ width:72px; height:72px }
-      h1{ font-size:1.7rem }
-    }
-  </style>
+  footer{
+    text-align:center; color:#e6fff2; padding:40px 12px 60px;
+    text-shadow: 0 2px 12px rgba(0,0,0,.55);
+  }
+
+  @media (max-width:720px){
+    .nav-inner{ padding:12px 14px }
+    .hero h1{ font-size:2rem }
+  }
+</style>
 </head>
 <body>
 
-  <!-- Sticky light navigation -->
+  <!-- transparent sticky nav -->
   <nav class="site-nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">
-        <img src="assets/logo.png" alt="Seechur Agro logo">
+        <!-- if your logo path is wrong/missing, the text still looks fine -->
+        <img src="assets/logo.png" alt="" onerror="this.style.display='none'">
         <span>Seechur Agro</span>
       </a>
       <div class="menu">
@@ -122,41 +124,34 @@
   </nav>
 
   <main class="container">
-    <!-- HERO -->
+    <!-- HERO on background (no boxes) -->
     <section class="hero">
-      <img class="logo" src="assets/logo.png" alt="Seechur Agro logo">
-      <div>
-        <h1>SEECHUR AGRO PRIVATE LIMITED</h1>
-        <div class="tagline">“Human By Chance, Farmer By Choice”</div>
-        <p>
-          We pioneer sustainable hydroponics and protected cultivation,
-          focusing on high-curcumin <b>Lakadong Turmeric</b> and premium vegetables from Edayarpakkam, Tamil Nadu.
-        </p>
-        <div class="cta-row">
-          <a class="btn" href="financials.html">Investor Snapshot</a>
-          <a class="btn whatsapp" target="_blank"
-             href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20I%20am%20interested">WhatsApp</a>
-          <a class="btn ghost"
-             href="mailto:seechu@seechuragro.in?subject=Inquiry%20via%20Website">Email Us</a>
-        </div>
+      <h1>SEECHUR AGRO PRIVATE LIMITED</h1>
+      <div class="tagline">“Human By Chance, Farmer By Choice”</div>
+      <p>
+        We pioneer sustainable hydroponics and protected cultivation,
+        focusing on high-curcumin <b>Lakadong Turmeric</b> and premium vegetables from Edayarpakkam, Tamil Nadu.
+      </p>
+
+      <div class="cta-row">
+        <a class="btn" href="financials.html">Investor Snapshot</a>
+        <a class="btn wa" target="_blank"
+           href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20I%20am%20interested">WhatsApp</a>
+        <a class="btn outline"
+           href="mailto:seechu@seechuragro.in?subject=Inquiry%20via%20Website">Email Us</a>
       </div>
     </section>
 
     <!-- Vision & Mission (from pitch deck) -->
-    <h3 class="section-title">Vision</h3>
-    <div class="card">
-      <p>
-        To be a leading agri-tech venture creating sustainable, high-value crop ecosystems with technology, trust and transparency.
-      </p>
-    </div>
+    <section class="section">
+      <h3>Vision</h3>
+      <p>To be a leading agri-tech venture creating sustainable, high-value crop ecosystems with technology, trust and transparency.</p>
+    </section>
 
-    <h3 class="section-title">Mission</h3>
-    <div class="card">
-      <p>
-        To sustainably cultivate Lakadong turmeric and high-value crops using hydroponics and controlled environment farming
-        to deliver consistent returns to stakeholders and healthier produce to consumers.
-      </p>
-    </div>
+    <section class="section">
+      <h3>Mission</h3>
+      <p>To sustainably cultivate Lakadong turmeric and high-value crops using hydroponics and controlled environment farming to deliver consistent returns to stakeholders and healthier produce to consumers.</p>
+    </section>
   </main>
 
   <footer>
@@ -164,12 +159,12 @@
   </footer>
 
   <script>
-    // set copyright year & highlight current link (keeps future pages consistent)
+    // year + active link
     (function(){
-      const y = document.getElementById('year'); if (y) y.textContent = new Date().getFullYear();
-      const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-      document.querySelectorAll('.menu a').forEach(a => {
-        if (a.getAttribute('href').toLowerCase() === current) a.classList.add('active');
+      const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+      const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+      document.querySelectorAll('.menu a').forEach(a=>{
+        if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
       });
     })();
   </script>
