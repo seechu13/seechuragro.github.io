@@ -1,23 +1,88 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Market | Seechur Agro</title>
-      <link rel="stylesheet" href="assets/style.css">
-    </head>
-    <body>
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Market • Seechur Agro Private Limited</title>
 
-<div class="overlay"></div>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --text:#f3fff6; --muted:#cfe9d8; --accent:#1f7a4d;
+    --nav-bg:rgba(10,25,10,0.7); --glass:rgba(255,255,255,.12);
+    --max:1100px;
+    --bar2025:#222; --bar2030:#28a067; /* bars for market size */
+    --barQC:#222; --barOrg:#28a067;   /* bars for growth chart */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
+      url('hydroponic-bg.jpg?v=12') center/cover no-repeat;
+    filter:saturate(1.1) brightness(0.95);
+  }
+
+  /* NAV */
+  .site-nav{position:sticky; top:0; z-index:50; background:var(--nav-bg); backdrop-filter:blur(6px);}
+  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
+  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
+  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
+  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
+  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
+
+  /* LAYOUT */
+  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
+  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
+  ul{color:var(--muted); line-height:1.8; margin-left:20px;}
+  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+  .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px}
+
+  /* TABLE */
+  .table-wrap{overflow:auto; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); margin:10px 0}
+  table{width:100%; border-collapse:collapse; min-width:620px;}
+  th,td{border-bottom:1px solid rgba(255,255,255,.18); padding:12px 14px; text-align:left; color:#f3fff6}
+  th{background:rgba(0,0,0,.25); font-weight:600}
+  tr:last-child td{border-bottom:none}
+
+  /* SIMPLE BARS (no JS) */
+  .bars{display:flex; gap:18px; align-items:flex-end; height:240px; padding:14px 10px 6px 10px}
+  .group{display:flex; gap:6px; align-items:flex-end; width:100%}
+  .bar{width:20px; border-radius:6px 6px 0 0; box-shadow:0 2px 10px rgba(0,0,0,.35)}
+  .bar.qc{background:var(--barQC)}
+  .bar.org{background:var(--barOrg)}
+  .xaxis{display:flex; gap:18px; justify-content:space-between; padding:0 6px 8px; color:#e8fff2; opacity:.9; font-size:.92rem}
+  .legend{display:flex; gap:14px; align-items:center; color:#e8fff2; font-size:.92rem}
+  .key{display:inline-block; width:14px; height:14px; border-radius:3px; margin-right:6px}
+  .cap{font-size:.92rem; color:#eaf9f0; margin-top:6px}
+
+  /* BADGES */
+  .badges{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0 4px}
+  .badge{padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.25); color:#eafff4; font-size:.92rem; border:1px solid rgba(255,255,255,.15)}
+
+  /* QUOTE */
+  .quote{font-style:italic; color:#eaf9f0; margin-top:6px}
+
+  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+  @media (max-width:720px){ .brand img{width:84px;} h1{font-size:1.9rem;} .nav-inner{padding:10px 12px;} }
+</style>
+</head>
+<body>
+
 <nav class="site-nav">
   <div class="nav-inner">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Seechur Agro"><span>Seechur Agro</span></a>
+    <a class="brand" href="index.html"><img src="logo.png?v=12" alt="Seechur Agro logo"></a>
     <div class="menu">
       <a href="index.html">Home</a>
       <a href="about.html">About</a>
       <a href="why-lakadong.html">Why Lakadong</a>
       <a href="portfolio.html">Portfolio</a>
-      <a href="market.html">Market</a>
+      <a class="active" href="market.html">Market</a>
       <a href="financials.html">Financials</a>
       <a href="team.html">Team</a>
       <a href="contact.html">Contact</a>
@@ -26,38 +91,166 @@
   </div>
 </nav>
 
-
 <main class="container">
-  <div class="hero">
-    <h1 class="title">Market Opportunity</h1>
-    <div class="tagline">Premium vegetables • Organic spice • Export demand</div>
-  </div>
+  <h1>Market Opportunity & Growth Outlook</h1>
+  <p>
+    India’s premium agri-produce is accelerating—driven by health-aware consumers, quick-commerce penetration
+    and export momentum in high-curcumin turmeric. Seechur Agro operates at this intersection with traceable
+    hydroponic vegetables and Lakadong turmeric, backed by policy support and strong B2B channels.
+  </p>
+
+  <!-- SURGING DEMAND (static bars) -->
+  <h2>Surging Demand & Policy Push (Indexed 2020–2025)</h2>
   <div class="card">
-    <p>Rising demand for organic & premium vegetables in urban India plus global curcumin demand in EU/NA/ME create a strong runway. Protected cultivation ensures reliability that buyers seek.</p>
+    <!-- Bars are % heights vs max value (here, 537) -->
+    <div class="bars">
+      <!-- Year 2020 -->
+      <div class="group" style="--hqc: calc(100% * 100/537); --horg: calc(100% * 100/537);">
+        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 100"></div>
+        <div class="bar org" style="height:var(--horg)" title="Organic demand 100"></div>
+      </div>
+      <!-- 2021 -->
+      <div class="group" style="--hqc: calc(100% * 130/537); --horg: calc(100% * 140/537);">
+        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 130"></div>
+        <div class="bar org" style="height:var(--horg)" title="Organic demand 140"></div>
+      </div>
+      <!-- 2022 -->
+      <div class="group" style="--hqc: calc(100% * 160/537); --horg: calc(100% * 196/537);">
+        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 160"></div>
+        <div class="bar org" style="height:var(--horg)" title="Organic demand 196"></div>
+      </div>
+      <!-- 2023 -->
+      <div class="group" style="--hqc: calc(100% * 190/537); --horg: calc(100% * 274/537);">
+        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 190"></div>
+        <div class="bar org" style="height:var(--horg)" title="Organic demand 274"></div>
+      </div>
+      <!-- 2024 -->
+      <div class="group" style="--hqc: calc(100% * 230/537); --horg: calc(100% * 384/537);">
+        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 230"></div>
+        <div class="bar org" style="height:var(--horg)" title="Organic demand 384"></div>
+      </div>
+      <!-- 2025 -->
+      <div class="group" style="--hqc: calc(100% * 300/537); --horg: calc(100% * 537/537);">
+        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 300"></div>
+        <div class="bar org" style="height:var(--horg)" title="Organic demand 537"></div>
+      </div>
+    </div>
+    <div class="xaxis">
+      <span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span>
+    </div>
+    <div class="legend" style="margin-top:4px;">
+      <span><span class="key" style="background:var(--barQC)"></span>Quick-commerce orders (Index)</span>
+      <span><span class="key" style="background:var(--barOrg)"></span>Organic food demand (Index)</span>
+    </div>
+    <p class="cap">Growth is reinforced by government incentives (e.g., <b>NHB 50% capex subsidy</b> for storage, logistics & infra), improving last-mile availability and quality.</p>
+  </div>
+
+  <!-- MARKET SIZE -->
+  <h2>Market Size & Growth to 2030</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Segment</th><th>2025 (₹ Cr)</th><th>2030 (₹ Cr)</th><th>CAGR</th></tr></thead>
+      <tbody>
+        <tr><td><b>Premium Vegetables</b></td><td>1200</td><td><b>2750</b></td><td>~18%</td></tr>
+        <tr><td><b>Organic Turmeric</b></td><td>850</td><td><b>2100</b></td><td>~19%</td></tr>
+        <tr><td><b>Exports (select agri)</b></td><td>650</td><td><b>1800</b></td><td>~22%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- paired bars per category -->
+  <div class="card">
+    <div class="bars" style="height:220px">
+      <!-- Normalize to 2750 max -->
+      <div class="group" title="Premium Vegetables">
+        <div class="bar" style="background:var(--bar2025); height:calc(100% * 1200/2750)"></div>
+        <div class="bar" style="background:var(--bar2030); height:calc(100% * 2750/2750)"></div>
+      </div>
+      <div class="group" title="Organic Turmeric">
+        <div class="bar" style="background:var(--bar2025); height:calc(100% * 850/2750)"></div>
+        <div class="bar" style="background:var(--bar2030); height:calc(100% * 2100/2750)"></div>
+      </div>
+      <div class="group" title="Exports">
+        <div class="bar" style="background:var(--bar2025); height:calc(100% * 650/2750)"></div>
+        <div class="bar" style="background:var(--bar2030); height:calc(100% * 1800/2750)"></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><span class="key" style="background:var(--bar2025)"></span>2025</span>
+      <span><span class="key" style="background:var(--bar2030)"></span>2030</span>
+    </div>
+    <p class="cap">Premium veg & organic turmeric are projected to more than double by 2030, driven by health, exports and e-commerce penetration.</p>
+  </div>
+
+  <!-- COMPETITIVE EDGE -->
+  <h2>Competitive Edge</h2>
+  <div class="card">
     <ul>
-      <li>B2B: BigBasket / Reliance Retail / HoReCa</li>
-      <li>Exports: curcumin & processed turmeric</li>
-      <li>Direct to consumer pilots (subscription)</li>
+      <li><b>Capital efficiency:</b> Restart leveraging existing polyhouse/greenhouse assets.</li>
+      <li><b>Premium mix:</b> Hydroponic vegetables for cash-flow + high-curcumin Lakadong for value.</li>
+      <li><b>Traceability:</b> Batch-level testing & compliance targeting modern trade and export buyers.</li>
+      <li><b>Speed to market:</b> Microgreens revenue from Day-30 post-investment; vegetables stabilise by Month-6.</li>
     </ul>
   </div>
 
-<div class="section-title">Demand Growth</div>
-<div class="card figure">
-  <img src="assets/demand-growth.png" alt="Surging demand & policy push chart">
-  <div class="caption">Quick‑commerce orders and organic food demand are rising; policy support improves viability.</div>
-</div>
+  <!-- STRATEGY & BUYERS -->
+  <h2>Market Strategy & Buyers</h2>
+  <div class="card">
+    <div class="badges">
+      <span class="badge">B2B 80% (quick-commerce & retail chains)</span>
+      <span class="badge">B2C 20% (local delivery & kits)</span>
+      <span class="badge">APEDA / Spices Board for exports</span>
+      <span class="badge">Batch testing for curcumin & residues</span>
+    </div>
+    <ul>
+      <li><b>Quick-commerce:</b> Target Zepto, Blinkit, Instamart for cucumbers/greens.</li>
+      <li><b>Modern trade:</b> Regional fresh chains & HoReCa suppliers.</li>
+      <li><b>Export / nutraceutical:</b> High-curcumin Lakadong turmeric lots with lab certification.</li>
+    </ul>
+  </div>
 
-<div class="section-title">Market Size</div>
-<div class="card figure">
-  <img src="assets/market-size.png" alt="Market size bar chart">
-  <div class="caption">Premium Vegetables, Organic Turmeric and Exports — 2025 vs 2030 (APEDA, IMARC).</div>
-</div>
+  <!-- POLICY SUPPORT -->
+  <h2>Policy & Government Support</h2>
+  <div class="grid">
+    <div class="card">
+      <h3 style="margin-bottom:6px;color:#fff">Mission Lakadong (Meghalaya)</h3>
+      <p>State mission to scale area, productivity & value addition for Lakadong turmeric; supports testing, FPOs and processing infrastructure.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:6px;color:#fff">NHB & AIF</h3>
+      <p><b>NHB</b>: eligible infra gets up to <b>50% capex subsidy</b> (cold storage/logistics). <b>AIF</b>: low-interest funding with interest subvention.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:6px;color:#fff">APEDA & Spices Board</h3>
+      <p>Export facilitation, quality norms, and market linkage programs for organic spices and fresh produce.</p>
+    </div>
+  </div>
 
+  <!-- SUMMARY -->
+  <h2>Summary</h2>
+  <div class="card">
+    <p>
+      Seechur Agro is positioned to capture the fastest-growing niches of Indian agribusiness—traceable hydroponic vegetables and
+      high-curcumin Lakadong turmeric—by pairing capital-efficient refurbishment with strong B2B channels and policy alignment.
+    </p>
+    <p class="quote">“India’s agri-future lies in traceable, high-yield, low-water cultivation — Seechur Agro is building that bridge.”</p>
+  </div>
 </main>
 
-      <footer>
-        © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-      </footer>
-      <script src="assets/script.js"></script>
-    </body>
-    </html>
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+  const current=(location.pathname.split('/').pop()||'market.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+})();
+</script>
+</body>
+</html>
+ 
