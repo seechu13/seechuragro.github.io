@@ -59,22 +59,22 @@
 </head>
 <body>
 
-<nav class="site-nav">
-  <div class="nav-inner">
-    <a class="brand" href="index.html"><img src="logo.png?v=10" alt="Seechur Agro logo"></a>
-    <div class="menu">
-      <a href="index.html">Home</a>
-      <a href="about.html">About</a>
-      <a class="active" href="why-lakadong.html">Why Lakadong</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="market.html">Market</a>
-      <a href="financials.html">Financials</a>
-      <a href="team.html">Team</a>
-      <a href="contact.html">Contact</a>
-      <a href="investor-pack.html">Investor Pack</a>
-    </div>
-  </div>
-</nav>
+<div id="navbar-placeholder"></div>
+
+<script>
+  fetch('navbar.html')
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById('navbar-placeholder').innerHTML = data;
+
+      // Highlight current page link
+      const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+      document.querySelectorAll('.menu a').forEach(a => {
+        if (a.getAttribute('href').toLowerCase() === current) a.classList.add('active');
+      });
+    });
+</script>
+
 
 <main class="container">
   <h1>Why Lakadong Turmeric?</h1>
