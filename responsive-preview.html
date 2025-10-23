@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Seechur Agro – Responsive Preview (Desktop vs Mobile)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0b1510; --glass:rgba(255,255,255,.08); --accent:#2dbb7f; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Poppins,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#06120b,#0f231a)}
+  header{position:sticky;top:0;z-index:10;background:rgba(7,15,11,.7);backdrop-filter:blur(6px);
+         border-bottom:1px solid rgba(255,255,255,.08)}
+  .bar{max-width:1200px;margin:0 auto;padding:10px 14px;display:flex;gap:10px;align-items:center}
+  .title{color:#eafff5;font-weight:700}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+  .tab{padding:8px 12px;border-radius:999px;color:#eafff5;text-decoration:none;border:1px solid rgba(255,255,255,.18);
+       background:rgba(255,255,255,.06);font-size:.9rem}
+  .tab.active{background:rgba(45,187,127,.18);border-color:rgba(45,187,127,.35);color:#b7ffe0}
+  main{max-width:1200px;margin:14px auto;padding:0 14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .framebox{border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;background:var(--glass)}
+  .label{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;color:#eafff5;background:rgba(255,255,255,.06)}
+  .label span{opacity:.9;font-size:.9rem}
+  iframe{display:block;width:100%;border:0;background:#111}
+  /* Viewport sizes */
+  .desktop iframe{height:900px}
+  .mobile iframe{height:896px}
+  /* Panel headers */
+  .chip{padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);font-size:.8rem}
+  footer{max-width:1200px;margin:10px auto 30px;color:#cfeede;opacity:.85;text-align:center;font-size:.9rem}
+  @media (max-width:1100px){ .grid{grid-template-columns:1fr} .desktop iframe,.mobile iframe{height:720px} }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="title">Seechur Agro — Responsive Preview</div>
+    <nav class="tabs" id="tabs">
+      <a class="tab" data-page="index.html">Home</a>
+      <a class="tab" data-page="about.html">About</a>
+      <a class="tab" data-page="why-lakadong.html">Why Lakadong</a>
+      <a class="tab" data-page="portfolio.html">Portfolio</a>
+      <a class="tab" data-page="market.html">Market</a>
+      <a class="tab" data-page="financials.html">Financials</a>
+      <a class="tab" data-page="team.html">Team</a>
+      <a class="tab" data-page="faq.html">FAQ</a>
+      <a class="tab" data-page="investor-pack.html">Investor Pack</a>
+      <a class="tab" data-page="contact.html">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="framebox desktop">
+      <div class="label">
+        <span>💻 Desktop preview (1440×900)</span>
+        <span class="chip" id="leftUrl">—</span>
+      </div>
+      <iframe id="left" title="Desktop preview"></iframe>
+    </section>
+
+    <section class="framebox mobile">
+      <div class="label">
+        <span>📱 Mobile preview (414×896)</span>
+        <span class="chip" id="rightUrl">—</span>
+      </div>
+      <iframe id="right" title="Mobile preview"></iframe>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Tip: use the tabs above to switch pages. The left pane emulates a laptop viewport; the right pane shows a phone-sized viewport.
+</footer>
+
+<script>
+  // Default page
+  const DEFAULT_PAGE = 'index.html';
+  const tabs = document.getElementById('tabs').querySelectorAll('.tab');
+  const left = document.getElementById('left');
+  const right = document.getElementById('right');
+  const leftUrl = document.getElementById('leftUrl');
+  const rightUrl = document.getElementById('rightUrl');
+
+  function loadPage(page){
+    // mark active
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.page === page));
+    // set src (relative paths; works on GitHub Pages too)
+    left.src = page;
+    right.src = page;
+    leftUrl.textContent = page;
+    rightUrl.textContent = page;
+  }
+
+  tabs.forEach(t => {
+    t.addEventListener('click', (e) => {
+      e.preventDefault();
+      loadPage(t.dataset.page);
+    });
+  });
+
+  // On first load: try query ?p=about.html
+  const qs = new URLSearchParams(location.search);
+  const start = qs.get('p') || DEFAULT_PAGE;
+  loadPage(start);
+</script>
+</body>
+</html>
