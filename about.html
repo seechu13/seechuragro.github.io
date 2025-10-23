@@ -1,52 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>About | Seechur Agro</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="icon" href="logo.png" type="image/png" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About • Seechur Agro Private Limited</title>
 
-  <style>
-    body::before{
-      content:""; position:fixed; inset:0; z-index:-1;
-      background:
-        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-        url('hydroponic-bg.jpg') center/cover no-repeat;
-      filter:saturate(1.05) brightness(.97);
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- ✅ Global stylesheet -->
+<link rel="stylesheet" href="assets/style.css">
+
+<style>
+  :root{
+    --text:#f3fff6;
+    --muted:#cfe9d8;
+    --accent:#1f7a4d;
+    --nav-bg:rgba(10,25,10,0.7); /* Transparent desktop nav */
+    --nav-solid:#1b4332;         /* Solid mobile drawer */
+    --max:1100px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--text);
+    min-height:100vh;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
+      url('hydroponic-bg.jpg?v=9') center/cover no-repeat;
+    filter:saturate(1.1) brightness(0.95);
+  }
+
+  /* ===== Sticky Navbar (desktop transparent) ===== */
+  .site-nav{
+    position:sticky; top:0; z-index:60;
+    background:var(--nav-bg); backdrop-filter:blur(6px);
+    border-bottom:1px solid rgba(255,255,255,.12);
+  }
+  .nav-inner{
+    max-width:var(--max); margin:0 auto;
+    padding:10px 18px; display:flex; align-items:center; gap:14px;
+  }
+  .brand{display:flex; align-items:center; text-decoration:none}
+  .brand img{
+    width:110px; height:auto; display:block;
+    filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  }
+
+  /* desktop menu */
+  .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+  .menu a{
+    color:#ffffff; text-decoration:none; padding:6px 10px; border-radius:999px;
+    transition:.25s;
+  }
+  .menu a:hover,.menu a.active{
+    background:rgba(255,255,255,0.18);
+  }
+
+  /* ===== Mobile drawer ===== */
+  .nav-toggle{display:none;margin-left:auto;border:1px solid rgba(255,255,255,.28);
+    background:rgba(0,0,0,.25);color:#eafff5;padding:8px 12px;border-radius:10px;cursor:pointer;}
+  .nav-overlay{display:none;}
+
+  @media (max-width: 768px){
+    .nav-inner{padding:10px 12px;}
+    .brand img{width:84px;}
+    .nav-toggle{display:inline-block;}
+    .menu{
+      position:fixed; top:0; right:-80%;
+      width:80%; height:100vh; margin:0;
+      display:flex; flex-direction:column; gap:8px;
+      padding:18px;
+      background:var(--nav-solid);
+      border-left:1px solid rgba(255,255,255,.18);
+      box-shadow:-10px 0 24px rgba(0,0,0,.45);
+      transition:right .28s ease-in-out;
     }
-  </style>
+    .menu a{padding:12px 14px;border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);}
+    .site-nav.open .menu{right:0;}
+    .nav-overlay{
+      position:fixed; inset:0; z-index:55;
+      display:none; background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
+    }
+    .site-nav.open + .nav-overlay{display:block;}
+  }
 
+  /* ===== Page content ===== */
+  .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
+  h1{
+    font-size:2.2rem; font-weight:700; margin-bottom:8px; color:#ffffff;
+    text-shadow:0 2px 8px rgba(0,0,0,.55);
+  }
+  h2{
+    font-size:1.4rem; margin-top:30px; margin-bottom:10px; color:#ffffff;
+    text-shadow:0 2px 6px rgba(0,0,0,.5);
+  }
+  p{line-height:1.8;color:var(--muted);margin-bottom:16px;}
+
+  .photo-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:24px; margin:40px 0;
+  }
+  figure{
+    position:relative; overflow:hidden;
+    border-radius:18px; background:rgba(255,255,255,0.12);
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  }
+  figure img{width:100%;height:auto;display:block;transition:transform 0.4s ease;}
+  figure:hover img{transform:scale(1.03);}
+  figcaption{
+    padding:12px; font-size:0.95rem; text-align:center; color:#f3fff6;
+    background:rgba(0,0,0,0.35); backdrop-filter:blur(4px);
+  }
+
+  footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;
+    background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);}
+</style>
 </head>
-<body class="about">
-  <div id="navbar-placeholder"></div>
-  <script>
-    fetch('navbar.html').then(r=>r.text()).then(h=>{document.getElementById('navbar-placeholder').innerHTML=h;});
-  </script>
 
-  <main class="container">
-    <h1>About Seechur Agro</h1>
-    <p>We are a Chennai-based agritech venture focused on hydroponics and protected cultivation. The Edaiyarpakkam facility operated successfully before the cyclone; we are now refurbishing and scaling with investor support.</p>
+<body>
 
-    <h2>Before & After (Cyclone)</h2>
-    <div class="grid">
-      <div class="card">
-        <img src="edayarpakkam-before.jpg" alt="Edayarpakkam facility before cyclone" />
-        <div class="info"><strong>Before Cyclone</strong> — full operations with stable yields.</div>
-      </div>
-      <div class="card">
-        <img src="edayarpakkam-after.jpg" alt="Edayarpakkam facility after cyclone" />
-        <div class="info"><strong>After Cyclone</strong> — refurbishment required (cladding, fertigation, benches, electricals).</div>
-      </div>
+<!-- ===== Navbar ===== -->
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <img src="logo.png?v=9" alt="Seechur Agro logo">
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu">☰ Menu</button>
+    <div class="menu" id="mobileMenu">
+      <a href="index.html">Home</a>
+      <a class="active" href="about.html">About</a>
+      <a href="why-lakadong.html">Why Lakadong</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="market.html">Market</a>
+      <a href="financials.html">Financials</a>
+      <a href="team.html">Team</a>
+      <a href="contact.html">Contact</a>
+      <a href="investor-pack.html">Investor Pack</a>
     </div>
+  </div>
+</nav>
+<div class="nav-overlay" id="navOverlay"></div>
 
-    <h2>Vision & Mission</h2>
-    <p><strong>Vision:</strong> Build a sustainable, technology-integrated agriculture enterprise producing premium vegetables and Lakadong turmeric.</p>
-    <p><strong>Mission:</strong> Combine precision hydroponics with traditional crop excellence to ensure consistent yield, traceability, and investor-grade governance.</p>
-  </main>
+<!-- ===== Page Content ===== -->
+<main class="container">
+  <h1>About Seechur Agro</h1>
 
-  <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
-  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <h2>Company Overview</h2>
+  <p><b>Seechur Agro Private Limited</b> is an emerging agri-tech enterprise based in Chennai, Tamil Nadu, founded with the mission of integrating modern technology with sustainable agriculture.
+  Guided by the belief <b>“Human by Chance, Farmer by Choice”</b>, the company is committed to building scalable, profitable, and environmentally responsible farming systems that enhance rural livelihoods while ensuring food safety and quality.</p>
+
+  <p>Our model focuses on high-value, high-efficiency crop cultivation using <b>hydroponics, polyhouse, and greenhouse technologies</b>. This approach minimizes water usage, eliminates soil-borne diseases, and delivers consistent yields independent of seasonal constraints.</p>
+
+  <h2>Edayarpakkam Project</h2>
+  <p>The company owns and operates a 13.5-acre integrated farming complex at <b>Edayarpakkam, near Chennai</b>. Prior to cyclone impact, the farm was a fully functional, benchmark hydroponic facility featuring:</p>
+  <ul style="color:var(--muted);line-height:1.8;margin-left:20px;">
+    <li>4 acres of climate-controlled polyhouse cultivation</li>
+    <li>1.25 acres of greenhouse farming for exotic vegetables</li>
+    <li>Automated nutrient and drip irrigation systems</li>
+    <li>Packhouse, water storage, and fertigation infrastructure</li>
+    <li>Solar-assisted power and resource-efficient layout</li>
+  </ul>
+  <p>The project demonstrated operational success in producing English cucumbers, leafy greens, and other high-value crops. From <b>Year 3 onward</b>, an additional 6 acres are planned for the cultivation of <b>Lakadong Turmeric</b> — India’s most potent curcumin-rich variety — positioned for domestic and export markets.</p>
+
+  <div class="photo-grid">
+    <figure>
+      <img src="edayarpakkam-before.jpg" alt="Edayarpakkam farm before cyclone">
+      <figcaption>🌿 Fully Operational Farm — Before Cyclone (Full Functioning Infrastructure)</figcaption>
+    </figure>
+    <figure>
+      <img src="edayarpakkam-after.jpg" alt="Edayarpakkam farm after cyclone">
+      <figcaption>⚠️ Post-Cyclone — Depleted Infrastructure (Restoration Pending)</figcaption>
+    </figure>
+  </div>
+
+  <h2>Impact of Cyclone & Current Status</h2>
+  <p>A severe cyclone in late 2023 caused extensive damage to the polyhouse structures, irrigation systems, and electrical components. The farm is presently non-operational and requires complete refurbishment, re-sheeting, and system recalibration. The land and core assets remain intact, making the project ready for rapid reactivation once capital infusion is received.</p>
+
+  <h2>Revival & Investment Opportunity</h2>
+  <p>Seechur Agro is seeking an investment of <b>₹3 crore</b> through the SEEC Fund: <b>₹1.5 crore as debt</b> (12% annual return) and <b>₹1.5 crore as equity</b> in Seechur Agro Private Limited. The investment targets a <b>20% annualized return</b> by restoring operations, scaling Lakadong turmeric cultivation, and optimizing protected farming.</p>
+
+  <p>The revival plan emphasizes sustainable infrastructure using reinforced polyhouse design, efficient fertigation, and automation systems — ensuring resilience against future weather shocks. Once revived, the farm is projected to achieve <b>break-even within 18 months</b> and <b>steady profitability from Year 2</b>.</p>
+
+  <h2>Why Seechur Agro</h2>
+  <p>• Proven operational track record before cyclone impact<br>
+     • Land and fixed assets already in place (no greenfield risk)<br>
+     • Integrated plan for hydroponics + Lakadong turmeric diversification<br>
+     • Experienced management team with agri-tech and operations background<br>
+     • Ready access to Chennai’s retail and wholesale markets<br>
+     • Strong alignment with India’s agri-modernization and sustainability goals</p>
+
+  <p>The company’s model represents the next generation of Indian agriculture — where technology, traceability, and sustainable profitability converge.</p>
+</main>
+
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+  const current=(location.pathname.split('/').pop()||'about.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+
+  // Mobile drawer
+  const nav=document.getElementById('siteNav');
+  const toggle=document.getElementById('navToggle');
+  const overlay=document.getElementById('navOverlay');
+  function openMenu(){nav.classList.add('open');toggle.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';}
+  function closeMenu(){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false');document.body.style.overflow='';}
+  toggle.addEventListener('click',()=>{nav.classList.contains('open')?closeMenu():openMenu();});
+  overlay.addEventListener('click',closeMenu);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
+})();
+</script>
 </body>
 </html>
