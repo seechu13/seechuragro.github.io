@@ -1,152 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>About • Seechur Agro Private Limited</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>About | Seechur Agro</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="logo.png" type="image/png" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body::before{
+      content:""; position:fixed; inset:0; z-index:-1;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+        url('hydroponic-bg.jpg') center/cover no-repeat;
+      filter:saturate(1.05) brightness(.97);
+    }
+  </style>
 
-<style>
-  :root{
-    --text:#f3fff6; --muted:#cfe9d8; --nav-bg:rgba(10,25,10,0.7);
-    --glass:rgba(255,255,255,.12); --max:1100px;
-    --pill:#1f7a4d;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
-  body::before{
-    content:""; position:fixed; inset:0; z-index:-1;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-      url('hydroponic-bg.jpg?v=15') center/cover no-repeat;
-    filter:saturate(1.08) brightness(.97);
-  }
-
-  /* NAV */
-  .site-nav{position:sticky; top:0; z-index:50; background:var(--nav-bg); backdrop-filter:blur(6px);}
-  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
-  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
-  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
-  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
-  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
-
-  /* LAYOUT */
-  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
-  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; text-shadow:0 2px 6px rgba(0,0,0,.5)}
-  p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
-  .lead{font-size:1.05rem}
-  .pill{display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.12); color:#eafff4; margin-right:8px; font-size:.92rem}
-
-  .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px; margin:12px 0}
-  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
-
-  .img-box{overflow:hidden; border-radius:14px; background:#0b0b0b22}
-  .img-box img{width:100%; height:auto; display:block}
-
-  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
-  @media (max-width:720px){ .brand img{width:84px;} h1{font-size:1.9rem;} .nav-inner{padding:10px 12px;} }
-</style>
 </head>
-<body>
+<body class="about">
+  <div id="navbar-placeholder"></div>
+  <script>
+    fetch('navbar.html').then(r=>r.text()).then(h=>{document.getElementById('navbar-placeholder').innerHTML=h;});
+  </script>
 
-<div id="navbar-placeholder"></div>
+  <main class="container">
+    <h1>About Seechur Agro</h1>
+    <p>We are a Chennai-based agritech venture focused on hydroponics and protected cultivation. The Edaiyarpakkam facility operated successfully before the cyclone; we are now refurbishing and scaling with investor support.</p>
 
-<script>
-  fetch('navbar.html')
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById('navbar-placeholder').innerHTML = data;
-
-      // Highlight current page link
-      const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-      document.querySelectorAll('.menu a').forEach(a => {
-        if (a.getAttribute('href').toLowerCase() === current) a.classList.add('active');
-      });
-    });
-</script>
-
-
-<main class="container">
-  <h1>About Seechur Agro</h1>
-  <p class="lead">
-    Seechur Agro is reviving a proven hydroponic & protected-cultivation farm at <b>Edaiyarpakkam, Tamil Nadu</b> —
-    shifting to premium, traceable crops such as <b>Lakadong turmeric</b>, English cucumber and microgreens.
-    We are refurbishing the greenhouse after the 2015 cyclone to restart a capital-efficient, sustainability-first operation.
-  </p>
-
-  <!-- BEFORE / AFTER COLLAGES (if you already created collage files, keep same names) -->
-  <h2>Our Farm: Before and After Cyclone</h2>
-  <div class="grid">
-    <div class="card">
-      <div class="img-box">
-        <img src="edayarpakkam-before.jpg" alt="Edaiyarpakkam Farm at full potential before cyclone">
-      </div>
-      <p><span class="pill">Before Cyclone</span>
-        Fully functional polyhouse operations with dense basil and cucumber beds; steady supply to modern trade.
-      </p>
-    </div>
-    <div class="card">
-      <div class="img-box">
-        <img src="edayarpakkam-after.jpg" alt="Edaiyarpakkam Farm condition after cyclone — requires refurbishment">
-      </div>
-      <p><span class="pill" style="background:#8a1f1fb8">Post Cyclone</span>
-        Structure damage and degraded beds — <b>refurbishment</b> (cladding, irrigation, fertigation, benches) is underway with investor capital.
-      </p>
-    </div>
-  </div>
-
-  <!-- 🔹 NEW: Mission graphic block (your provided image) -->
-  <h2>Our Mission</h2>
-  <p>
-    To establish a <b>resource-efficient hydroponic farm</b> that uses ~80% less water than traditional cultivation, delivers ~3× yield density,
-    and enables <b>365-day</b> premium produce.
-  </p>
-  <div class="card" style="text-align:center">
-    <img src="mission-hydroponic.png" alt="Mission: Resource-efficient hydroponic farm — water saving, premium produce, year-round harvest"
-         style="max-width:860px; width:100%; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,.35);">
-  </div>
-
-  <!-- WHY WE’RE RAISING CAPITAL -->
-  <h2>Why We’re Raising Capital</h2>
-  <div class="card">
-    <p>
-      The site already has ~5.25 acres of polyhouse, high-capacity borewell (17,700 L/hr) and 38KW solar support.
-      Funding accelerates: (1) structural refurbishment, (2) fertigation & benches, (3) Lakadong nursery & microgreens benches,
-      (4) working capital for the first crop cycle.
-    </p>
+    <h2>Before & After (Cyclone)</h2>
     <div class="grid">
-      <div class="card"><p><b>0–3 months:</b> Refurbish & recommission. Microgreens start by Day-30.</p></div>
-      <div class="card"><p><b>Month 4–6:</b> Vegetables stabilise; Lakadong nursery in progress.</p></div>
-      <div class="card"><p><b>~Month 7:</b> First Lakadong production cheque; steady multi-crop revenue thereafter.</p></div>
+      <div class="card">
+        <img src="edayarpakkam-before.jpg" alt="Edayarpakkam facility before cyclone" />
+        <div class="info"><strong>Before Cyclone</strong> — full operations with stable yields.</div>
+      </div>
+      <div class="card">
+        <img src="edayarpakkam-after.jpg" alt="Edayarpakkam facility after cyclone" />
+        <div class="info"><strong>After Cyclone</strong> — refurbishment required (cladding, fertigation, benches, electricals).</div>
+      </div>
     </div>
-  </div>
 
-  <!-- VALUES / PRACTICES -->
-  <h2>What Guides Us</h2>
-  <div class="card">
-    <p class="pill">Water & Energy Efficiency</p>
-    <p class="pill">Residue-safe, traceable produce</p>
-    <p class="pill">Capital efficiency & quick payback</p>
-    <p class="pill">Modern trade & export readiness</p>
-  </div>
-</main>
+    <h2>Vision & Mission</h2>
+    <p><strong>Vision:</strong> Build a sustainable, technology-integrated agriculture enterprise producing premium vegetables and Lakadong turmeric.</p>
+    <p><strong>Mission:</strong> Combine precision hydroponics with traditional crop excellence to ensure consistent yield, traceability, and investor-grade governance.</p>
+  </main>
 
-<footer>
-  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-</footer>
-
-<script>
-(function(){
-  const y=document.getElementById('year');
-  if(y) y.textContent=new Date().getFullYear();
-  const current=(location.pathname.split('/').pop()||'about.html').toLowerCase();
-  document.querySelectorAll('.menu a').forEach(a=>{
-    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
-  });
-})();
-</script>
+  <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
 </body>
 </html>

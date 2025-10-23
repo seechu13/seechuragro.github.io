@@ -1,85 +1,56 @@
-<!-- navbar.html -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-
-<style>
-  :root {
-    --nav-bg: rgba(10,25,10,0.75);
-    --hover:#33d18f;
-    --text:#ffffff;
-  }
-  .site-nav {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: var(--nav-bg);
-    backdrop-filter: blur(8px);
-    box-shadow: 0 2px 12px rgba(0,0,0,.4);
-  }
-  .nav-inner {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 10px 18px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .brand img {
-    width: 110px;
-    height: auto;
-    object-fit: contain;
-    display: block;
-    filter: drop-shadow(0 3px 10px rgba(0,0,0,.45));
-  }
-  .menu {
-    margin-left: auto;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-  .menu a {
-    color: var(--text);
-    text-decoration: none;
-    font-weight: 500;
-    padding: 6px 12px;
-    border-radius: 999px;
-    transition: background .3s ease, color .3s ease, transform .2s ease;
-  }
-  .menu a:hover {
-    background: rgba(255,255,255,0.18);
-    color: var(--hover);
-    transform: translateY(-1px);
-  }
-  .menu a.active {
-    background: rgba(255,255,255,0.25);
-    color: var(--hover);
-    font-weight: 600;
-  }
-
-  @media (max-width:720px) {
-    .nav-inner { padding: 10px 12px; }
-    .brand img { width: 84px; }
-    .menu { gap: 10px; }
-    .menu a { font-size: 0.9rem; padding: 5px 10px; }
-  }
-</style>
-
-<nav class="site-nav">
+<!-- navbar.html (sticky, mobile-ready, transparent) -->
+<nav class="navbar" role="navigation" aria-label="Main">
+  <style>
+    .navbar{position:sticky; top:0; z-index:50; backdrop-filter: blur(6px);
+      background: rgba(10,25,10,0.45); border-bottom:1px solid rgba(255,255,255,.12);}
+    .nav-inner{max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:14px; padding:10px 16px;}
+    .brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:#eafff5; font-weight:700}
+    .brand img{height:32px; width:auto; display:block}
+    .spacer{flex:1}
+    .menu{display:flex; gap:12px; align-items:center; list-style:none; margin:0; padding:0}
+    .menu a{color:#eafff5; text-decoration:none; padding:8px 12px; border-radius:999px; border:1px solid transparent}
+    .menu a:hover, .menu a.active{background:rgba(255,255,255,.10); border-color: rgba(255,255,255,.18)}
+    .navbar-toggle{display:none; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.25);
+      color:#eafff5; padding:8px 12px; border-radius:10px; cursor:pointer}
+    @media (max-width: 768px){
+      .menu{display:none; position:fixed; left:12px; right:12px; top:60px;
+        flex-direction:column; gap:8px; background:rgba(10,25,10,0.92); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.15)}
+      .navbar.active .menu{display:flex;}
+      .navbar-toggle{display:block;}
+    }
+  </style>
   <div class="nav-inner">
     <a class="brand" href="index.html">
-      <img src="logo.png?v=22" alt="Seechur Agro logo">
+      <img src="logo.png" alt="Seechur Agro">
+      <span>Seechur Agro</span>
     </a>
-    <div class="menu">
-      <a href="index.html">Home</a>
-      <a href="about.html">About</a>
-      <a href="why-lakadong.html">Why Lakadong</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="market.html">Market</a>
-      <a href="financials.html">Financials</a>
-      <a href="team.html">Team</a>
-      <a href="faq.html">FAQ</a>
-      <a href="contact.html">Contact</a>
-      <a href="investor-pack.html">Investor Pack</a>
-    </div>
+    <div class="spacer"></div>
+    <button class="navbar-toggle" aria-expanded="false" aria-controls="menu">☰ Menu</button>
+    <ul class="menu" id="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="why-lakadong.html">Why Lakadong</a></li>
+      <li><a href="portfolio.html">Portfolio</a></li>
+      <li><a href="market.html">Market</a></li>
+      <li><a href="financials.html">Financials</a></li>
+      <li><a href="team.html">Team</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="investor-pack.html">Investor Pack</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
   </div>
+  <script>
+    (function(){
+      const nav = document.currentScript.parentElement;
+      const btn = nav.querySelector('.navbar-toggle');
+      btn.addEventListener('click', ()=>{
+        const open = nav.classList.toggle('active');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      const current = (location.pathname.split('/').pop()||'index.html').toLowerCase();
+      nav.querySelectorAll('.menu a').forEach(a=>{
+        if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+      });
+    })();
+  </script>
 </nav>

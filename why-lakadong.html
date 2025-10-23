@@ -1,156 +1,56 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Why Lakadong • Seechur Agro Private Limited</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Why Lakadong | Seechur Agro</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="logo.png" type="image/png" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body::before{
+      content:""; position:fixed; inset:0; z-index:-1;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+        url('hydroponic-bg.jpg') center/cover no-repeat;
+      filter:saturate(1.05) brightness(.97);
+    }
+  </style>
 
-<style>
-  :root{
-    --text:#f3fff6; --muted:#cfe9d8; --accent:#1f7a4d;
-    --nav-bg:rgba(10,25,10,0.7); --max:1100px;
-    --glass:rgba(255,255,255,.12);
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
-  body::before{
-    content:""; position:fixed; inset:0; z-index:-1;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
-      url('hydroponic-bg.jpg?v=10') center/cover no-repeat;
-    filter:saturate(1.1) brightness(0.95);
-  }
-  .site-nav{position:sticky; top:0; z-index:50; background:var(--nav-bg); backdrop-filter:blur(6px);}
-  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
-  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
-  .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
-  .menu a{color:#ffffff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
-  .menu a:hover,.menu a.active{ background:rgba(255,255,255,0.18); }
-
-  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
-  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; color:#ffffff; text-shadow:0 2px 8px rgba(0,0,0,.55);}
-  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,.5);}
-  p{ line-height:1.8; color:var(--muted); margin-bottom:16px; }
-  ul{ color:var(--muted); line-height:1.8; margin-left:20px; }
-
-  .grid{ display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
-
-  /* Figures */
-  figure{ position:relative; overflow:hidden; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,0.4); }
-  figure img{ width:100%; height:auto; display:block; transition:transform .35s ease; }
-  figure:hover img{ transform:scale(1.02); }
-  figcaption{ padding:12px; font-size:.95rem; text-align:center; color:#f3fff6; background:rgba(0,0,0,0.35); backdrop-filter:blur(4px); }
-
-  /* Spec table */
-  .spec-card{ margin:18px 0; overflow:auto; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); }
-  table{ width:100%; border-collapse:collapse; min-width:520px; }
-  th,td{ border-bottom:1px solid rgba(255,255,255,.18); padding:12px 14px; text-align:left; color:#f3fff6; }
-  th{ background:rgba(0,0,0,.25); font-weight:600; }
-  tr:last-child td{ border-bottom:none; }
-  .note{ font-size:.92rem; color:#e7f7ef; opacity:.95; margin-top:10px; }
-
-  footer{ text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px); }
-
-  @media (max-width:720px){ .brand img{width:84px;} h1{font-size:1.9rem;} .nav-inner{padding:10px 12px;} }
-</style>
 </head>
-<body>
+<body class="lakadong">
+  <div id="navbar-placeholder"></div>
+  <script>
+    fetch('navbar.html').then(r=>r.text()).then(h=>{document.getElementById('navbar-placeholder').innerHTML=h;});
+  </script>
 
-<div id="navbar-placeholder"></div>
+  <main class="container">
+    <h1>Why Lakadong Turmeric</h1>
+    <p>Lakadong (Meghalaya) is a high-curcumin turmeric variety with strong domestic and export demand. It aligns with Mission Lakadong’s goal to expand quality acreage and traceability. Protected cultivation & nursery-to-field models enhance survivability and grade consistency; Lakadong adapts well to polyhouse nursery conditions.</p>
 
-<script>
-  fetch('navbar.html')
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById('navbar-placeholder').innerHTML = data;
+    <h2>Quick Specs</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Attribute</th><th>Spec</th></tr></thead>
+        <tbody>
+          <tr><td>Variety</td><td>Lakadong (High Curcumin)</td></tr>
+          <tr><td>Use</td><td>Premium spice, nutraceuticals, export</td></tr>
+          <tr><td>Nursery</td><td>Polyhouse-raised rhizomes (traceable)</td></tr>
+          <tr><td>Realisation (base)</td><td>₹230/kg (illustrative)</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-      // Highlight current page link
-      const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-      document.querySelectorAll('.menu a').forEach(a => {
-        if (a.getAttribute('href').toLowerCase() === current) a.classList.add('active');
-      });
-    });
-</script>
+    <h2>Program Highlights</h2>
+    <ul>
+      <li>Mission Lakadong support to improve acreage & quality</li>
+      <li>Traceability and batch testing for buyer confidence</li>
+      <li>Nursery → field model for robust plantings and uniformity</li>
+    </ul>
+  </main>
 
-
-<main class="container">
-  <h1>Why Lakadong Turmeric?</h1>
-
-  <h2>What is Lakadong?</h2>
-  <p>
-    <b>Lakadong turmeric</b> from Meghalaya’s Jaintia Hills is renowned for consistently high <b>curcumin</b> levels.
-    Official state materials and recent press notes cite a typical range of <b>7–12% curcumin</b>, far above common varieties (≈2–3%). :contentReference[oaicite:0]{index=0}
-  </p>
-
-  <div class="spec-card">
-    <table>
-      <thead><tr><th>Parameter</th><th>Typical Lakadong Value</th><th>Notes / Source</th></tr></thead>
-      <tbody>
-        <tr><td>Curcumin (%)</td><td><b>~7.4% avg</b> (range 7–12%)</td><td>Mission Lakadong docs note ~7.4% avg; state press cites 7–12%. :contentReference[oaicite:1]{index=1}</td></tr>
-        <tr><td>Volatile oil (%)</td><td><b>3.6–4.8%</b> (dry rhizome)</td><td>Mission Lakadong technical brief. :contentReference[oaicite:2]{index=2}</td></tr>
-        <tr><td>Moisture (cured)</td><td><b>≈5.8%</b></td><td>Composition values in state mission document. :contentReference[oaicite:3]{index=3}</td></tr>
-        <tr><td>Positioning</td><td>Premium colour, flavour & nutraceutical interest</td><td>Multiple government/industry briefs. :contentReference[oaicite:4]{index=4}</td></tr>
-      </tbody>
-    </table>
-    <div class="note">Specs vary by seed stock, agronomy, curing and testing method; final lots are verified by accredited labs.</div>
-  </div>
-
-  <h2>Mission Lakadong (Meghalaya)</h2>
-  <p>
-    Meghalaya launched <b>Mission Lakadong</b> to scale production, productivity and value addition, including FPO formation,
-    testing, and processing infrastructure. Documented targets included increasing area from ~2,577 ha towards ~6,070 ha
-    and lifting production and productivity substantially (e.g., production to ~50,000 MT; productivity to ~28 MT/ha). :contentReference[oaicite:5]{index=5}
-  </p>
-  <p>
-    In <b>March–April 2024</b>, Lakadong Turmeric was granted a <b>Geographical Indication (GI)</b> tag, strengthening origin-linked branding and
-    authenticity enforcement for the Jaintia Hills region. :contentReference[oaicite:6]{index=6}
-  </p>
-
-  <h2>Why it fits our model</h2>
-  <ul>
-    <li><b>Premium pricing:</b> High curcumin supports superior realisations versus common turmeric. :contentReference[oaicite:7]{index=7}</li>
-    <li><b>Traceability & quality:</b> Controlled cultivation + lot testing for curcumin/residues improves export readiness. :contentReference[oaicite:8]{index=8}</li>
-    <li><b>Value-addition runway:</b> Powder, sterilised lots, oleoresin and curcumin extracts open nutraceutical channels. :contentReference[oaicite:9]{index=9}</li>
-  </ul>
-
-  <h2>Adaptability to protected cultivation</h2>
-  <p>
-    While Lakadong is traditionally open-field grown, our plan is to adapt nursery establishment and early growth under
-    <b>protected / controlled environments</b> to enhance disease management, uniformity and traceability; field growing and curing then follow best-practice protocols.
-    This approach leverages protected-cultivation benefits (sanitation, climate buffering, input control) to meet residue and quality specs for premium buyers.
-  </p>
-
-  <h2>Key context from Indian agriculture</h2>
-  <div class="grid">
-    <figure>
-      <img src="challenges-grid.png" alt="Key challenges in Indian agriculture"
-           onerror="this.closest('figure').style.display='none'">
-      <figcaption>Key Challenges: water stress, post-harvest loss, land degradation, labour gaps — premium, traceable crops address quality & consistency.</figcaption>
-    </figure>
-    <figure>
-      <img src="competitive-edge.png" alt="Competitive edge for Seechur Agro"
-           onerror="this.closest('figure').style.display='none'">
-      <figcaption>Competitive Edge: leverage existing infra + premium crops; focus on quality, testing, and efficient capex.</figcaption>
-    </figure>
-  </div>
-</main>
-
-<footer>
-  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-</footer>
-
-<script>
-(function(){
-  const y=document.getElementById('year');
-  if(y) y.textContent=new Date().getFullYear();
-  const current=(location.pathname.split('/').pop()||'why-lakadong.html').toLowerCase();
-  document.querySelectorAll('.menu a').forEach(a=>{
-    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
-  });
-})();
-</script>
+  <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
 </body>
 </html>

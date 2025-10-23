@@ -1,210 +1,59 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Team • Seechur Agro Private Limited</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Team | Seechur Agro</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="logo.png" type="image/png" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body::before{
+      content:""; position:fixed; inset:0; z-index:-1;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+        url('hydroponic-bg.jpg') center/cover no-repeat;
+      filter:saturate(1.05) brightness(.97);
+    }
+  </style>
 
-<style>
-  :root{
-    --text:#f3fff6; --muted:#cfe9d8; --nav-bg:rgba(10,25,10,0.7);
-    --glass:rgba(255,255,255,.12); --max:1100px;
-    --hover:#33d18f;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
-  body::before{
-    content:""; position:fixed; inset:0; z-index:-1;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-      url('hydroponic-bg.jpg?v=20') center/cover no-repeat;
-    filter:saturate(1.05) brightness(.97);
-  }
-
-  /* NAV */
-  .site-nav{position:sticky; top:0; z-index:50; background:var(--nav-bg); backdrop-filter:blur(6px);}
-  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
-  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
-  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
-  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
-  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
-
-  /* BANNER */
-  .banner{
-    background:rgba(51,209,143,.12);
-    border:1px solid rgba(51,209,143,.4);
-    border-radius:12px;
-    padding:10px 18px;
-    text-align:center;
-    font-weight:600;
-    color:#b2ffcb;
-    max-width:var(--max);
-    margin:22px auto;
-    backdrop-filter:blur(5px);
-    animation:glow 3s ease-in-out infinite alternate;
-  }
-  @keyframes glow{
-    from{box-shadow:0 0 6px rgba(51,209,143,.2);}
-    to{box-shadow:0 0 16px rgba(51,209,143,.4);}
-  }
-
-  /* LAYOUT */
-  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
-  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; text-shadow:0 2px 6px rgba(0,0,0,.5)}
-  p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
-  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
-
-  /* CARDS + fade-in */
-  .card{
-    background:var(--glass); border-radius:20px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:18px;
-    opacity:0; transform:translateY(14px); transition:opacity .7s ease, transform .7s ease;
-  }
-  .card.show{opacity:1; transform:translateY(0);}
-
-  /* PROFILE */
-  .profile{display:flex; gap:18px; align-items:center}
-  .avatar{
-    flex:0 0 260px; width:260px; aspect-ratio:1/1;
-    border-radius:16px; overflow:hidden; background:#0b0b0b22;
-    margin:auto; display:flex; justify-content:center; align-items:center;
-  }
-  .avatar img{
-    width:100%; height:100%; object-fit:cover; display:block;
-    transition:transform .4s ease;
-  }
-  .avatar img:hover{ transform:scale(1.03); }
-
-  .role{color:#d6ffe9; font-weight:600; margin-top:2px}
-  .icons{display:flex; gap:10px; margin-top:8px}
-  .icon{
-    width:36px; height:36px; border-radius:999px; display:grid; place-items:center;
-    background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.14);
-    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
-  }
-  .icon:hover{transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.35); background:rgba(0,0,0,.35)}
-  .icon svg{width:18px; height:18px; fill:#eafff4}
-  .icon.linkedin:hover svg{fill:var(--hover)}
-  .icon.mail:hover svg{fill:#fff}
-
-  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
-
-  @media (max-width:720px){
-    .brand img{width:84px;} h1{font-size:1.9rem;} .nav-inner{padding:10px 12px;}
-    .profile{flex-direction:column; text-align:center}
-    .avatar{width:280px;}
-  }
-</style>
 </head>
-<body>
+<body class="team">
+  <div id="navbar-placeholder"></div>
+  <script>
+    fetch('navbar.html').then(r=>r.text()).then(h=>{document.getElementById('navbar-placeholder').innerHTML=h;});
+  </script>
 
-<div id="navbar-placeholder"></div>
-
-<script>
-  fetch('navbar.html')
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById('navbar-placeholder').innerHTML = data;
-
-      // Highlight current page link
-      const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-      document.querySelectorAll('.menu a').forEach(a => {
-        if (a.getAttribute('href').toLowerCase() === current) a.classList.add('active');
-      });
-    });
-</script>
-
-
-<!-- Advisory Banner -->
-<div class="banner">
-  Advisory collaborations underway with <b>Mission Lakadong</b> & <b>Tamil Nadu Agricultural University (TNAU)</b>
-</div>
-
-<main class="container">
-  <h1>Our Leadership Team</h1>
-  <p>
-    Our strength lies in hands-on agri-entrepreneurship, practical innovation, and a relentless focus on
-    sustainability and capital efficiency. Meet the people steering Seechur Agro forward.
-  </p>
-
-  <section class="grid">
-    <!-- Srivatsan -->
-    <article class="card">
-      <div class="profile">
-        <div class="avatar">
-          <img src="srivatsan-renga.jpg" alt="Srivatsan Renga">
-        </div>
-        <div>
-          <h2>Srivatsan Renga</h2>
-          <div class="role">Founder & Managing Director</div>
+  <main class="container">
+    <h1>Leadership Team</h1>
+    <div class="grid">
+      <div class="card">
+        <img class="avatar" src="srivatsan-renga.jpg" alt="Srivatsan Renga" style="display:block;margin:0 auto;border-radius:16px;width:260px;height:260px;object-fit:cover" />
+        <div class="info" style="text-align:center">
+          <h3>Srivatsan Renga</h3>
+          <p>Founder & Managing Director. 22 years in banking risk, including 12 years as Agricultural Officer in a leading Indian private bank.</p>
           <p>
-            Business leader with extensive experience in <b>agri-project development</b>, protected cultivation,
-            and farm reactivation. Brings over <b>22 years of banking and risk management expertise</b>, including
-            <b>12 years as an Agricultural Officer in a leading Indian Private Bank</b>, where he specialized in
-            credit appraisal and farm finance. His combined background in agriculture and finance ensures operational
-            viability, investor confidence, and long-term sustainability for Seechur Agro.
+            <a class="btn" href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener">LinkedIn</a>
+            <a class="btn" href="mailto:seechu@seechuragro.in">Email</a>
           </p>
-          <div class="icons">
-            <a class="icon linkedin" href="https://www.linkedin.com/in/srivatsan-renga-85219151?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener" aria-label="Srivatsan on LinkedIn">
-              <svg viewBox="0 0 24 24"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
-            </a>
-            <a class="icon mail" href="mailto:seechu@seechuragro.in" aria-label="Email Srivatsan">
-              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-            </a>
-          </div>
         </div>
       </div>
-    </article>
-
-    <!-- Kanaka -->
-    <article class="card">
-      <div class="profile">
-        <div class="avatar">
-          <img src="kanaka-srivatsan.jpg" alt="Kanaka Srivatsan">
-        </div>
-        <div>
-          <h2>Kanaka Srivatsan</h2>
-          <div class="role">Director</div>
+      <div class="card">
+        <img class="avatar" src="kanaka-srivatsan.jpg" alt="Kanaka Srivatsan" style="display:block;margin:0 auto;border-radius:16px;width:260px;height:260px;object-fit:cover" />
+        <div class="info" style="text-align:center">
+          <h3>Kanaka Srivatsan</h3>
+          <p>Director. 10+ years in operations and quality-led execution.</p>
           <p>
-            Graduate in Sociology with over a decade of experience managing premium dining operations and teaching;
-            detail-oriented leader passionate about sustainable farming and quality.
+            <a class="btn" href="https://www.linkedin.com/in/kanaka-srivatsan-8a8b17371" target="_blank" rel="noopener">LinkedIn</a>
+            <a class="btn" href="mailto:kanaka@seechuragro.in">Email</a>
           </p>
-          <div class="icons">
-            <a class="icon linkedin" href="https://www.linkedin.com/in/kanaka-srivatsan-8a8b17371?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener" aria-label="Kanaka on LinkedIn">
-              <svg viewBox="0 0 24 24"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
-            </a>
-            <a class="icon mail" href="mailto:kanaka@seechuragro.in" aria-label="Email Kanaka">
-              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-            </a>
-          </div>
         </div>
       </div>
-    </article>
-  </section>
-</main>
+    </div>
+  </main>
 
-<footer>
-  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-</footer>
-
-<script>
-(function(){
-  const y=document.getElementById('year');
-  if(y) y.textContent=new Date().getFullYear();
-  const current=(location.pathname.split('/').pop()||'team.html').toLowerCase();
-  document.querySelectorAll('.menu a').forEach(a=>{
-    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
-  });
-
-  const cards=[...document.querySelectorAll('.card')];
-  const io=new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target);} });
-  },{threshold:0.18});
-  cards.forEach(c=>io.observe(c));
-})();
-</script>
+  <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
 </body>
 </html>

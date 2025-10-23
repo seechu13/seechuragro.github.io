@@ -1,246 +1,57 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Portfolio • Seechur Agro Private Limited</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Portfolio | Seechur Agro</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="logo.png" type="image/png" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body::before{
+      content:""; position:fixed; inset:0; z-index:-1;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+        url('hydroponic-bg.jpg') center/cover no-repeat;
+      filter:saturate(1.05) brightness(.97);
+    }
+  </style>
 
-<style>
-  :root{
-    --text:#f3fff6; --muted:#cfe9d8; --accent:#1f7a4d;
-    --nav-bg:rgba(10,25,10,0.7); --glass:rgba(255,255,255,.12);
-    --max:1100px;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
-  body::before{
-    content:""; position:fixed; inset:0; z-index:-1;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
-      url('hydroponic-bg.jpg?v=11') center/cover no-repeat;
-    filter:saturate(1.1) brightness(0.95);
-  }
-
-  .site-nav{position:sticky; top:0; z-index:50; background:var(--nav-bg); backdrop-filter:blur(6px);}
-  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
-  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
-  .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
-  .menu a{color:#ffffff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
-  .menu a:hover,.menu a.active{ background:rgba(255,255,255,0.18); }
-
-  .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
-  h1{font-size:2.2rem;font-weight:700;margin-bottom:8px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  h2{font-size:1.4rem;margin-top:28px;margin-bottom:10px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5)}
-  p{line-height:1.8;color:var(--muted);margin-bottom:16px;}
-  ul{color:var(--muted);line-height:1.8;margin-left:20px;}
-  .grid{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
-
-  /* Glass cards & figures */
-  .card, figure{background:var(--glass);border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-  figure{overflow:hidden}
-  figure img{width:100%;height:auto;display:block;transition:transform .35s ease}
-  figure:hover img{transform:scale(1.02)}
-  figcaption{padding:12px;font-size:.95rem;text-align:center;color:#f3fff6;background:rgba(0,0,0,.35);backdrop-filter:blur(4px)}
-
-  /* Tables */
-  .table-wrap{overflow:auto;border-radius:18px;background:var(--glass);box-shadow:0 4px 20px rgba(0,0,0,.4);margin:10px 0}
-  table{width:100%;border-collapse:collapse;min-width:720px;}
-  th,td{border-bottom:1px solid rgba(255,255,255,.18);padding:12px 14px;text-align:left;color:#f3fff6}
-  th{background:rgba(0,0,0,.25);font-weight:600}
-  tr:last-child td{border-bottom:none}
-
-  /* Badges list */
-  .badges{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 4px}
-  .badge{padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.25);color:#eafff4;font-size:.92rem;border:1px solid rgba(255,255,255,.15)}
-
-  /* Timeline */
-  .timeline{position:relative;margin-top:10px}
-  .timeline::before{content:"";position:absolute;left:18px;top:0;bottom:0;width:3px;background:rgba(255,255,255,.35)}
-  .milestone{position:relative;padding-left:48px;margin:14px 0}
-  .milestone::before{content:"";position:absolute;left:10px;top:.35rem;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(255,255,255,.15)}
-  .milestone b{color:#fff}
-  .quote{font-style:italic;color:#eaf9f0;margin-top:8px}
-
-  footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px)}
-
-  @media (max-width:720px){.brand img{width:84px;}h1{font-size:1.9rem}.nav-inner{padding:10px 12px}}
-</style>
 </head>
-<body>
+<body class="portfolio">
+  <div id="navbar-placeholder"></div>
+  <script>
+    fetch('navbar.html').then(r=>r.text()).then(h=>{document.getElementById('navbar-placeholder').innerHTML=h;});
+  </script>
 
-<div id="navbar-placeholder"></div>
+  <main class="container">
+    <h1>Our Portfolio</h1>
+    <p>Fast-cycle hydroponic vegetables for steady cashflows, paired with premium Lakadong turmeric and daily microgreens.</p>
 
-<script>
-  fetch('navbar.html')
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById('navbar-placeholder').innerHTML = data;
+    <section class="grid">
+      <article class="card">
+        <img src="cucumber-harvest.jpg" alt="English cucumber harvest" />
+        <div class="info"><h3>English Cucumber (Hydroponic)</h3><p>Core protected cultivation line for modern retail & quick commerce.</p></div>
+      </article>
+      <article class="card">
+        <img src="lakadong-rhizome.jpg" alt="Lakadong turmeric rhizome" />
+        <div class="info"><h3>Lakadong Turmeric</h3><p>High-curcumin premium varietal aligned with Mission Lakadong.</p></div>
+      </article>
+      <article class="card">
+        <img src="microgreens-tray.jpg" alt="Microgreens trays" />
+        <div class="info"><h3>Microgreens</h3><p>Daily harvest cycles; HORECA and retail demand; quick cashflow stabiliser.</p></div>
+      </article>
+    </section>
 
-      // Highlight current page link
-      const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-      document.querySelectorAll('.menu a').forEach(a => {
-        if (a.getAttribute('href').toLowerCase() === current) a.classList.add('active');
-      });
-    });
-</script>
+    <section class="grid" style="margin-top:16px">
+      <div class="card"><strong>Sustainability:</strong> water reuse, responsible inputs, protected structures.</div>
+      <div class="card"><strong>Quality:</strong> hygiene, traceability, batch testing, buyer feedback loops.</div>
+      <div class="card"><strong>Partners (Proposed):</strong> Mission Lakadong & TNAU advisory.</div>
+    </section>
+  </main>
 
-
-<main class="container">
-  <h1>Our Crop & Infrastructure Portfolio</h1>
-  <p>
-    Our model combines short-cycle, high-frequency cash crops (hydroponic vegetables) with a premium spice line (Lakadong turmeric) to
-    balance cash flow, diversify risk and scale sustainably.
-  </p>
-
-  <!-- Crop Portfolio Summary -->
-  <h2>Crop Portfolio — Summary & Indicative Value</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Crop</th><th>Area</th><th>Yield (per acre)</th><th>Annual Output</th><th>Indicative Value (₹/year)</th><th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><b>English Cucumber (Hydroponic)</b></td>
-          <td>2 acres</td>
-          <td>216,000 kg</td>
-          <td><b>432,000 kg</b></td>
-          <td><b>₹ 2.59 Cr</b></td>
-          <td>Premium demand; Chennai metro</td>
-        </tr>
-        <tr>
-          <td><b>Microgreens</b></td>
-          <td>1.25 acres</td>
-          <td>Rotational (daily)</td>
-          <td>Daily harvest</td>
-          <td><b>₹ 1.00–1.25 Cr</b></td>
-          <td>High-margin, quick cycle</td>
-        </tr>
-        <tr>
-          <td><b>Leafy Greens</b></td>
-          <td>0.5 acres</td>
-          <td>—</td>
-          <td>~100,000 kg</td>
-          <td><b>₹ 25 Lakh</b></td>
-          <td>Retail & HoReCa</td>
-        </tr>
-        <tr>
-          <td><b>Lakadong Turmeric</b> (from Yr-3)</td>
-          <td>6 acres</td>
-          <td>8 MT</td>
-          <td><b>48 MT</b></td>
-          <td><b>₹ 1.10 Cr</b></td>
-          <td>High-curcumin, export grade</td>
-        </tr>
-        <tr>
-          <td colspan="6"><b>Steady-state total (indicative): ~₹ 4.9–5.2 Cr / year</b> (market-linked; subject to price/yield variance).</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Images row -->
-  <div class="grid" style="margin-top:18px;">
-    <figure>
-      <img src="cucumber-harvest.jpg" alt="Hydroponic cucumber rows">
-      <figcaption>English Cucumber — hydroponic rows for consistent quality and yields.</figcaption>
-    </figure>
-    <figure>
-      <img src="lakadong-rhizome.jpg" alt="Lakadong turmeric rhizomes">
-      <figcaption>Lakadong Turmeric — high-curcumin rhizomes for premium spice and nutraceutical demand.</figcaption>
-    </figure>
-    <figure>
-      <img src="microgreens-tray.jpg" alt="Microgreens cultivation trays">
-      <figcaption>Microgreens — high-margin, fast-cycle crop with daily dispatch capability.</figcaption>
-    </figure>
-  </div>
-
-  <!-- Infrastructure -->
-  <h2>Infrastructure Snapshot</h2>
-  <div class="card" style="padding:16px;">
-    <div class="badges">
-      <span class="badge">4 acres Polyhouse (controlled)</span>
-      <span class="badge">1.25 acres Greenhouse</span>
-      <span class="badge">Drip & Fertigation Automation</span>
-      <span class="badge">Packhouse & Grading</span>
-      <span class="badge">Solar-assisted Power</span>
-      <span class="badge">Rainwater Harvesting</span>
-    </div>
-    <p class="quote">“Diverse crops, one sustainable vision — combining technology, taste, and traceability.”</p>
-  </div>
-
-  <!-- Portfolio chart (optional) -->
-  <div class="grid" style="margin-top:18px;">
-    <figure>
-      <img src="crop-portfolio.png" alt="Crop portfolio chart"
-           onerror="this.closest('figure').style.display='none'">
-      <figcaption>Balanced mix of high-frequency vegetables and high-value Lakadong turmeric.</figcaption>
-    </figure>
-  </div>
-
-  <!-- Partners & Advisory -->
-  <h2>Advisory & Market Partners</h2>
-  <div class="card" style="padding:16px;">
-    <ul>
-      <li><b>Advisory (in discussion):</b> Senior officials from <b>Mission Lakadong (Meghalaya)</b> and <b>Tamil Nadu Agricultural University (TNAU)</b> for varietal, agronomy and value-addition guidance.</li>
-      <li><b>Protected-cultivation support:</b> Agritech consultants network for hydroponics, fertigation and climate control.</li>
-      <li><b>Market access:</b> Quick-commerce and modern retail channels (e.g., Zepto, Blinkit, Swiggy Instamart) for vegetables; spice traders & nutraceutical buyers for Lakadong.</li>
-    </ul>
-  </div>
-
-  <!-- Quality & Sustainability -->
-  <h2>Certifications & Quality Practices</h2>
-  <div class="card" style="padding:16px;">
-    <ul>
-      <li>FSSAI-compliant handling; graded, hygienic packing.</li>
-      <li>Periodic lab testing for <b>residues & curcumin</b> (Lakadong).</li>
-      <li>Traceable batch system; organic certification roadmap post-restoration.</li>
-    </ul>
-  </div>
-
-  <h2>Sustainability Highlights</h2>
-  <div class="card" style="padding:16px;">
-    <ul>
-      <li>Solar-assisted power and energy-efficient operations.</li>
-      <li>Hydroponic loop reduces water footprint; rainwater reuse.</li>
-      <li>Soil regeneration practices for open-field turmeric.</li>
-      <li>Direct employment for 20+ local workers at steady state.</li>
-    </ul>
-  </div>
-
-  <!-- Timeline -->
-  <h2>Project Timeline (post-investment)</h2>
-  <div class="card" style="padding:16px;">
-    <div class="timeline">
-      <div class="milestone"><b>Day 0:</b> Investment received; procurement & contractor mobilisation.</div>
-      <div class="milestone"><b>Day 1–90:</b> Polyhouse/greenhouse refurbishment, fertigation & electrical re-installs; <b>Lakadong nursery established in protected area</b>.</div>
-      <div class="milestone"><b>Day 30:</b> <b>Microgreens revenue starts</b> (daily harvest & dispatch).</div>
-      <div class="milestone"><b>Month 4–6:</b> Hydroponic vegetable production stabilises; cucumber & leafy supply ramps up.</div>
-      <div class="milestone"><b>Month 7:</b> <b>First cheque from Lakadong</b> (nursery→field cycle; early batch monetisation).</div>
-      <div class="milestone"><b>Month 12:</b> Steady-state run-rate; scale up Lakadong acreage and B2B buyer base.</div>
-    </div>
-  </div>
-
-</main>
-
-<footer>
-  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-</footer>
-
-<script>
-(function(){
-  const y=document.getElementById('year');
-  if(y) y.textContent=new Date().getFullYear();
-  const current=(location.pathname.split('/').pop()||'portfolio.html').toLowerCase();
-  document.querySelectorAll('.menu a').forEach(a=>{
-    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
-  });
-})();
-</script>
+  <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
 </body>
 </html>
