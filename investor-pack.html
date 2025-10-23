@@ -12,7 +12,7 @@
   :root{
     --text:#f3fff6; --muted:#cfe9d8; --nav-bg:rgba(10,25,10,0.7);
     --glass:rgba(255,255,255,.12); --max:1100px;
-    --accent:#2dbb7f; --accent-2:#56cfe1; --hover:#33d18f;
+    --accent:#2dbb7f; --hover:#33d18f;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
@@ -20,7 +20,7 @@
     content:""; position:fixed; inset:0; z-index:-1;
     background:
       linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-      url('hydroponic-bg.jpg?v=25') center/cover no-repeat;
+      url('hydroponic-bg.jpg?v=26') center/cover no-repeat;
     filter:saturate(1.05) brightness(.97);
   }
 
@@ -49,10 +49,30 @@
   /* viewer */
   .viewer{
     background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.16);
-    border-radius:16px; overflow:hidden;
+    border-radius:16px; overflow:hidden; position:relative;
   }
   .viewer iframe{display:block; width:100%; height:70vh; border:0;}
+  .blurred{filter:blur(6px); pointer-events:none; user-select:none;}
 
+  /* Password modal */
+  .lock-overlay{
+    position:fixed; inset:0; display:grid; place-items:center;
+    background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:60;
+  }
+  .lock-card{
+    width:min(520px,92vw); background:rgba(255,255,255,.12); color:#eafff4;
+    border:1px solid rgba(255,255,255,.22); border-radius:18px; padding:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+  .lock-card h3{margin:0 0 6px 0; font-size:1.25rem}
+  .lock-card p{margin:0 0 12px 0; color:#d8ffee}
+  .field{display:flex; gap:10px; margin-top:6px}
+  .field input{
+    flex:1; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.25); color:#fff; outline:none;
+  }
+  .error{color:#ffd2d2; font-size:.95rem; margin-top:8px; min-height:1.2em}
+  .note{font-size:.9rem; color:#d6ffea; margin-top:10px}
   footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
 </style>
 </head>
@@ -75,16 +95,15 @@
 <main class="container">
   <h1>Investor Pack (Confidential)</h1>
   <p>
-    This page hosts the official <b>Investor Pack</b> for Seechur Agro Private Limited.  
-    Access is restricted via Google Drive with <b>download, print, and copy disabled</b>.  
-    Investors can request secure access below.
+    Access to the Investor Pack is restricted. Approved viewers may unlock the secure viewer below using the passphrase we shared.
+    For new requests, use WhatsApp or Email.
   </p>
 
   <section class="grid">
     <!-- Request Access -->
     <div class="card">
       <h2 style="margin-top:0">Request Access</h2>
-      <p class="hint">We’ll verify your details and grant view-only access.</p>
+      <p class="hint">We’ll verify your details and grant view-only access on Google Drive (download/print/copy disabled).</p>
       <div class="buttons">
         <a class="btn" href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20please%20grant%20me%20access%20to%20the%20Investor%20Pack." target="_blank" rel="noopener" aria-label="Request on WhatsApp">
           <svg viewBox="0 0 24 24"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4z"/></svg>
@@ -95,17 +114,18 @@
           Email
         </a>
       </div>
-      <p style="margin-top:10px" class="hint"><b>Note:</b> Access is managed via Drive “Restricted” sharing. Only approved emails can open the document.</p>
+      <p style="margin-top:10px" class="hint"><b>Reminder:</b> This passphrase gate is for convenience only and does not replace Google Drive restrictions.</p>
     </div>
 
     <!-- Secure Viewer -->
     <div class="card">
       <h2 style="margin-top:0">Approved Investors — View Here</h2>
-      <p class="hint">If your email has been approved, the Investor Pack will load securely below.</p>
+      <p class="hint">Enter the passphrase to load the Investor Pack securely.</p>
 
-      <div class="viewer" id="viewer">
-        <iframe
-          src="https://drive.google.com/file/d/1rZK3yYDvwY2PILsvfUz6E6SYQ8K0FzPK/preview"
+      <div class="viewer">
+        <iframe id="driveFrame"
+          class="blurred"
+          src="about:blank"
           allow="autoplay"
           referrerpolicy="no-referrer-when-downgrade"
           title="Seechur Agro Investor Pack (Confidential)">
@@ -113,17 +133,31 @@
       </div>
 
       <div class="buttons" style="margin-top:10px">
-        <a class="btn" href="https://drive.google.com/file/d/1rZK3yYDvwY2PILsvfUz6E6SYQ8K0FzPK/preview" target="_blank" rel="noopener">
+        <a class="btn" id="openNew" href="#" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5zm0 14h5v2H3v-7h2v5zm14-5h2v7h-7v-2h5v-5z"/></svg>
           Open in New Tab
         </a>
       </div>
       <p class="hint" style="margin-top:8px">
-        If you see “You need access”, please click <b>Request access</b> in Drive, or use WhatsApp/Email above.
+        If Drive shows “You need access”, click <b>Request access</b> or contact us via WhatsApp/Email above.
       </p>
     </div>
   </section>
 </main>
+
+<!-- Password Modal -->
+<div class="lock-overlay" id="lock">
+  <div class="lock-card">
+    <h3>Enter Passphrase</h3>
+    <p>We’ve shared a passphrase with approved investors. Enter it to unlock the viewer.</p>
+    <div class="field">
+      <input id="pass" type="password" placeholder="Passphrase">
+      <button class="btn" id="unlockBtn">Unlock</button>
+    </div>
+    <div class="error" id="error"></div>
+    <div class="note">Note: This is a light, client-side gate for convenience. Sensitive files are protected in Google Drive.</div>
+  </div>
+</div>
 
 <footer>
   © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
@@ -133,11 +167,50 @@
 (function(){
   const y=document.getElementById('year');
   if(y) y.textContent=new Date().getFullYear();
+
+  // fade-in cards
   const cards=[...document.querySelectorAll('.card')];
   const io=new IntersectionObserver((entries)=>{
     entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target);} });
   },{threshold:0.18});
   cards.forEach(c=>io.observe(c));
+
+  // ====== Password Gate (client-side convenience only) ======
+  // CHANGE THIS to your chosen passphrase (case-sensitive)
+  const PASSPHRASE = 'SEECHUR2025';
+  // Your Drive File ID
+  const FILE_ID = '1rZK3yYDvwY2PILsvfUz6E6SYQ8K0FzPK';
+
+  const lock = document.getElementById('lock');
+  const input = document.getElementById('pass');
+  const err = document.getElementById('error');
+  const btn = document.getElementById('unlockBtn');
+  const frame = document.getElementById('driveFrame');
+  const openNew = document.getElementById('openNew');
+
+  function openViewer(){
+    const src = `https://drive.google.com/file/d/${FILE_ID}/preview`;
+    frame.src = src;
+    frame.classList.remove('blurred');
+    if(openNew) openNew.href = src;
+  }
+
+  btn.addEventListener('click', ()=>{
+    const val = (input.value || '').trim();
+    if(!val){ err.textContent = 'Please enter the passphrase.'; return; }
+    if(val === PASSPHRASE){
+      lock.style.display='none';
+      openViewer();
+    }else{
+      err.textContent = 'Incorrect passphrase. Please try again or request access.';
+    }
+  });
+
+  // Allow Enter key
+  input.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') btn.click();
+  });
+
 })();
 </script>
 </body>
