@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FAQ • Seechur Agro Private Limited</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --text:#f3fff6; --muted:#cfe9d8; --nav-bg:rgba(10,25,10,0.7);
+    --glass:rgba(255,255,255,.12); --max:1100px;
+    --accent:#2dbb7f; --accent-2:#56cfe1; --hover:#33d18f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+      url('hydroponic-bg.jpg?v=21') center/cover no-repeat;
+    filter:saturate(1.05) brightness(.97);
+  }
+
+  /* NAV */
+  .site-nav{position:sticky; top:0; z-index:50; background:var(--nav-bg); backdrop-filter:blur(6px);}
+  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
+  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
+  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
+  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
+  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
+
+  /* LAYOUT */
+  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
+  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
+
+  /* ACCORDION */
+  .faq-section{margin-top:18px}
+  .accordion{
+    background:var(--glass);
+    border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4);
+    overflow:hidden; margin:14px 0; opacity:0; transform:translateY(14px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .accordion.show{opacity:1; transform:translateY(0);}
+  .acc-item{border-bottom:1px solid rgba(255,255,255,.14)}
+  .acc-item:last-child{border-bottom:none}
+  .acc-btn{
+    width:100%; text-align:left; background:transparent; color:#fff;
+    padding:16px 18px; font:600 1rem/1.4 Poppins, system-ui, sans-serif;
+    display:flex; align-items:center; gap:10px; cursor:pointer;
+  }
+  .acc-btn .tag{
+    padding:4px 8px; border-radius:999px; font-size:.8rem;
+    background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12); color:#dfffee;
+  }
+  .acc-btn .chev{
+    margin-left:auto; transition:transform .25s ease; opacity:.9;
+  }
+  .acc-btn.active .chev{ transform:rotate(180deg); }
+  .acc-panel{
+    max-height:0; overflow:hidden; transition:max-height .35s ease;
+    padding:0 18px 0 18px; background:rgba(0,0,0,.15);
+  }
+  .acc-panel p, .acc-panel ul{color:#cfe9d8}
+  .acc-panel .inner{padding:0 0 16px 0}
+  .acc-panel ul{margin:10px 0 10px 20px; line-height:1.7}
+
+  /* CTA */
+  .cta{
+    background:linear-gradient(135deg, rgba(45,187,127,.18), rgba(86,207,225,.18));
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:18px; padding:20px; margin:22px 0;
+    display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+    padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.2);
+    background:rgba(0,0,0,.25); color:#eafff4; transition:.2s;
+  }
+  .btn:hover{ transform:translateY(-1px); background:rgba(0,0,0,.35) }
+
+  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+  @media (max-width:720px){ .brand img{width:84px;} h1{font-size:1.9rem;} .nav-inner{padding:10px 12px;} }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html"><img src="logo.png?v=21" alt="Seechur Agro logo"></a>
+    <div class="menu">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="why-lakadong.html">Why Lakadong</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="market.html">Market</a>
+      <a href="financials.html">Financials</a>
+      <a href="team.html">Team</a>
+      <a class="active" href="faq.html">FAQ</a>
+      <a href="contact.html">Contact</a>
+      <a href="investor-pack.html">Investor Pack</a>
+    </div>
+  </div>
+</nav>
+
+<main class="container">
+  <h1>Frequently Asked Questions</h1>
+  <p>Everything investors and partners usually ask us — from operations and market strategy to returns and risk.</p>
+
+  <!-- Section: Project & Operations -->
+  <section class="faq-section">
+    <h2>Project & Operations</h2>
+    <div class="accordion">
+      <!-- Q1 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Project</span>
+          What is Seechur Agro’s core business?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>We are reviving a proven <b>hydroponic & protected-cultivation</b> farm at Edaiyarpakkam (TN), moving to a premium crop mix: English cucumber, microgreens, leafy greens, and <b>Lakadong turmeric</b>, with traceability and B2B-first distribution.</p>
+        </div></div>
+      </div>
+      <!-- Q2 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Status</span>
+          Where is the farm located and what is its current status?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>The farm is at <b>Edaiyarpakkam, Tamil Nadu</b>. It operated successfully before a cyclone event; refurbishment (cladding, fertigation, benches, electricals) is planned immediately post-investment.</p>
+        </div></div>
+      </div>
+      <!-- Q3 (your requested wording) -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Crops</span>
+          What crops are <b>proposed</b> to be cultivated under the hydroponic setup?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <ul>
+            <li><b>English cucumber</b> (core hydroponic line)</li>
+            <li><b>Microgreens</b> (daily harvest & dispatch)</li>
+            <li><b>Leafy greens</b> (supplementary, high-turn)</li>
+            <li><b>Lakadong turmeric</b> (premium, nursery-to-field program)</li>
+          </ul>
+        </div></div>
+      </div>
+      <!-- Q4 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Continuity</span>
+          How do you ensure year-round production and quality?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>Protected cultivation, fertigation automation, batch testing (residues/curcumin for Lakadong), and staggered cycles enable <b>365-day supply</b> with consistent grading and freshness.</p>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: Investment & Financials -->
+  <section class="faq-section">
+    <h2>Investment & Financials</h2>
+    <div class="accordion">
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Capital</span>
+          What is the total investment required and how is it structured?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>We are raising ~<b>₹3.0 Cr</b> for refurbishment, crop inputs, nursery setup, and working capital. We are flexible between <b>equity and/or investor debt</b>; final terms are negotiated per investor.</p>
+        </div></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Returns</span>
+          What returns can investors expect and when?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>Aligned with our financials: microgreens revenue from <b>Day-30</b>, vegetables stabilise by <b>Month-6</b>, <b>first Lakadong cheque ~Month-7</b>, and steady-state revenue ~<b>₹5.2 Cr/year</b> from Year-3 in the base case. Exit and distributions are discussed individually.</p>
+        </div></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Risk</span>
+          How secure is the investor’s capital?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>We prioritise <b>capital efficiency</b> (existing infra), diversified crop mix, strong B2B channels, and policy tailwinds. Instruments (equity, CCDs, revenue-share) can be structured to match investor risk appetite.</p>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: Market & Sales -->
+  <section class="faq-section">
+    <h2>Market & Sales</h2>
+    <div class="accordion">
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Buyers</span>
+          Who are your target buyers and channel partners?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>B2B-first: quick-commerce & modern retail for vegetables; <b>APEDA/Spices Board</b> aligned buyers for Lakadong turmeric (domestic premium + export).</p>
+        </div></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Edge</span>
+          What differentiates Seechur Agro from other hydroponic farms?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <ul>
+            <li>Existing infrastructure → faster restart, lower capex/ton</li>
+            <li>Balanced portfolio: cash-flow veg + high-value Lakadong</li>
+            <li>Traceability & testing to meet modern trade/ex-requirements</li>
+          </ul>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: Risk & Sustainability -->
+  <section class="faq-section">
+    <h2>Risk & Sustainability</h2>
+    <div class="accordion">
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Resilience</span>
+          How did the cyclone impact the farm and what’s the plan now?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>Pre-cyclone, the farm ran well. Post-cyclone degradation requires refurbishment (polyhouse cladding, fertigation, benches, power). The plan is a <b>0–3 month</b> refurb, then quick crop ramp-up.</p>
+        </div></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Sustainability</span>
+          What are your quality and sustainability practices?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <ul>
+            <li>Hydroponics (lower water footprint) + rainwater reuse</li>
+            <li>Solar-assisted power; hygienic grading & packing</li>
+            <li>Batch testing for residues & curcumin (Lakadong)</li>
+            <li>Organic certification roadmap post-restoration</li>
+          </ul>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: Future Vision & Exit -->
+  <section class="faq-section">
+    <h2>Future Vision & Exit</h2>
+    <div class="accordion">
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">3–5 year</span>
+          What is your medium-term plan?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>Stabilise vegetables & microgreens; scale <b>Lakadong acreage</b>; deepen B2B contracts; explore <b>value-added</b> Lakadong (powders/extracts) and export certifications.</p>
+        </div></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-btn">
+          <span class="tag">Exit</span>
+          What is the proposed investor exit approach?
+          <span class="chev">▾</span>
+        </button>
+        <div class="acc-panel"><div class="inner">
+          <p>Exit to be negotiated — options include buy-back, strategic sale, or secondary to new investors. Valuation guideposts in our Financials (e.g., earnings multiple at steady state).</p>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Have more questions -->
+  <section class="cta">
+    <div>
+      <h2 style="margin:0 0 6px 0">Have more questions?</h2>
+      <p style="margin:0; color:#e7fff2">We’re happy to clarify anything about operations, markets, or investment.</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a class="btn" href="https://wa.me/918056021869" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+        <!-- WhatsApp icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#eafff4" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
+        WhatsApp
+      </a>
+      <a class="btn" href="mailto:seechu@seechuragro.in" aria-label="Email us">
+        <!-- Mail icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#eafff4" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        Email
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  // active menu + year
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+  const current=(location.pathname.split('/').pop()||'faq.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+
+  // accordion
+  document.querySelectorAll('.accordion').forEach(acc => acc.classList.add('show'));
+  document.querySelectorAll('.acc-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      btn.classList.toggle('active');
+      const panel=btn.nextElementSibling;
+      if(panel.style.maxHeight){
+        panel.style.maxHeight=null;
+      }else{
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
