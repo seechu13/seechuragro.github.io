@@ -1,17 +1,68 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Team | Seechur Agro</title>
-      <link rel="stylesheet" href="assets/style.css">
-    </head>
-    <body>
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Team • Seechur Agro Private Limited</title>
 
-<div class="overlay"></div>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --text:#f3fff6; --muted:#cfe9d8; --nav-bg:rgba(10,25,10,0.7);
+    --glass:rgba(255,255,255,.12); --max:1100px;
+    --accent:#22a060; --hover:#33d18f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+      url('hydroponic-bg.jpg?v=16') center/cover no-repeat;
+    filter:saturate(1.05) brightness(.97);
+  }
+
+  /* NAV */
+  .site-nav{position:sticky; top:0; z-index:50; background:var(--nav-bg); backdrop-filter:blur(6px);}
+  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
+  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
+  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
+  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
+  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
+
+  /* LAYOUT */
+  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
+  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
+  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+  .card{background:var(--glass); border-radius:20px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:18px}
+  .profile{display:flex; gap:18px; align-items:flex-start}
+  .avatar{flex:0 0 140px; width:140px; aspect-ratio:1/1; border-radius:14px; overflow:hidden; background:#0b0b0b22}
+  .avatar img{width:100%; height:100%; object-fit:cover; display:block}
+  .role{color:#d6ffe9; font-weight:600; margin-top:2px}
+  .icons{display:flex; gap:10px; margin-top:8px}
+  .icon{width:36px; height:36px; border-radius:999px; display:grid; place-items:center; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.14); transition:transform .15s ease, box-shadow .15s ease, background .15s ease}
+  .icon:hover{transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.35); background:rgba(0,0,0,.35)}
+  .icon svg{width:18px; height:18px; fill:#eafff4}
+  .icon.linkedin:hover svg{fill:var(--hover)}
+  .icon.mail:hover svg{fill:#fff}
+
+  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+  @media (max-width:720px){
+    .brand img{width:84px;} h1{font-size:1.9rem;} .nav-inner{padding:10px 12px;}
+    .profile{flex-direction:column; align-items:center; text-align:center}
+    .avatar{width:180px}
+  }
+</style>
+</head>
+<body>
+
 <nav class="site-nav">
   <div class="nav-inner">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Seechur Agro"><span>Seechur Agro</span></a>
+    <a class="brand" href="index.html"><img src="logo.png?v=16" alt="Seechur Agro logo"></a>
     <div class="menu">
       <a href="index.html">Home</a>
       <a href="about.html">About</a>
@@ -19,28 +70,101 @@
       <a href="portfolio.html">Portfolio</a>
       <a href="market.html">Market</a>
       <a href="financials.html">Financials</a>
-      <a href="team.html">Team</a>
+      <a class="active" href="team.html">Team</a>
       <a href="contact.html">Contact</a>
       <a href="investor-pack.html">Investor Pack</a>
     </div>
   </div>
 </nav>
 
-
 <main class="container">
-  <div class="hero">
-    <h1 class="title">Team</h1>
-    <div class="tagline">Experienced leadership in agri‑finance & operations</div>
-  </div>
-  <div class="grid">
-    <div class="card"><b>Srivatsan Renga</b><br/>Founder — Agri‑finance & strategy.</div>
-    <div class="card"><b>Kanaka Srivatsan</b><br/>Operations & hospitality experience.</div>
-  </div>
+  <h1>Our Leadership Team</h1>
+  <p>
+    Our strength lies in hands-on agri-entrepreneurship, practical innovation, and a relentless focus on
+    sustainability and capital efficiency. Meet the people steering Seechur Agro forward.
+  </p>
+
+  <section class="grid">
+    <!-- Srivatsan -->
+    <article class="card">
+      <div class="profile">
+        <div class="avatar">
+          <img src="srivatsan-renga.jpg" alt="Srivatsan Renga">
+        </div>
+        <div>
+          <h2>Srivatsan Renga</h2>
+          <div class="role">Founder & Managing Director</div>
+          <p>
+            Business leader with deep execution experience in protected cultivation and farm reactivation.
+            Focused on high-value crops, operational discipline, and B2B market linkages.
+          </p>
+          <div class="icons">
+            <a class="icon linkedin" aria-label="Srivatsan on LinkedIn"
+               href="https://www.linkedin.com/in/srivatsan-renga-85219151?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+               target="_blank" rel="noopener">
+              <!-- LinkedIn SVG -->
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
+            </a>
+            <a class="icon mail" aria-label="Email Srivatsan" href="mailto:seechu@seechuragro.in">
+              <!-- Mail SVG -->
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Kanaka -->
+    <article class="card">
+      <div class="profile">
+        <div class="avatar">
+          <img src="kanaka-srivatsan.jpg" alt="Kanaka Srivatsan">
+        </div>
+        <div>
+          <h2>Kanaka Srivatsan</h2>
+          <div class="role">Director</div>
+          <p>
+            Graduate in Sociology with over a decade of experience managing premium dining operations and teaching;
+            detail-oriented leader passionate about sustainable farming and quality.
+          </p>
+          <div class="icons">
+            <a class="icon linkedin" aria-label="Kanaka on LinkedIn"
+               href="https://www.linkedin.com/in/kanaka-srivatsan-8a8b17371?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+               target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
+            </a>
+            <a class="icon mail" aria-label="Email Kanaka" href="mailto:kanaka@seechuragro.in">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- Advisory (future) -->
+  <section class="card" style="margin-top:8px">
+    <h2>Advisory Board (in progress)</h2>
+    <p>
+      We are onboarding advisors from <b>Mission Lakadong</b> (Meghalaya) and <b>Tamil Nadu Agricultural University</b>
+      to support cultivation practices, quality assurance, and market linkages.
+    </p>
+  </section>
 </main>
 
-      <footer>
-        © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-      </footer>
-      <script src="assets/script.js"></script>
-    </body>
-    </html>
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+  const current=(location.pathname.split('/').pop()||'team.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+})();
+</script>
+</body>
+</html>
