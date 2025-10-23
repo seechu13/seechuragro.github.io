@@ -159,45 +159,54 @@
     </div>
 
     <!-- Secure Viewer -->
-    <div class="card">
-      <h2 style="margin-top:0">Approved Investors — View Here</h2>
-      <p class="hint">Enter the passphrase to load the Investor Pack securely.</p>
+    <script>
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
 
-      <div class="viewer">
-        <iframe id="driveFrame"
-          class="blurred"
-          src="about:blank"
-          allow="autoplay"
-          referrerpolicy="no-referrer-when-downgrade"
-          title="Seechur Agro Investor Pack (Confidential)"></iframe>
-      </div>
+  const cards=[...document.querySelectorAll('.card')];
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target);} });
+  },{threshold:0.18});
+  cards.forEach(c=>io.observe(c));
 
-      <div class="buttons" style="margin-top:10px">
-        <a class="btn" id="openNew" href="#" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5zm0 14h5v2H3v-7h2v5zm14-5h2v7h-7v-2h5v-5z"/></svg>
-          Open in New Tab
-        </a>
-      </div>
-      <p class="hint" style="margin-top:8px">
-        If Drive shows “You need access”, click <b>Request access</b> or contact us via WhatsApp/Email above.
-      </p>
-    </div>
-  </section>
-</main>
+  // Password Gate
+  const PASSPHRASE = 'SEECHUR2025';
+  const FILE_ID = '1rZK3yYDvwY2PILsvfUz6E6SYQ8K0FzPK';
 
-<!-- Password Modal -->
-<div class="lock-overlay" id="lock">
-  <div class="lock-card">
-    <h3>Enter Passphrase</h3>
-    <p>We’ve shared a passphrase with approved investors. Enter it to unlock the viewer.</p>
-    <div class="field">
-      <input id="pass" type="password" placeholder="Passphrase">
-      <button class="btn" id="unlockBtn">Unlock</button>
-    </div>
-    <div class="error" id="error"></div>
-    <div class="note">Note: This is a light, client-side gate for convenience. Sensitive files are protected in Google Drive.</div>
-  </div>
-</div>
+  const lock = document.getElementById('lock');
+  const input = document.getElementById('pass');
+  const err = document.getElementById('error');
+  const btn = document.getElementById('unlockBtn');
+  const frame = document.getElementById('driveFrame');
+  const openNew = document.getElementById('openNew');
+  const openLockBtn = document.getElementById('openLockBtn');
+
+  function openViewer(){
+    const src = `https://drive.google.com/file/d/${FILE_ID}/preview`;
+    frame.src = src;
+    frame.classList.remove('blurred');
+    if(openNew) openNew.href = src;
+  }
+
+  // Show passphrase modal only when user clicks Unlock button
+  openLockBtn.addEventListener('click', ()=>{ lock.style.display='grid'; input.focus(); });
+
+  // Unlock logic
+  btn.addEventListener('click', ()=>{
+    const val = (input.value || '').trim();
+    if(!val){ err.textContent = 'Please enter the passphrase.'; return; }
+    if(val === PASSPHRASE){
+      lock.style.display='none';
+      openViewer();
+    }else{
+      err.textContent = 'Incorrect passphrase. Please try again or request access.';
+    }
+  });
+
+  input.addEventListener('keydown',(e)=>{ if(e.key==='Enter') btn.click(); });
+})();
+</script>
 
 <footer>
   © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
