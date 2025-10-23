@@ -1,52 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Contact | Seechur Agro</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="icon" href="logo.png" type="image/png" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contact • Seechur Agro Private Limited</title>
 
-  <style>
-    body::before{
-      content:""; position:fixed; inset:0; z-index:-1;
-      background:
-        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-        url('hydroponic-bg.jpg') center/cover no-repeat;
-      filter:saturate(1.05) brightness(.97);
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+
+<style>
+  :root{
+    --text:#f3fff6; --muted:#cfe9d8;
+    --nav-bg:rgba(10,25,10,0.7);
+    --nav-solid:#1b4332;
+    --glass:rgba(255,255,255,.12); --max:1100px;
+    --accent:#2dbb7f; --accent-2:#56cfe1; --hover:#33d18f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+      url('hydroponic-bg.jpg?v=23') center/cover no-repeat;
+    filter:saturate(1.05) brightness(.97);
+  }
+
+  /* Navbar */
+  .site-nav{position:sticky; top:0; z-index:60; background:var(--nav-bg); backdrop-filter:blur(6px); border-bottom:1px solid rgba(255,255,255,.12);}
+  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
+  .brand img{width:110px; height:auto; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
+  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
+  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
+  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
+
+  .nav-toggle{display:none;margin-left:auto;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.25);color:#eafff5;padding:8px 12px;border-radius:10px;cursor:pointer;}
+  .nav-overlay{display:none;}
+
+  @media (max-width:768px){
+    .nav-inner{padding:10px 12px;}
+    .brand img{width:84px;}
+    .nav-toggle{display:inline-block;}
+    .menu{
+      position:fixed; top:0; right:-80%;
+      width:80%; height:100vh; margin:0;
+      display:flex; flex-direction:column; gap:8px;
+      padding:18px;
+      background:var(--nav-solid);
+      border-left:1px solid rgba(255,255,255,.18);
+      box-shadow:-10px 0 24px rgba(0,0,0,.45);
+      transition:right .28s ease-in-out;
     }
-  </style>
+    .menu a{padding:12px 14px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);}
+    .site-nav.open .menu{right:0;}
+    .nav-overlay{position:fixed;inset:0;z-index:55;display:none;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);}
+    .site-nav.open + .nav-overlay{display:block;}
+  }
 
+  /* Page */
+  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
+  h1{font-size:2.2rem;font-weight:700;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  h2{font-size:1.3rem;margin:16px 0 10px 0;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  p{line-height:1.8;color:var(--muted);margin-bottom:16px;}
+  .grid{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+  .card{background:var(--glass);border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,.4);padding:18px;opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease;}
+  .card.show{opacity:1;transform:translateY(0);}
+  .cta-buttons{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:#eafff4;transition:.2s;}
+  .btn:hover{transform:translateY(-1px);background:rgba(0,0,0,.35)}
+  .btn svg{width:18px;height:18px;fill:#eafff4}
+
+  form{display:grid;gap:12px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label{font-size:.92rem;color:#e9fff3}
+  input,textarea,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#f3fff6;outline:none;}
+  textarea{min-height:120px;resize:vertical}
+  .sendbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}
+  .send{cursor:pointer}
+  .mode{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .hint{font-size:.9rem;color:#d2ffe7}
+  footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px)}
+  @media (max-width:720px){.row{grid-template-columns:1fr}}
+</style>
 </head>
-<body class="contact">
-  <div id="navbar-placeholder"></div>
-  <script>
-    fetch('navbar.html').then(r=>r.text()).then(h=>{document.getElementById('navbar-placeholder').innerHTML=h;});
-  </script>
+<body>
 
-  <main class="container">
-    <h1>Contact Us</h1>
-    <div class="grid">
-      <div class="card">
-        <h3>WhatsApp</h3>
-        <p>+91 80560 21869</p>
-        <a class="btn" href="https://wa.me/918056021869" target="_blank" rel="noopener">Chat on WhatsApp</a>
-      </div>
-      <div class="card">
-        <h3>Email</h3>
-        <p>seechu@seechuragro.in</p>
-        <a class="btn" href="mailto:seechu@seechuragro.in">Send Email</a>
-      </div>
-      <div class="card">
-        <h3>Website</h3>
-        <p>www.seechuragro.in</p>
-        <a class="btn" href="https://www.seechuragro.in" target="_blank" rel="noopener">Visit Site</a>
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html"><img src="logo.png?v=23" alt="Seechur Agro logo"></a>
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu">☰ Menu</button>
+    <div class="menu" id="mobileMenu">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="why-lakadong.html">Why Lakadong</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="market.html">Market</a>
+      <a href="financials.html">Financials</a>
+      <a href="team.html">Team</a>
+      <a href="faq.html">FAQ</a>
+      <a class="active" href="contact.html">Contact</a>
+      <a href="investor-pack.html">Investor Pack</a>
+    </div>
+  </div>
+</nav>
+<div class="nav-overlay" id="navOverlay"></div>
+
+<main class="container">
+  <h1>Contact Us</h1>
+  <p>We’d love to connect — whether you’re an investor, collaborator, or agritech enthusiast.</p>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Quick Connect</h2>
+      <p class="hint">Choose your preferred channel and reach us instantly.</p>
+      <div class="cta-buttons">
+        <a class="btn" href="https://wa.me/918056021869" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+          <svg viewBox="0 0 24 24"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
+          WhatsApp
+        </a>
+        <a class="btn" href="mailto:seechu@seechuragro.in" aria-label="Email us">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          Email
+        </a>
       </div>
     </div>
-  </main>
 
-  <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
-  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+    <div class="card">
+      <h2>Send a Message</h2>
+      <p class="hint">No backend needed — we’ll open your WhatsApp or email with your message ready to send.</p>
+      <form id="contactForm">
+        <div class="row">
+          <div>
+            <label for="name">Name</label>
+            <input id="name" name="name" placeholder="Your name" required>
+          </div>
+          <div>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="topic">Topic</label>
+            <select id="topic" name="topic">
+              <option>Investor enquiry</option>
+              <option>Partnership</option>
+              <option>Product/Procurement</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div style="display:none">
+            <label for="company">Company</label>
+            <input id="company" name="company" autocomplete="off" tabindex="-1">
+          </div>
+        </div>
+        <div>
+          <label for="message">Message</label>
+          <textarea id="message" name="message" placeholder="Write your message..."></textarea>
+        </div>
+        <div class="sendbar">
+          <div class="mode">
+            <label><input type="radio" name="sendmode" value="whatsapp" checked> Send via WhatsApp</label>
+            <label><input type="radio" name="sendmode" value="email"> Send via Email</label>
+          </div>
+          <button class="btn send" type="submit" aria-label="Send message">
+            <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+            Send
+          </button>
+          <span class="hint">We’ll open your app with the message pre-filled.</span>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+
+  const current=(location.pathname.split('/').pop()||'contact.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+
+  const cards=[...document.querySelectorAll('.card')];
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target);}});
+  },{threshold:0.18});
+  cards.forEach(c=>io.observe(c));
+
+  const form=document.getElementById('contactForm');
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    if(form.company && form.company.value)return;
+    const name=form.name.value.trim();
+    const email=form.email.value.trim();
+    const topic=form.topic.value;
+    const msg=form.message.value.trim();
+    const mode=[...form.querySelectorAll('input[name="sendmode"]')].find(r=>r.checked)?.value||'whatsapp';
+    const composed=`Hello Seechur Agro,%0A%0AName: ${encodeURIComponent(name)}%0AEmail: ${encodeURIComponent(email)}%0ATopic: ${encodeURIComponent(topic)}%0AMessage: ${encodeURIComponent(msg||'(no additional message)')}`;
+    if(mode==='whatsapp'){
+      window.open(`https://wa.me/918056021869?text=${composed}`,'_blank');
+    }else{
+      const subject=encodeURIComponent(`[Contact] ${topic} — ${name}`);
+      window.location.href=`mailto:seechu@seechuragro.in?subject=${subject}&body=${composed}`;
+    }
+  });
+
+  // Mobile drawer
+  const nav=document.getElementById('siteNav');
+  const toggle=document.getElementById('navToggle');
+  const overlay=document.getElementById('navOverlay');
+  function openMenu(){nav.classList.add('open');toggle&&toggle.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';}
+  function closeMenu(){nav.classList.remove('open');toggle&&toggle.setAttribute('aria-expanded','false');document.body.style.overflow='';}
+  if(toggle){toggle.addEventListener('click',()=>{nav.classList.contains('open')?closeMenu():openMenu();});}
+  if(overlay){overlay.addEventListener('click',closeMenu);}
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
+})();
+</script>
 </body>
 </html>
