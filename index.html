@@ -1,42 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Seechur Agro | Home</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="icon" href="logo.png" type="image/png" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SEECHUR AGRO PRIVATE LIMITED</title>
 
-  <style>
-    body::before{
-      content:""; position:fixed; inset:0; z-index:-1;
-      background:
-        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-        url('hydroponic-bg.jpg') center/cover no-repeat;
-      filter:saturate(1.05) brightness(.97);
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- ✅ Global responsive stylesheet -->
+<link rel="stylesheet" href="assets/style.css">
+
+<style>
+  :root{
+    --text:#f3fff6;
+    --muted:#cfe9d8;
+    --accent:#1f7a4d;    /* Brand green for buttons */
+    --nav-bg:rgba(10,25,10,0.7); /* desktop transparent */
+    --nav-solid:#1b4332;        /* mobile drawer solid */
+    --max:1100px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--text);
+    min-height:100vh;
+  }
+
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
+      url('hydroponic-bg.jpg?v=5') center/cover no-repeat;
+    filter:saturate(1.1) brightness(0.95);
+  }
+
+  /* ===== Sticky Navbar (desktop) ===== */
+  .site-nav{
+    position:sticky; top:0; z-index:60;
+    background:var(--nav-bg); backdrop-filter:blur(6px);
+    border-bottom:1px solid rgba(255,255,255,.12);
+  }
+  .nav-inner{
+    max-width:var(--max); margin:0 auto;
+    padding:10px 18px; display:flex; align-items:center; gap:14px;
+  }
+  .brand{display:flex; align-items:center; text-decoration:none}
+  .brand img{
+    width:110px; height:auto; object-fit:contain; display:block;
+    filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  }
+
+  /* desktop menu */
+  .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+  .menu a{
+    color:#ffffff;
+    text-decoration:none;
+    padding:6px 10px;
+    border-radius:999px;
+    transition:.25s;
+  }
+  .menu a:hover,.menu a.active{
+    background:rgba(255,255,255,0.18);
+  }
+
+  /* ===== Mobile drawer toggle button ===== */
+  .nav-toggle{
+    display:none; margin-left:auto;
+    border:1px solid rgba(255,255,255,.28);
+    background:rgba(0,0,0,.25); color:#eafff5;
+    padding:8px 12px; border-radius:10px; cursor:pointer;
+  }
+
+  /* ===== Drawer + overlay (mobile only) ===== */
+  .nav-overlay{
+    display:none;
+  }
+
+  @media (max-width: 768px){
+    .nav-inner{padding:10px 12px;}
+    .brand img{width:84px;}
+    .nav-toggle{display:inline-block;}
+    /* hide desktop menu and turn into drawer */
+    .menu{
+      position:fixed; top:0; right:-80%;
+      width:80%; height:100vh; margin:0;
+      display:flex; flex-direction:column; gap:8px;
+      padding:18px;
+      background:var(--nav-solid);
+      border-left:1px solid rgba(255,255,255,.18);
+      box-shadow:-10px 0 24px rgba(0,0,0,.45);
+      transition:right .28s ease-in-out;
     }
-  </style>
+    .menu a{
+      padding:12px 14px; border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+    }
+    .site-nav.open .menu{ right:0; }
 
+    /* page overlay when drawer is open */
+    .nav-overlay{
+      position:fixed; inset:0; z-index:55;
+      display:none; background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
+    }
+    .site-nav.open + .nav-overlay{ display:block; }
+
+    /* center hero buttons on mobile */
+    .cta-row{justify-content:center;}
+  }
+
+  .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
+  .hero{
+    padding:70px 0 20px;
+    text-shadow:0 2px 8px rgba(0,0,0,.55);
+  }
+  .hero h1{
+    font-size:2.6rem;
+    font-weight:700;
+    color:#ffffff;
+  }
+  .tagline{
+    font-style:italic;
+    color:var(--muted);
+    margin-bottom:12px;
+  }
+  .hero p{color:var(--text);max-width:900px;line-height:1.7;}
+
+  /* Two matching green buttons */
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
+  .btn{
+    display:inline-block;
+    padding:10px 20px;
+    border-radius:999px;
+    font-weight:700;
+    text-decoration:none;
+    color:#ffffff;
+    background:var(--accent);
+    box-shadow:0 4px 20px rgba(0,0,0,.3);
+    transition:filter .2s;
+  }
+  .btn:hover{filter:brightness(1.15);}
+  .btn.outline{background:transparent;border:2px solid #ffffff;}
+
+  .section{margin-top:36px;}
+  .section h3{
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    font-weight:700;
+    margin-bottom:8px;
+    color:#ffffff;
+    text-shadow:0 2px 6px rgba(0,0,0,.6);
+  }
+  .section p{line-height:1.8;max-width:900px;color:var(--muted);}
+
+  footer{
+    text-align:center;
+    color:#d9ffe6;
+    padding:40px 12px 60px;
+    background:rgba(0,0,0,0.4);
+    backdrop-filter:blur(4px);
+  }
+
+  @media (max-width:720px){
+    .hero h1{font-size:2rem;}
+  }
+</style>
 </head>
-<body class="home">
-  <div id="navbar-placeholder"></div>
-  <script>
-    fetch('navbar.html').then(r=>r.text()).then(h=>{document.getElementById('navbar-placeholder').innerHTML=h;});
-  </script>
+<body>
 
-  <main class="container">
-    <h1>Human by Chance, Farmer by Choice</h1>
-    <p>Seechur Agro pioneers sustainable hydroponics with Lakadong turmeric, cucumbers, and microgreens — combining fast cashflows with premium crops.</p>
-    <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <a class="btn" href="about.html">About Us</a>
-      <a class="btn" href="portfolio.html">Our Portfolio</a>
-      <a class="btn" href="investor-pack.html">Investor Pack</a>
-      <a class="btn" href="contact.html">Contact</a>
+<!-- ===== Navbar (desktop transparent; mobile drawer with solid background) ===== -->
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <img src="logo.png?v=5" alt="Seechur Agro logo">
+    </a>
+
+    <!-- Mobile hamburger -->
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open Menu">☰ Menu</button>
+
+    <!-- Menu (becomes drawer on mobile) -->
+    <div class="menu" id="mobileMenu">
+      <a class="active" href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="why-lakadong.html">Why Lakadong</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="market.html">Market</a>
+      <a href="financials.html">Financials</a>
+      <a href="team.html">Team</a>
+      <a href="contact.html">Contact</a>
+      <a href="investor-pack.html">Investor Pack</a>
     </div>
-  </main>
+  </div>
+</nav>
+<!-- overlay for drawer -->
+<div class="nav-overlay" id="navOverlay"></div>
 
-  <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
-  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+<main class="container">
+  <section class="hero">
+    <h1>SEECHUR AGRO PRIVATE LIMITED</h1>
+    <div class="tagline">“Human By Chance, Farmer By Choice”</div>
+    <p>
+      We pioneer sustainable hydroponics and protected cultivation,
+      focusing on high-curcumin <b>Lakadong Turmeric</b> and premium vegetables from Edayarpakkam, Tamil Nadu.
+    </p>
+    <div class="cta-row">
+      <a class="btn" target="_blank"
+         href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20I%20am%20interested">WhatsApp</a>
+      <a class="btn" href="mailto:seechu@seechuragro.in?subject=Inquiry%20via%20Website">Email Us</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h3>Vision</h3>
+    <p>To be a leading agri-tech venture creating sustainable, high-value crop ecosystems with technology, trust and transparency.</p>
+  </section>
+
+  <section class="section">
+    <h3>Mission</h3>
+    <p>To sustainably cultivate Lakadong turmeric and high-value crops using hydroponics and controlled environment farming to deliver consistent returns to stakeholders and healthier produce to consumers.</p>
+  </section>
+</main>
+
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  // Footer year
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+
+  // Highlight active link
+  const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+
+  // Mobile drawer logic
+  const nav = document.getElementById('siteNav');
+  const toggle = document.getElementById('navToggle');
+  const overlay = document.getElementById('navOverlay');
+
+  function openMenu(){
+    nav.classList.add('open');
+    toggle.setAttribute('aria-expanded','true');
+    document.body.style.overflow='hidden';
+  }
+  function closeMenu(){
+    nav.classList.remove('open');
+    toggle.setAttribute('aria-expanded','false');
+    document.body.style.overflow='';
+  }
+  toggle.addEventListener('click', ()=>{
+    if(nav.classList.contains('open')) closeMenu(); else openMenu();
+  });
+  overlay.addEventListener('click', closeMenu);
+
+  // Close on ESC
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
+})();
+</script>
 </body>
 </html>
