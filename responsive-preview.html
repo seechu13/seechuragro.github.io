@@ -16,7 +16,7 @@
   .title{color:#eafff5;font-weight:700}
   .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
   .tab{padding:8px 12px;border-radius:999px;color:#eafff5;text-decoration:none;border:1px solid rgba(255,255,255,.18);
-       background:rgba(255,255,255,.06);font-size:.9rem}
+       background:rgba(255,255,255,.06);font-size:.9rem;cursor:pointer}
   .tab.active{background:rgba(45,187,127,.18);border-color:rgba(45,187,127,.35);color:#b7ffe0}
   main{max-width:1200px;margin:14px auto;padding:0 14px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -24,10 +24,8 @@
   .label{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;color:#eafff5;background:rgba(255,255,255,.06)}
   .label span{opacity:.9;font-size:.9rem}
   iframe{display:block;width:100%;border:0;background:#111}
-  /* Viewport sizes */
   .desktop iframe{height:900px}
   .mobile iframe{height:896px}
-  /* Panel headers */
   .chip{padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);font-size:.8rem}
   footer{max-width:1200px;margin:10px auto 30px;color:#cfeede;opacity:.85;text-align:center;font-size:.9rem}
   @media (max-width:1100px){ .grid{grid-template-columns:1fr} .desktop iframe,.mobile iframe{height:720px} }
@@ -38,16 +36,16 @@
   <div class="bar">
     <div class="title">Seechur Agro — Responsive Preview</div>
     <nav class="tabs" id="tabs">
-      <a class="tab" data-page="index.html">Home</a>
-      <a class="tab" data-page="about.html">About</a>
-      <a class="tab" data-page="why-lakadong.html">Why Lakadong</a>
-      <a class="tab" data-page="portfolio.html">Portfolio</a>
-      <a class="tab" data-page="market.html">Market</a>
-      <a class="tab" data-page="financials.html">Financials</a>
-      <a class="tab" data-page="team.html">Team</a>
-      <a class="tab" data-page="faq.html">FAQ</a>
-      <a class="tab" data-page="investor-pack.html">Investor Pack</a>
-      <a class="tab" data-page="contact.html">Contact</a>
+      <button class="tab" data-page="index.html">Home</button>
+      <button class="tab" data-page="about.html">About</button>
+      <button class="tab" data-page="why-lakadong.html">Why Lakadong</button>
+      <button class="tab" data-page="portfolio.html">Portfolio</button>
+      <button class="tab" data-page="market.html">Market</button>
+      <button class="tab" data-page="financials.html">Financials</button>
+      <button class="tab" data-page="team.html">Team</button>
+      <button class="tab" data-page="faq.html">FAQ</button>
+      <button class="tab" data-page="investor-pack.html">Investor Pack</button>
+      <button class="tab" data-page="contact.html">Contact</button>
     </nav>
   </div>
 </header>
@@ -73,11 +71,16 @@
 </main>
 
 <footer>
-  Tip: use the tabs above to switch pages. The left pane emulates a laptop viewport; the right pane shows a phone-sized viewport.
+  Tip: Use the tabs above to switch pages. Left pane emulates a laptop viewport; right pane shows a phone-sized viewport.
 </footer>
 
 <script>
-  // Default page
+  // 🔧 Set your live site base here (no trailing slash)
+  // Use your custom domain if it’s live, else your GitHub Pages URL.
+  const SITE_BASE = 'https://www.seechuragro.in';
+  // If your pages live in a subfolder, set it here (like '/site'); else keep empty:
+  const BASE_PATH = '';
+
   const DEFAULT_PAGE = 'index.html';
   const tabs = document.getElementById('tabs').querySelectorAll('.tab');
   const left = document.getElementById('left');
@@ -85,26 +88,21 @@
   const leftUrl = document.getElementById('leftUrl');
   const rightUrl = document.getElementById('rightUrl');
 
+  function abs(url){ return `${SITE_BASE}${BASE_PATH}/${url}`.replace(/([^:]\/)\/+/g,'$1'); }
+
   function loadPage(page){
-    // mark active
     tabs.forEach(t => t.classList.toggle('active', t.dataset.page === page));
-    // set src (relative paths; works on GitHub Pages too)
-    left.src = page;
-    right.src = page;
-    leftUrl.textContent = page;
-    rightUrl.textContent = page;
+    const full = abs(page);
+    left.src = full;
+    right.src = full;
+    leftUrl.textContent = full;
+    rightUrl.textContent = full;
   }
 
-  tabs.forEach(t => {
-    t.addEventListener('click', (e) => {
-      e.preventDefault();
-      loadPage(t.dataset.page);
-    });
-  });
+  tabs.forEach(t => t.addEventListener('click', (e) => { e.preventDefault(); loadPage(t.dataset.page); }));
 
-  // On first load: try query ?p=about.html
-  const qs = new URLSearchParams(location.search);
-  const start = qs.get('p') || DEFAULT_PAGE;
+  // Deep link support: ?p=team.html
+  const start = new URLSearchParams(location.search).get('p') || DEFAULT_PAGE;
   loadPage(start);
 </script>
 </body>
