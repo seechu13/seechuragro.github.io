@@ -1,1 +1,218 @@
+/* ===============================================================
+   SEECHUR AGRO — GLOBAL STYLE & RESPONSIVE CSS
+   =============================================================== */
+
+/* --- Base Typography & Colors --- */
+:root {
+  --text: #f3fff6;
+  --muted: #cfe9d8;
+  --accent: #2dbb7f;
+  --dark: #0b1510;
+  --glass: rgba(255, 255, 255, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  color: var(--text);
+  background-color: var(--dark);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* --- Basic Sections --- */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 18px;
+}
+
+h1, h2, h3 {
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+}
+
+h1 { font-size: 2.4rem; margin-bottom: 12px; }
+h2 { font-size: 1.6rem; margin: 18px 0 10px; }
+p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #eafff4;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+/* --- Grid Layout --- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--glass);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  overflow: hidden;
+}
+
+.card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+/* --- Footer --- */
+footer {
+  text-align: center;
+  color: #d9ffe6;
+  padding: 40px 12px 60px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  font-size: 0.95rem;
+}
+
+/* ===============================================================
+   RESPONSIVE LAYER
+   =============================================================== */
+
+/* === Font scaling === */
+html {
+  font-size: clamp(14px, 1.4vw, 17px);
+}
+
+/* === Tablet and below (<= 1024px) === */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+/* === Tablet Portrait (<= 768px) === */
+@media (max-width: 768px) {
+  body { padding: 0; }
+  h1 { font-size: 1.9rem; }
+  h2 { font-size: 1.4rem; }
+  p  { font-size: 1rem; }
+
+  .container { padding: 24px 14px; }
+
+  .grid, .cards, .section-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px;
+  }
+
+  img, iframe, video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Navbar - collapsible behavior (prepare for hamburger) */
+  .navbar .menu {
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.85);
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    display: none;
+  }
+
+  .navbar.active .menu {
+    display: flex;
+  }
+
+  .navbar-toggle {
+    display: block;
+    cursor: pointer;
+  }
+
+  .card { padding: 14px; }
+}
+
+/* === Phones and small screens (<= 480px) === */
+@media (max-width: 480px) {
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.2rem; }
+  p  { font-size: 0.95rem; }
+
+  .btn {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .container {
+    padding: 20px 12px;
+  }
+
+  .card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  footer {
+    font-size: 0.9rem;
+    padding: 24px 12px 40px;
+  }
+
+  /* Tables or KPI blocks scroll horizontally */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 480px;
+  }
+}
+
+/* === Prevent any overflow === */
+* {
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+/* === Optional floating WhatsApp button for mobile === */
+@media (max-width: 600px) {
+  .whatsapp-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    background: #25d366;
+    color: white;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
+    text-decoration: none;
+    font-size: 24px;
+  }
+}
 
