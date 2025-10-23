@@ -8,16 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-<!-- ✅ Global responsive stylesheet -->
-<link rel="stylesheet" href="assets/style.css">
-
 <style>
   :root{
     --text:#f3fff6;
     --muted:#cfe9d8;
-    --accent:#1f7a4d;    /* Brand green for buttons */
-    --nav-bg:rgba(10,25,10,0.7); /* desktop transparent */
-    --nav-solid:#1b4332;        /* mobile drawer solid */
+    --accent:#1f7a4d;
+    --nav-bg:rgba(10,25,10,0.7);
+    --nav-solid:#1b4332;
     --max:1100px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -25,17 +22,17 @@
     font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
     color:var(--text);
     min-height:100vh;
+    scroll-padding-top:70px; /* avoids content hiding under sticky nav */
   }
-
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
     background:
       linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
-      url('hydroponic-bg.jpg?v=5') center/cover no-repeat;
+      url('hydroponic-bg.jpg?v=7') center/cover no-repeat;
     filter:saturate(1.1) brightness(0.95);
   }
 
-  /* ===== Sticky Navbar (desktop) ===== */
+  /* ===== Navbar ===== */
   .site-nav{
     position:sticky; top:0; z-index:60;
     background:var(--nav-bg); backdrop-filter:blur(6px);
@@ -51,20 +48,13 @@
     filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));
   }
 
-  /* desktop menu */
   .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
   .menu a{
-    color:#ffffff;
-    text-decoration:none;
-    padding:6px 10px;
-    border-radius:999px;
-    transition:.25s;
+    color:#ffffff; text-decoration:none; padding:6px 10px;
+    border-radius:999px; transition:.25s;
   }
-  .menu a:hover,.menu a.active{
-    background:rgba(255,255,255,0.18);
-  }
+  .menu a:hover,.menu a.active{background:rgba(255,255,255,0.18)}
 
-  /* ===== Mobile drawer toggle button ===== */
   .nav-toggle{
     display:none; margin-left:auto;
     border:1px solid rgba(255,255,255,.28);
@@ -72,16 +62,12 @@
     padding:8px 12px; border-radius:10px; cursor:pointer;
   }
 
-  /* ===== Drawer + overlay (mobile only) ===== */
-  .nav-overlay{
-    display:none;
-  }
+  .nav-overlay{display:none;}
 
-  @media (max-width: 768px){
+  @media (max-width:768px){
     .nav-inner{padding:10px 12px;}
     .brand img{width:84px;}
     .nav-toggle{display:inline-block;}
-    /* hide desktop menu and turn into drawer */
     .menu{
       position:fixed; top:0; right:-80%;
       width:80%; height:100vh; margin:0;
@@ -97,36 +83,29 @@
       background:rgba(255,255,255,.06);
     }
     .site-nav.open .menu{ right:0; }
-
-    /* page overlay when drawer is open */
     .nav-overlay{
       position:fixed; inset:0; z-index:55;
       display:none; background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
     }
     .site-nav.open + .nav-overlay{ display:block; }
-
-    /* center hero buttons on mobile */
-    .cta-row{justify-content:center;}
   }
 
+  /* ===== Layout ===== */
+  main{padding-top:70px;} /* pushes hero below sticky nav */
   .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
   .hero{
-    padding:70px 0 20px;
+    padding:60px 0 20px;
     text-shadow:0 2px 8px rgba(0,0,0,.55);
+    animation:fadeIn 0.8s ease-out;
   }
-  .hero h1{
-    font-size:2.6rem;
-    font-weight:700;
-    color:#ffffff;
+  @keyframes fadeIn{
+    from{opacity:0;transform:translateY(10px);}
+    to{opacity:1;transform:translateY(0);}
   }
-  .tagline{
-    font-style:italic;
-    color:var(--muted);
-    margin-bottom:12px;
-  }
+  .hero h1{font-size:2.6rem;font-weight:700;color:#ffffff;}
+  .tagline{font-style:italic;color:var(--muted);margin-bottom:12px;}
   .hero p{color:var(--text);max-width:900px;line-height:1.7;}
 
-  /* Two matching green buttons */
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
   .btn{
     display:inline-block;
@@ -154,47 +133,43 @@
   .section p{line-height:1.8;max-width:900px;color:var(--muted);}
 
   footer{
-    text-align:center;
-    color:#d9ffe6;
+    text-align:center;color:#d9ffe6;
     padding:40px 12px 60px;
     background:rgba(0,0,0,0.4);
     backdrop-filter:blur(4px);
   }
 
-  @media (max-width:720px){
-    .hero h1{font-size:2rem;}
-  }
+  @media (max-width:720px){.hero h1{font-size:2rem;}}
 </style>
 </head>
 <body>
 
-<!-- ===== Navbar (desktop transparent; mobile drawer with solid background) ===== -->
+<!-- ===== Navbar ===== -->
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
     <a class="brand" href="index.html">
-      <img src="logo.png?v=5" alt="Seechur Agro logo">
+      <img src="logo.png?v=7" alt="Seechur Agro logo">
     </a>
 
-    <!-- Mobile hamburger -->
     <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open Menu">☰ Menu</button>
 
-    <!-- Menu (becomes drawer on mobile) -->
     <div class="menu" id="mobileMenu">
-  <a class="active" href="index.html">Home</a>
-  <a href="about.html">About</a>
-  <a href="why-lakadong.html">Why Lakadong</a>
-  <a href="portfolio.html">Portfolio</a>
-  <a href="market.html">Market</a>
-  <a href="financials.html">Financials</a>
-  <a href="team.html">Team</a>
-  <a href="faq.html">FAQ</a>
-  <a href="contact.html">Contact</a>
-  <a href="investor-pack.html">Investor Pack</a>
-</div>
-
-<!-- overlay for drawer -->
+      <a class="active" href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="why-lakadong.html">Why Lakadong</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="market.html">Market</a>
+      <a href="financials.html">Financials</a>
+      <a href="team.html">Team</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contact.html">Contact</a>
+      <a href="investor-pack.html">Investor Pack</a>
+    </div>
+  </div>
+</nav>
 <div class="nav-overlay" id="navOverlay"></div>
 
+<!-- ===== Main Content ===== -->
 <main class="container">
   <section class="hero">
     <h1>SEECHUR AGRO PRIVATE LIMITED</h1>
@@ -231,16 +206,16 @@
   const y=document.getElementById('year');
   if(y) y.textContent=new Date().getFullYear();
 
-  // Highlight active link
+  // Active menu highlight
   const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
   document.querySelectorAll('.menu a').forEach(a=>{
     if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
   });
 
-  // Mobile drawer logic
-  const nav = document.getElementById('siteNav');
-  const toggle = document.getElementById('navToggle');
-  const overlay = document.getElementById('navOverlay');
+  // Mobile drawer
+  const nav=document.getElementById('siteNav');
+  const toggle=document.getElementById('navToggle');
+  const overlay=document.getElementById('navOverlay');
 
   function openMenu(){
     nav.classList.add('open');
@@ -252,13 +227,12 @@
     toggle.setAttribute('aria-expanded','false');
     document.body.style.overflow='';
   }
-  toggle.addEventListener('click', ()=>{
-    if(nav.classList.contains('open')) closeMenu(); else openMenu();
-  });
-  overlay.addEventListener('click', closeMenu);
 
-  // Close on ESC
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
+  toggle.addEventListener('click',()=>{
+    nav.classList.contains('open')?closeMenu():openMenu();
+  });
+  overlay.addEventListener('click',closeMenu);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape') closeMenu();});
 })();
 </script>
 </body>
