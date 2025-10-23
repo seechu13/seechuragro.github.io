@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -10,11 +10,8 @@
 
 <style>
   :root{
-    --text:#f3fff6; --muted:#cfe9d8; --accent:#1f7a4d;
-    --nav-bg:rgba(10,25,10,0.7); --glass:rgba(255,255,255,.12);
-    --max:1100px;
-    --bar2025:#222; --bar2030:#28a067; /* bars for market size */
-    --barQC:#222; --barOrg:#28a067;   /* bars for growth chart */
+    --text:#f3fff6; --muted:#cfe9d8; --nav-bg:rgba(10,25,10,0.7);
+    --glass:rgba(255,255,255,.12); --max:1100px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
@@ -22,11 +19,10 @@
     content:""; position:fixed; inset:0; z-index:-1;
     background:
       linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
-      url('hydroponic-bg.jpg?v=12') center/cover no-repeat;
+      url('hydroponic-bg.jpg?v=13') center/cover no-repeat;
     filter:saturate(1.1) brightness(0.95);
   }
 
-  /* NAV */
   .site-nav{position:sticky; top:0; z-index:50; background:var(--nav-bg); backdrop-filter:blur(6px);}
   .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
   .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
@@ -34,40 +30,23 @@
   .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
   .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
 
-  /* LAYOUT */
   .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
   h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.55)}
   h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.5)}
-  p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
-  ul{color:var(--muted); line-height:1.8; margin-left:20px;}
-  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+  p{line-height:1.8; color:#cfe9d8; margin-bottom:16px;}
   .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px}
-
-  /* TABLE */
   .table-wrap{overflow:auto; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); margin:10px 0}
   table{width:100%; border-collapse:collapse; min-width:620px;}
   th,td{border-bottom:1px solid rgba(255,255,255,.18); padding:12px 14px; text-align:left; color:#f3fff6}
   th{background:rgba(0,0,0,.25); font-weight:600}
   tr:last-child td{border-bottom:none}
-
-  /* SIMPLE BARS (no JS) */
-  .bars{display:flex; gap:18px; align-items:flex-end; height:240px; padding:14px 10px 6px 10px}
-  .group{display:flex; gap:6px; align-items:flex-end; width:100%}
-  .bar{width:20px; border-radius:6px 6px 0 0; box-shadow:0 2px 10px rgba(0,0,0,.35)}
-  .bar.qc{background:var(--barQC)}
-  .bar.org{background:var(--barOrg)}
-  .xaxis{display:flex; gap:18px; justify-content:space-between; padding:0 6px 8px; color:#e8fff2; opacity:.9; font-size:.92rem}
-  .legend{display:flex; gap:14px; align-items:center; color:#e8fff2; font-size:.92rem}
-  .key{display:inline-block; width:14px; height:14px; border-radius:3px; margin-right:6px}
-  .cap{font-size:.92rem; color:#eaf9f0; margin-top:6px}
-
-  /* BADGES */
+  figure{position:relative; overflow:hidden; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); margin:12px 0}
+  figure img{width:100%; height:auto; display:block}
+  figcaption{padding:12px; font-size:.95rem; text-align:center; color:#f3fff6; background:rgba(0,0,0,.35); backdrop-filter:blur(4px)}
+  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
   .badges{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0 4px}
   .badge{padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.25); color:#eafff4; font-size:.92rem; border:1px solid rgba(255,255,255,.15)}
-
-  /* QUOTE */
   .quote{font-style:italic; color:#eaf9f0; margin-top:6px}
-
   footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
   @media (max-width:720px){ .brand img{width:84px;} h1{font-size:1.9rem;} .nav-inner{padding:10px 12px;} }
 </style>
@@ -76,7 +55,7 @@
 
 <nav class="site-nav">
   <div class="nav-inner">
-    <a class="brand" href="index.html"><img src="logo.png?v=12" alt="Seechur Agro logo"></a>
+    <a class="brand" href="index.html"><img src="logo.png?v=13" alt="Seechur Agro logo"></a>
     <div class="menu">
       <a href="index.html">Home</a>
       <a href="about.html">About</a>
@@ -99,53 +78,15 @@
     hydroponic vegetables and Lakadong turmeric, backed by policy support and strong B2B channels.
   </p>
 
-  <!-- SURGING DEMAND (static bars) -->
-  <h2>Surging Demand & Policy Push (Indexed 2020–2025)</h2>
-  <div class="card">
-    <!-- Bars are % heights vs max value (here, 537) -->
-    <div class="bars">
-      <!-- Year 2020 -->
-      <div class="group" style="--hqc: calc(100% * 100/537); --horg: calc(100% * 100/537);">
-        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 100"></div>
-        <div class="bar org" style="height:var(--horg)" title="Organic demand 100"></div>
-      </div>
-      <!-- 2021 -->
-      <div class="group" style="--hqc: calc(100% * 130/537); --horg: calc(100% * 140/537);">
-        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 130"></div>
-        <div class="bar org" style="height:var(--horg)" title="Organic demand 140"></div>
-      </div>
-      <!-- 2022 -->
-      <div class="group" style="--hqc: calc(100% * 160/537); --horg: calc(100% * 196/537);">
-        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 160"></div>
-        <div class="bar org" style="height:var(--horg)" title="Organic demand 196"></div>
-      </div>
-      <!-- 2023 -->
-      <div class="group" style="--hqc: calc(100% * 190/537); --horg: calc(100% * 274/537);">
-        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 190"></div>
-        <div class="bar org" style="height:var(--horg)" title="Organic demand 274"></div>
-      </div>
-      <!-- 2024 -->
-      <div class="group" style="--hqc: calc(100% * 230/537); --horg: calc(100% * 384/537);">
-        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 230"></div>
-        <div class="bar org" style="height:var(--horg)" title="Organic demand 384"></div>
-      </div>
-      <!-- 2025 -->
-      <div class="group" style="--hqc: calc(100% * 300/537); --horg: calc(100% * 537/537);">
-        <div class="bar qc"  style="height:var(--hqc)" title="Quick-commerce 300"></div>
-        <div class="bar org" style="height:var(--horg)" title="Organic demand 537"></div>
-      </div>
-    </div>
-    <div class="xaxis">
-      <span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span>
-    </div>
-    <div class="legend" style="margin-top:4px;">
-      <span><span class="key" style="background:var(--barQC)"></span>Quick-commerce orders (Index)</span>
-      <span><span class="key" style="background:var(--barOrg)"></span>Organic food demand (Index)</span>
-    </div>
-    <p class="cap">Growth is reinforced by government incentives (e.g., <b>NHB 50% capex subsidy</b> for storage, logistics & infra), improving last-mile availability and quality.</p>
-  </div>
+  <!-- GROWTH CHART (your image) -->
+  <h2>Surging Demand & Policy Push</h2>
+  <figure>
+    <img src="growth-chart.jpg" alt="Quick-commerce vs Organic Food Demand growth chart"
+         onerror="this.closest('figure').style.display='none'">
+    <figcaption>Indexed growth in quick-commerce and organic demand; reinforced by NHB’s 50% capex subsidy for cold-chain & logistics.</figcaption>
+  </figure>
 
-  <!-- MARKET SIZE -->
+  <!-- MARKET SIZE TABLE + IMAGE -->
   <h2>Market Size & Growth to 2030</h2>
   <div class="table-wrap">
     <table>
@@ -157,30 +98,11 @@
       </tbody>
     </table>
   </div>
-
-  <!-- paired bars per category -->
-  <div class="card">
-    <div class="bars" style="height:220px">
-      <!-- Normalize to 2750 max -->
-      <div class="group" title="Premium Vegetables">
-        <div class="bar" style="background:var(--bar2025); height:calc(100% * 1200/2750)"></div>
-        <div class="bar" style="background:var(--bar2030); height:calc(100% * 2750/2750)"></div>
-      </div>
-      <div class="group" title="Organic Turmeric">
-        <div class="bar" style="background:var(--bar2025); height:calc(100% * 850/2750)"></div>
-        <div class="bar" style="background:var(--bar2030); height:calc(100% * 2100/2750)"></div>
-      </div>
-      <div class="group" title="Exports">
-        <div class="bar" style="background:var(--bar2025); height:calc(100% * 650/2750)"></div>
-        <div class="bar" style="background:var(--bar2030); height:calc(100% * 1800/2750)"></div>
-      </div>
-    </div>
-    <div class="legend">
-      <span><span class="key" style="background:var(--bar2025)"></span>2025</span>
-      <span><span class="key" style="background:var(--bar2030)"></span>2030</span>
-    </div>
-    <p class="cap">Premium veg & organic turmeric are projected to more than double by 2030, driven by health, exports and e-commerce penetration.</p>
-  </div>
+  <figure>
+    <img src="market-size.jpg" alt="Market size bars for Premium Vegetables, Organic Turmeric and Exports"
+         onerror="this.closest('figure').style.display='none'">
+    <figcaption>Premium veg & organic turmeric expected to more than double by 2030 (APEDA, IMARC).</figcaption>
+  </figure>
 
   <!-- COMPETITIVE EDGE -->
   <h2>Competitive Edge</h2>
@@ -205,7 +127,7 @@
     <ul>
       <li><b>Quick-commerce:</b> Target Zepto, Blinkit, Instamart for cucumbers/greens.</li>
       <li><b>Modern trade:</b> Regional fresh chains & HoReCa suppliers.</li>
-      <li><b>Export / nutraceutical:</b> High-curcumin Lakadong turmeric lots with lab certification.</li>
+      <li><b>Export / nutraceutical:</b> High-curcumin Lakadong lots with lab certification.</li>
     </ul>
   </div>
 
@@ -253,4 +175,3 @@
 </script>
 </body>
 </html>
- 
