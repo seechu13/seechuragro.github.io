@@ -1,21 +1,107 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Why Lakadong | Seechur Agro</title>
-      <link rel="stylesheet" href="assets/style.css">
-    </head>
-    <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Why Lakadong • Seechur Agro Private Limited</title>
 
-<div class="overlay"></div>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --text:#f3fff6;
+    --muted:#cfe9d8;
+    --accent:#1f7a4d;
+    --nav-bg:rgba(10,25,10,0.7);
+    --max:1100px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--text);
+    min-height:100vh;
+  }
+
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
+      url('hydroponic-bg.jpg?v=10') center/cover no-repeat;
+    filter:saturate(1.1) brightness(0.95);
+  }
+
+  .site-nav{
+    position:sticky; top:0; z-index:50;
+    background:var(--nav-bg); backdrop-filter:blur(6px);
+  }
+  .nav-inner{
+    max-width:var(--max); margin:0 auto;
+    padding:10px 18px; display:flex; align-items:center; gap:14px;
+  }
+  .brand img{
+    width:110px; height:auto; object-fit:contain; display:block;
+    filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  }
+
+  .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+  .menu a{
+    color:#ffffff; text-decoration:none; padding:6px 10px;
+    border-radius:999px; transition:.25s;
+  }
+  .menu a:hover,.menu a.active{ background:rgba(255,255,255,0.18); }
+
+  .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
+  h1{
+    font-size:2.2rem; font-weight:700; margin-bottom:8px; color:#ffffff;
+    text-shadow:0 2px 8px rgba(0,0,0,.55);
+  }
+  h2{
+    font-size:1.4rem; margin-top:28px; margin-bottom:10px; color:#ffffff;
+    text-shadow:0 2px 6px rgba(0,0,0,.5);
+  }
+  p{ line-height:1.8; color:var(--muted); margin-bottom:16px; }
+  ul{ color:var(--muted); line-height:1.8; margin-left:20px; }
+
+  /* Figures */
+  .figure{ margin:24px 0; }
+  figure{
+    position:relative; overflow:hidden; border-radius:18px;
+    background:rgba(255,255,255,0.12);
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  }
+  figure img{ width:100%; height:auto; display:block; transition:transform .35s ease; }
+  figure:hover img{ transform:scale(1.02); }
+  figcaption{
+    padding:12px; font-size:.95rem; text-align:center; color:#f3fff6;
+    background:rgba(0,0,0,0.35); backdrop-filter:blur(4px);
+  }
+
+  .grid{ display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+
+  footer{
+    text-align:center; color:#d9ffe6; padding:40px 12px 60px;
+    background:rgba(0,0,0,0.4); backdrop-filter:blur(4px);
+  }
+
+  @media (max-width:720px){
+    .brand img{width:84px;}
+    h1{font-size:1.9rem;}
+    .nav-inner{padding:10px 12px;}
+  }
+</style>
+</head>
+<body>
+
 <nav class="site-nav">
   <div class="nav-inner">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Seechur Agro"><span>Seechur Agro</span></a>
+    <a class="brand" href="index.html">
+      <img src="logo.png?v=10" alt="Seechur Agro logo">
+    </a>
     <div class="menu">
       <a href="index.html">Home</a>
       <a href="about.html">About</a>
-      <a href="why-lakadong.html">Why Lakadong</a>
+      <a class="active" href="why-lakadong.html">Why Lakadong</a>
       <a href="portfolio.html">Portfolio</a>
       <a href="market.html">Market</a>
       <a href="financials.html">Financials</a>
@@ -26,25 +112,58 @@
   </div>
 </nav>
 
-
 <main class="container">
-  <div class="hero">
-    <h1 class="title">Why Lakadong Turmeric?</h1>
-    <div class="tagline">High curcumin • Premium pricing • Export‑ready</div>
+  <h1>Why Lakadong Turmeric?</h1>
+
+  <h2>What is Lakadong?</h2>
+  <p>
+    <b>Lakadong turmeric</b> is a premium variety from Meghalaya, known for consistently high <b>curcumin</b> levels (often 7–12%),
+    desirable colour, and strong flavour. This natural potency drives demand from <b>nutraceuticals, wellness brands, exporters</b> and
+    premium food manufacturers.
+  </p>
+
+  <h2>Why it fits our model</h2>
+  <ul>
+    <li><b>Premium pricing:</b> High curcumin commands better realisations versus common turmeric.</li>
+    <li><b>Traceability & quality:</b> Controlled cultivation improves purity, residue compliance, and consistent colour/curcumin.</li>
+    <li><b>Value-addition runway:</b> Grinding, sterilisation, capsules, and extracts for export-ready SKUs.</li>
+    <li><b>Risk balance:</b> Complements our protected-vegetable cashflows with a high-value spice line.</li>
+  </ul>
+
+  <h2>Key context from Indian agriculture</h2>
+  <div class="figure grid">
+    <figure>
+      <img src="challenges-grid.png" alt="Key challenges in Indian agriculture"
+           onerror="this.closest('figure').style.display='none'">
+      <figcaption>Key Challenges: water stress, post-harvest loss, land degradation, labour gaps — Lakadong under controlled cultivation addresses quality & consistency.</figcaption>
+    </figure>
+    <figure>
+      <img src="competitive-edge.png" alt="Competitive edge for Seechur Agro"
+           onerror="this.closest('figure').style.display='none'">
+      <figcaption>Competitive Edge: leverage existing infra + premium crops; focus on quality, traceability, and efficient capex.</figcaption>
+    </figure>
   </div>
-  <div class="card">
-    <p>Lakadong turmeric (Meghalaya origin) is renowned for curcumin levels of 7–12%, creating strong domestic and export demand. We scale it under controlled conditions for traceability and quality.</p>
-    <ul>
-      <li>Premium pricing — deck example ₹230/kg</li>
-      <li>Value‑add & nutraceutical potential</li>
-      <li>Protected cultivation for consistent quality</li>
-    </ul>
-  </div>
+
+  <h2>Our Lakadong plan</h2>
+  <p>
+    We scale Lakadong turmeric on our Edayarpakkam land, phasing from revival of protected vegetables to turmeric acreage expansion (Year 3 onward).
+    The focus is on <b>certified seed stock</b>, <b>best-practice curing</b>, and <b>testing for curcumin and residues</b> to meet domestic and export standards.
+  </p>
 </main>
 
-      <footer>
-        © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-      </footer>
-      <script src="assets/script.js"></script>
-    </body>
-    </html>
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+  const current=(location.pathname.split('/').pop()||'why-lakadong.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+})();
+</script>
+</body>
+</html>
