@@ -1,47 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Market | Seechur Agro</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="icon" href="logo.png" type="image/png" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Market • Seechur Agro Private Limited</title>
 
-  <style>
-    body::before{
-      content:""; position:fixed; inset:0; z-index:-1;
-      background:
-        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-        url('hydroponic-bg.jpg') center/cover no-repeat;
-      filter:saturate(1.05) brightness(.97);
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- ✅ Global stylesheet -->
+<link rel="stylesheet" href="assets/style.css">
+
+<style>
+  :root{
+    --text:#f3fff6; --muted:#cfe9d8;
+    --nav-bg:rgba(10,25,10,0.7);   /* desktop transparent */
+    --nav-solid:#1b4332;           /* mobile drawer solid */
+    --glass:rgba(255,255,255,.12);
+    --max:1100px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
+      url('hydroponic-bg.jpg?v=13') center/cover no-repeat;
+    filter:saturate(1.1) brightness(0.95);
+  }
+
+  /* ===== Sticky Navbar ===== */
+  .site-nav{position:sticky; top:0; z-index:60; background:var(--nav-bg); backdrop-filter:blur(6px); border-bottom:1px solid rgba(255,255,255,.12);}
+  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
+  .brand{display:flex; align-items:center; text-decoration:none}
+  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
+
+  /* desktop menu */
+  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
+  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
+  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
+
+  /* ===== Mobile drawer ===== */
+  .nav-toggle{display:none;margin-left:auto;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.25);color:#eafff5;padding:8px 12px;border-radius:10px;cursor:pointer;}
+  .nav-overlay{display:none;}
+
+  @media (max-width: 768px){
+    .nav-inner{padding:10px 12px;}
+    .brand img{width:84px;}
+    .nav-toggle{display:inline-block;}
+    .menu{
+      position:fixed; top:0; right:-80%;
+      width:80%; height:100vh; margin:0;
+      display:flex; flex-direction:column; gap:8px;
+      padding:18px;
+      background:var(--nav-solid);
+      border-left:1px solid rgba(255,255,255,.18);
+      box-shadow:-10px 0 24px rgba(0,0,0,.45);
+      transition:right .28s ease-in-out;
     }
-  </style>
+    .menu a{padding:12px 14px;border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06);}
+    .site-nav.open .menu{right:0;}
+    .nav-overlay{
+      position:fixed; inset:0; z-index:55;
+      display:none; background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
+    }
+    .site-nav.open + .nav-overlay{display:block;}
+  }
 
+  /* ===== Page content (your original styles) ===== */
+  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
+  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  p{line-height:1.8; color:#cfe9d8; margin-bottom:16px;}
+  .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px}
+  .table-wrap{overflow:auto; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); margin:10px 0}
+  table{width:100%; border-collapse:collapse; min-width:620px;}
+  th,td{border-bottom:1px solid rgba(255,255,255,.18); padding:12px 14px; text-align:left; color:#f3fff6}
+  th{background:rgba(0,0,0,.25); font-weight:600}
+  tr:last-child td{border-bottom:none}
+  figure{position:relative; overflow:hidden; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); margin:12px 0}
+  figure img{width:100%; height:auto; display:block}
+  figcaption{padding:12px; font-size:.95rem; text-align:center; color:#f3fff6; background:rgba(0,0,0,.35); backdrop-filter:blur(4px)}
+  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+  .badges{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0 4px}
+  .badge{padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.25); color:#eafff4; font-size:.92rem; border:1px solid rgba(255,255,255,.15)}
+  .quote{font-style:italic; color:#eaf9f0; margin-top:6px}
+  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+  @media (max-width:720px){ h1{font-size:1.9rem;} }
+</style>
 </head>
-<body class="market">
-  <div id="navbar-placeholder"></div>
-  <script>
-    fetch('navbar.html').then(r=>r.text()).then(h=>{document.getElementById('navbar-placeholder').innerHTML=h;});
-  </script>
+<body>
 
-  <main class="container">
-    <h1>Market</h1>
-    <p>Premium vegetables and high-curcumin Lakadong turmeric enjoy strong urban and export demand. Quick commerce and modern retail offer steady channels; Lakadong aligns with APEDA/Spices Board buyers.</p>
-
-    <div class="grid">
-      <div class="card">
-        <h3>Demand Trend</h3>
-        <img class="chart" src="growth-chart.jpg" alt="Demand growth trend" />
-      </div>
-      <div class="card">
-        <h3>Market Size (Illustrative)</h3>
-        <img class="chart" src="market-size.jpg" alt="Market size comparison" />
-      </div>
+<!-- ===== Navbar ===== -->
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html"><img src="logo.png?v=13" alt="Seechur Agro logo"></a>
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu">☰ Menu</button>
+    <div class="menu" id="mobileMenu">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="why-lakadong.html">Why Lakadong</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a class="active" href="market.html">Market</a>
+      <a href="financials.html">Financials</a>
+      <a href="team.html">Team</a>
+      <a href="contact.html">Contact</a>
+      <a href="investor-pack.html">Investor Pack</a>
     </div>
-  </main>
+  </div>
+</nav>
+<div class="nav-overlay" id="navOverlay"></div>
 
-  <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
-  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+<main class="container">
+  <h1>Market Opportunity & Growth Outlook</h1>
+  <p>
+    India’s premium agri-produce is accelerating—driven by health-aware consumers, quick-commerce penetration
+    and export momentum in high-curcumin turmeric. Seechur Agro operates at this intersection with traceable
+    hydroponic vegetables and Lakadong turmeric, backed by policy support and strong B2B channels.
+  </p>
+
+  <!-- GROWTH CHART (your image) -->
+  <h2>Surging Demand & Policy Push</h2>
+  <figure>
+    <img src="growth-chart.jpg" alt="Quick-commerce vs Organic Food Demand growth chart"
+         onerror="this.closest('figure').style.display='none'">
+    <figcaption>Indexed growth in quick-commerce and organic demand; reinforced by NHB’s 50% capex subsidy for cold-chain & logistics.</figcaption>
+  </figure>
+
+  <!-- MARKET SIZE TABLE + IMAGE -->
+  <h2>Market Size & Growth to 2030</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Segment</th><th>2025 (₹ Cr)</th><th>2030 (₹ Cr)</th><th>CAGR</th></tr></thead>
+      <tbody>
+        <tr><td><b>Premium Vegetables</b></td><td>1200</td><td><b>2750</b></td><td>~18%</td></tr>
+        <tr><td><b>Organic Turmeric</b></td><td>850</td><td><b>2100</b></td><td>~19%</td></tr>
+        <tr><td><b>Exports (select agri)</b></td><td>650</td><td><b>1800</b></td><td>~22%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure>
+    <img src="market-size.jpg" alt="Market size bars for Premium Vegetables, Organic Turmeric and Exports"
+         onerror="this.closest('figure').style.display='none'">
+    <figcaption>Premium veg & organic turmeric expected to more than double by 2030 (APEDA, IMARC).</figcaption>
+  </figure>
+
+  <!-- COMPETITIVE EDGE -->
+  <h2>Competitive Edge</h2>
+  <div class="card">
+    <ul>
+      <li><b>Capital efficiency:</b> Restart leveraging existing polyhouse/greenhouse assets.</li>
+      <li><b>Premium mix:</b> Hydroponic vegetables for cash-flow + high-curcumin Lakadong for value.</li>
+      <li><b>Traceability:</b> Batch-level testing & compliance targeting modern trade and export buyers.</li>
+      <li><b>Speed to market:</b> Microgreens revenue from Day-30 post-investment; vegetables stabilise by Month-6.</li>
+    </ul>
+  </div>
+
+  <!-- STRATEGY & BUYERS -->
+  <h2>Market Strategy & Buyers</h2>
+  <div class="card">
+    <div class="badges">
+      <span class="badge">B2B 80% (quick-commerce & retail chains)</span>
+      <span class="badge">B2C 20% (local delivery & kits)</span>
+      <span class="badge">APEDA / Spices Board for exports</span>
+      <span class="badge">Batch testing for curcumin & residues</span>
+    </div>
+    <ul>
+      <li><b>Quick-commerce:</b> Target Zepto, Blinkit, Instamart for cucumbers/greens.</li>
+      <li><b>Modern trade:</b> Regional fresh chains & HoReCa suppliers.</li>
+      <li><b>Export / nutraceutical:</b> High-curcumin Lakadong lots with lab certification.</li>
+    </ul>
+  </div>
+
+  <!-- POLICY SUPPORT -->
+  <h2>Policy & Government Support</h2>
+  <div class="grid">
+    <div class="card">
+      <h3 style="margin-bottom:6px;color:#fff">Mission Lakadong (Meghalaya)</h3>
+      <p>State mission to scale area, productivity & value addition for Lakadong turmeric; supports testing, FPOs and processing infrastructure.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:6px;color:#fff">NHB & AIF</h3>
+      <p><b>NHB</b>: eligible infra gets up to <b>50% capex subsidy</b> (cold storage/logistics). <b>AIF</b>: low-interest funding with interest subvention.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:6px;color:#fff">APEDA & Spices Board</h3>
+      <p>Export facilitation, quality norms, and market linkage programs for organic spices and fresh produce.</p>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <h2>Summary</h2>
+  <div class="card">
+    <p>
+      Seechur Agro is positioned to capture the fastest-growing niches of Indian agribusiness—traceable hydroponic vegetables and
+      high-curcumin Lakadong turmeric—by pairing capital-efficient refurbishment with strong B2B channels and policy alignment.
+    </p>
+    <p class="quote">“India’s agri-future lies in traceable, high-yield, low-water cultivation — Seechur Agro is building that bridge.”</p>
+  </div>
+</main>
+
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
+
+<script>
+(function(){
+  // Footer year + active link
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+  const current=(location.pathname.split('/').pop()||'market.html').toLowerCase();
+  document.querySelectorAll('.menu a').forEach(a=>{
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+  });
+
+  // Mobile drawer (slide-in)
+  const nav=document.getElementById('siteNav');
+  const toggle=document.getElementById('navToggle');
+  const overlay=document.getElementById('navOverlay');
+  function openMenu(){nav.classList.add('open');toggle.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';}
+  function closeMenu(){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false');document.body.style.overflow='';}
+  if(toggle){toggle.addEventListener('click',()=>{nav.classList.contains('open')?closeMenu():openMenu();});}
+  if(overlay){overlay.addEventListener('click',closeMenu);}
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
+})();
+</script>
 </body>
 </html>
