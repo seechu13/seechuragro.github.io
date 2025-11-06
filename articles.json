@@ -1,0 +1,34 @@
+[
+  {
+    "id": "water-use-efficiency",
+    "title": "Water Use Efficiency in Controlled Farming",
+    "subtitle": "Closed-loop fertigation can cut water use by ~80–90%.",
+    "date": "2025-11-05",
+    "category": "Hydroponics",
+    "image": "images/articles/water-use-efficiency/hero.jpg",
+    "url": "articles/water-use-efficiency.html",
+    "excerpt": "Protected cultivation with recirculation reduces evaporation and deep percolation losses while improving nutrient precision.",
+    "author": {
+      "name": "Dr. A. Technical",
+      "org": "Hydroponics Lab",
+      "role": "Advisor",
+      "url": ""
+    }
+  },
+  {
+    "id": "lakadong-curcumin-basics",
+    "title": "Lakadong Turmeric: Curcumin Basics for Buyers",
+    "subtitle": "How curcumin % links to pricing and applications.",
+    "date": "2025-11-01",
+    "category": "Lakadong",
+    "image": "images/articles/lakadong-curcumin-basics/hero.jpg",
+    "url": "articles/lakadong-curcumin-basics.html",
+    "excerpt": "Understanding curcumin ranges, testing norms, and what buyers look for in premium Lakadong lots.",
+    "author": {
+      "name": "Editorial Team",
+      "org": "Seechur Agro",
+      "role": "Content",
+      "url": ""
+    }
+  }
+]
