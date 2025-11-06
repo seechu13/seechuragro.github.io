@@ -30,5 +30,21 @@
       "role": "Content",
       "url": ""
     }
+  },
+  {
+    "id": "microgreens-basics",
+    "title": "Microgreens 101: Fast Cycles, Big Flavor",
+    "subtitle": "A rapid-return crop with nutrition and market appeal.",
+    "date": "2025-11-06",
+    "category": "Microgreens",
+    "image": "images/articles/microgreens-basics/hero.jpg",
+    "url": "articles/microgreens-basics.html",
+    "excerpt": "Microgreens mature in under 14 days, offering steady cash flow and premium prices for restaurants and health-conscious consumers.",
+    "author": {
+      "name": "Editorial Team",
+      "org": "Seechur Agro",
+      "role": "Content",
+      "url": ""
+    }
   }
 ]
