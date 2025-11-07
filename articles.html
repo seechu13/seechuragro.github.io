@@ -4,130 +4,167 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Articles • Seechur Agro Private Limited</title>
+<meta name="description" content="Insights on hydroponics, Lakadong turmeric, microgreens, and sustainable farming from Seechur Agro." />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
 
 <style>
-  :root{ --text:#f3fff6; --muted:#cfe9d8; --glass:rgba(255,255,255,.12); --max:1100px; }
+  :root{
+    --text:#f3fff6; --muted:#cfe9d8;
+    --nav-bg:rgba(10,25,10,0.7); --nav-solid:#1b4332;
+    --glass:rgba(255,255,255,.12); --max:1100px;
+    --accent:#2dbb7f; --hover:#33d18f;
+  }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,sans-serif;color:var(--text);min-height:100vh;}
-  body::before{
-    content:""; position:fixed; inset:0; z-index:-1;
-    background:linear-gradient(180deg,rgba(0,0,0,.30),rgba(0,0,0,.40)),url('hydroponic-bg.jpg?v=42') center/cover no-repeat;
-    filter:saturate(1.05) brightness(.97);
+  body{
+    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--text); min-height:100vh;
+  }
+  /* reader-friendly page background */
+  body::before{ display:none; }
+
+  /* ===== Navbar area is included via navbar.html ===== */
+
+  .container{max-width:var(--max); margin:0 auto; padding:28px 18px 40px;}
+  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  p.lead{line-height:1.8; color:var(--muted); margin-bottom:18px;}
+
+  /* Grid of article cards */
+  .grid{
+    display:grid; gap:18px;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  }
+  a.card{
+    display:block; text-decoration:none; color:inherit; cursor:pointer;
+    background:var(--glass); border:1px solid rgba(255,255,255,.16);
+    border-radius:18px; overflow:hidden;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
+    transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;
+  }
+  a.card:hover{ transform:translateY(-2px); filter:brightness(1.03); box-shadow:0 10px 26px rgba(0,0,0,.45) }
+
+  .thumb{
+    height:180px; background:rgba(0,0,0,.18);
+    display:block; overflow:hidden;
+  }
+  .thumb img{
+    width:100%; height:100%; object-fit:cover; display:block;
+    transition:transform .35s ease;
+  }
+  a.card:hover .thumb img{ transform:scale(1.03); }
+
+  .body{padding:14px 14px 16px}
+  .meta{font-size:.9rem; color:#baf5d0; opacity:.95; margin-bottom:4px}
+  .title{font-weight:600; font-size:1.15rem; margin:2px 0 6px}
+  .excerpt{color:var(--muted); font-size:.95rem; line-height:1.6}
+
+  .empty{
+    padding:14px; border-radius:12px;
+    background:rgba(255,255,255,.08);
+    border:1px dashed rgba(255,255,255,.2);
+    color:#defbea; text-align:center;
   }
 
-  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
-  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
-
-  .grid{display:grid; gap:22px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); margin-top:10px;}
-  .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); overflow:hidden; transition:transform .3s; cursor:pointer;}
-  .card:hover{transform:translateY(-3px);}
-  .thumb{height:180px; background:#0b0b0b22; overflow:hidden}
-  .thumb img{width:100%; height:100%; object-fit:cover; display:block}
-  .body{padding:16px;}
-  .meta{font-size:.9rem;color:#baf5d0;opacity:.9;margin-bottom:4px}
-  .title{font-size:1.2rem;font-weight:600;margin-bottom:6px}
-  .excerpt{color:var(--muted);font-size:.95rem}
-
-  /* muted tiles */
-  .card.muted{opacity:.6; cursor:not-allowed}
-  .card.muted:hover{transform:none}
-
-  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:30px}
 </style>
 </head>
 <body>
 
-<!-- Shared Navbar -->
+<!-- ✅ Shared navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
 (function loadNavbar(){
-  fetch('navbar.html',{cache:'no-cache'})
-    .then(r=>r.text()).then(html=>{
-      const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
-      host.querySelectorAll('script').forEach(s=>{const n=document.createElement('script'); if(s.src)n.src=s.src; else n.textContent=s.textContent; document.body.appendChild(n);});
-      const current=(location.pathname.split('/').pop()||'articles.html').toLowerCase();
-      document.querySelectorAll('.menu a').forEach(a=>{if(a.getAttribute('href')?.toLowerCase()===current)a.classList.add('active');});
+  fetch('navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
+    const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
+    // execute any scripts embedded in navbar.html
+    host.querySelectorAll('script').forEach(s=>{
+      const n=document.createElement('script');
+      if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+      document.body.appendChild(n);
     });
+    // highlight Articles in nav
+    document.querySelectorAll('.menu a').forEach(a=>{
+      const href=(a.getAttribute('href')||'').toLowerCase();
+      if(href==='articles.html') a.classList.add('active');
+    });
+  });
 })();
 </script>
 
 <main class="container">
   <h1>Articles & Insights</h1>
-  <p>Insights on hydroponics, Lakadong turmeric, and sustainable cultivation from the Seechur Agro team.</p>
+  <p class="lead">Practical notes from our farm and advisors on hydroponics, Lakadong turmeric, and microgreens.</p>
 
-  <section class="grid">
-    <!-- Live Article -->
-    <article class="card" onclick="openArticle('water')">
-      <div class="thumb"><img src="article-water.jpg" alt="Water Use Efficiency"></div>
-      <div class="body">
-        <div class="meta">Hydroponics • 2025</div>
-        <div class="title">Water Use Efficiency in Controlled Farming</div>
-        <div class="excerpt">How closed-loop fertigation and environment control cut water use by 80–90% vs. soil farming—while improving yield consistency.</div>
-      </div>
-    </article>
-
-    <!-- Coming soon placeholders -->
-    <article class="card muted" title="Coming soon">
-      <div class="thumb"><img src="article-lakadong.jpg" alt="Lakadong article placeholder" onerror="this.style.display='none'"></div>
-      <div class="body">
-        <div class="meta">Lakadong • Coming soon</div>
-        <div class="title">Lakadong Turmeric: From Nursery to Curing</div>
-        <div class="excerpt">Our workflow for origin-authenticated rhizomes, batch testing, and curing best practices.</div>
-      </div>
-    </article>
-
-    <article class="card muted" title="Coming soon">
-      <div class="thumb"><img src="article-microgreens.jpg" alt="Microgreens article placeholder" onerror="this.style.display='none'"></div>
-      <div class="body">
-        <div class="meta">Microgreens • Coming soon</div>
-        <div class="title">Daily Harvests, Smart Logistics</div>
-        <div class="excerpt">Short cycles and predictable dispatch windows for premium freshness.</div>
-      </div>
-    </article>
-  </section>
+  <div id="grid" class="grid" role="list"></div>
+  <div id="fallback" class="empty" style="display:none">No articles yet.</div>
 </main>
 
-<footer>
-  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
-</footer>
+<footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
 
 <script>
-function openArticle(id){
-  const articles={
-    water: `
-      <article style="max-width:900px;margin:24px auto;padding:18px;border-radius:16px;background:rgba(255,255,255,.10);color:#f3fff6;border:1px solid rgba(255,255,255,.16);line-height:1.8">
-        <h2 style="margin-top:0">Water Use Efficiency in Controlled Farming</h2>
-        <p>Hydroponics recirculates irrigation in closed loops, cutting water use by up to <b>80–90%</b> compared to soil cultivation. Precision fertigation delivers nutrients to the root zone with minimal runoff.</p>
-        <ul>
-          <li><b>Closed-loop fertigation:</b> Recycling tanks and inline filtration capture and re-use nutrient solution.</li>
-          <li><b>Sensors & control:</b> EC/pH automation and timed pulses match crop stage and climate, avoiding overwatering.</li>
-          <li><b>Rainwater + condensate:</b> Harvested rain and recovered condensate top up the system sustainably.</li>
-        </ul>
-        <p>The payoff is twofold: <b>dramatically lower water footprint</b> and <b>more consistent yields</b>—a core pillar of Seechur Agro’s protected-cultivation strategy.</p>
-      </article>
-    `
-  };
-  const html=articles[id]||'<p>Article not found.</p>';
-  const win=window.open('','_blank','width=780,height=900,scrollbars=yes');
-  win.document.write(`<!DOCTYPE html><html><head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Article • Seechur Agro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-      body{font-family:'Poppins',system-ui,sans-serif;background:#0f172a;color:#e6fff3;margin:0;padding:0}
-      .wrap{padding:24px}
-      a{color:#9ef0c6}
-    </style>
-  </head><body><div class="wrap">${html}</div></body></html>`);
-  win.document.close();
-}
-(function(){const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();})();
+(function(){
+  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+
+  const grid = document.getElementById('grid');
+  const fallback = document.getElementById('fallback');
+
+  // Fetch the JSON from the site root.
+  fetch('articles.json?ver=2', {cache:'no-cache'})
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(list => {
+      if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
+
+      // Sort newest first (by date string)
+      list.sort((a,b)=> String(b.date).localeCompare(String(a.date)));
+
+      const frag = document.createDocumentFragment();
+      list.forEach(item=>{
+        const url   = item.url   || '#';
+        const img   = item.image || '';
+        const cat   = item.category || '';
+        const date  = item.date || '';
+        const title = item.title || '';
+        const ex    = item.excerpt || item.subtitle || '';
+
+        // One big anchor to ensure full-card clickability
+        const a = document.createElement('a');
+        a.className = 'card';
+        a.href = url;
+
+        // thumbnail
+        const t = document.createElement('div');
+        t.className='thumb';
+        if(img){
+          const im = document.createElement('img');
+          im.loading='lazy';
+          im.alt = title || 'Article image';
+          im.src = img; // paths in JSON are root-relative (images/...)
+          im.onerror = ()=>{ t.remove(); /* no ugly box if image not found */ };
+          t.appendChild(im);
+        }
+        a.appendChild(t);
+
+        // body
+        const b = document.createElement('div'); b.className='body';
+        const m = document.createElement('div'); m.className='meta';
+        m.textContent = [cat, date].filter(Boolean).join(' • ');
+        const ti = document.createElement('div'); ti.className='title'; ti.textContent=title;
+        const exd = document.createElement('div'); exd.className='excerpt'; exd.textContent=ex;
+
+        b.appendChild(m); b.appendChild(ti); b.appendChild(exd);
+        a.appendChild(b);
+
+        frag.appendChild(a);
+      });
+
+      grid.innerHTML='';
+      grid.appendChild(frag);
+    })
+    .catch(()=>{
+      fallback.style.display='block';
+    });
+})();
 </script>
 </body>
 </html>
