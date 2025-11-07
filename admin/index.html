@@ -1,25 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Seechur Admin</title>
-  <!-- Netlify Identity widget -->
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <!-- Decap (Netlify) CMS -->
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Seechur Agro • Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+    body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;margin:0;min-height:100vh;background:#0b1d14;color:#eafff5;display:grid;place-items:center}
+    .card{width:min(520px,92vw);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.45);overflow:hidden}
+    header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.12)}
+    header img{width:40px;height:40px;object-fit:contain}
+    header h1{font-size:1.05rem;margin:0}
+    #cms{height:70vh}
   </style>
 </head>
 <body>
-  <!-- Redirect to CMS if already logged in -->
-  <script>
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.on('init', user => {
-        if (!user) window.netlifyIdentity.on('login', () => window.location.reload());
-      });
-    }
-  </script>
+  <div class="card">
+    <header>
+      <img src="/logo.png" alt="Seechur Agro" />
+      <h1>Seechur Agro — Admin</h1>
+    </header>
+    <div id="cms"></div>
+  </div>
+
+  <!-- Decap (Netlify) CMS -->
+  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </body>
 </html>
