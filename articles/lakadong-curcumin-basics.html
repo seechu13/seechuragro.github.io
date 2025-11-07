@@ -10,32 +10,73 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-  :root{--text:#f3fff6;--muted:#cfe9d8;--nav-bg:rgba(10,25,10,0.7);--nav-solid:#1b4332;--glass:rgba(255,255,255,.12);--max:1100px;--accent:#2dbb7f}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
-  body::before{
-    content:""; position:fixed; inset:0; z-index:-1;
-    background:linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)), url('../hydroponic-bg.jpg?v=31') center/cover no-repeat;
-    filter:saturate(1.05) brightness(.97);
+  :root{
+    --text:#f3fff6; --muted:#cfe9d8;
+    --nav-bg:rgba(10,25,10,0.7); --nav-solid:#1b4332;
+    --glass:rgba(255,255,255,.12); --max:1100px;
+    --accent:#2dbb7f;
   }
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  /* ========= Reader theme (turns off big site bg on articles) ========= */
+  body.article-page::before{display:none!important;}
+  body.article-page{
+    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--text); min-height:100vh;
+    background:#0e1914; /* dark green-black for comfy reading */
+  }
+
+  /* Container */
   .container{max-width:var(--max); margin:0 auto; padding:20px 18px 40px;}
-  .hero{margin-top:16px;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.45)}
-  .hero img{display:block;width:100%;height:360px;object-fit:cover}
-  h1{font-size:2.2rem;font-weight:700;margin:16px 0 6px;text-shadow:0 2px 8px rgba(0,0,0,.55)}
+
+  /* Hero */
+  .article-hero{
+    margin-top:16px;border-radius:18px;overflow:hidden;
+    background:rgba(255,255,255,.08);
+    box-shadow:0 8px 30px rgba(0,0,0,.45)
+  }
+  .article-hero img{display:block;width:100%;height:320px;object-fit:cover}
+  @media (max-width:640px){ .article-hero img{height:220px} }
+  .article-hero__meta{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    padding:12px 16px 0 16px;color:#bfead1
+  }
+  .pill{
+    display:inline-block;padding:4px 10px;border-radius:999px;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16);
+    font-size:.85rem
+  }
+  h1{font-size:2rem;font-weight:700;margin:6px 16px 4px;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  .subtitle{margin:0 16px 14px;color:#cfe9d8}
+
+  /* Meta row under title */
   .meta{display:flex;flex-wrap:wrap;gap:10px;color:#dcffe9;font-size:.95rem;opacity:.95}
   .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.16);font-size:.84rem}
   .byline{margin-left:auto}
-  .article{background:var(--glass);border-radius:18px;padding:18px;margin-top:16px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-  .article h2{font-size:1.3rem;margin:18px 0 8px;text-shadow:0 2px 6px rgba(0,0,0,.5)}
-  .article p,.article li{color:var(--muted);line-height:1.8}
+
+  /* Article card */
+  .article-card{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:18px; padding:18px;
+    box-shadow:0 4px 20px rgba(0,0,0,.4); margin-top:16px
+  }
+  .article-card h2{font-size:1.3rem;margin:18px 0 8px;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  .article-card p,.article-card li{color:var(--muted);line-height:1.85}
+
+  /* Small cards grid */
   .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin:10px 0}
   .card{background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px}
+
+  /* Buttons */
   .share{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
   .btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:#eafff4;transition:.2s}
   .btn:hover{transform:translateY(-1px);background:rgba(0,0,0,.35)}
+
   footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);margin-top:30px}
 </style>
 
+<!-- Structured data -->
 <script type="application/ld+json">
 {
   "@context":"https://schema.org",
@@ -49,33 +90,79 @@
 }
 </script>
 </head>
-<body>
 
+<body class="article-page">
+
+<!-- Shared navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
 (function loadNavbar(){
-  fetch('../navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
-    const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
-    host.querySelectorAll('script').forEach(s=>{const n=document.createElement('script'); if(s.src){n.src=s.src}else{n.textContent=s.textContent} document.body.appendChild(n);});
-  });
+  fetch('../navbar.html', {cache:'no-cache'})
+    .then(r=>r.text())
+    .then(html=>{
+      const host=document.getElementById('navbar-placeholder');
+      host.innerHTML=html;
+
+      // run any scripts present inside navbar.html
+      host.querySelectorAll('script').forEach(s=>{
+        const n=document.createElement('script');
+        if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+        document.body.appendChild(n);
+      });
+
+      // === FIX RELATIVE PATHS when inside /articles/ ===
+      const inArticles = location.pathname.toLowerCase().includes('/articles/');
+      if(inArticles){
+        // fix menu links and brand link
+        host.querySelectorAll('a').forEach(a=>{
+          const href=a.getAttribute('href')||'';
+          if(href && !href.startsWith('http') && !href.startsWith('/') && !href.startsWith('../')){
+            a.setAttribute('href','../'+href);
+          }
+        });
+        // fix logo src
+        const logo = host.querySelector('.brand img');
+        if(logo){
+          const src = logo.getAttribute('src')||'';
+          if(src && !src.startsWith('http') && !src.startsWith('/') && !src.startsWith('../')){
+            logo.setAttribute('src','../'+src);
+          }
+        }
+      }
+
+      // Active link highlight (after path fixes)
+      const current = (location.pathname.split('/').pop()||'articles.html').toLowerCase();
+      document.querySelectorAll('.menu a').forEach(a=>{
+        const href=(a.getAttribute('href')||'').toLowerCase().replace('../','');
+        if(href===current) a.classList.add('active');
+      });
+    });
 })();
 </script>
 
 <main class="container">
-  <div class="hero"><img src="../images/articles/lakadong-curcumin-basics/hero.jpg" alt="Lakadong turmeric rhizomes"></div>
+  <!-- HERO -->
+  <header class="article-hero">
+    <img src="../images/articles/lakadong-curcumin-basics/hero.jpg" alt="Dried Lakadong turmeric rhizomes">
+    <div class="article-hero__meta">
+      <span class="pill">Lakadong</span>
+      <time datetime="2025-11-01">Nov 1, 2025</time>
+    </div>
+    <h1>Lakadong Turmeric: Curcumin Basics for Buyers</h1>
+    <p class="subtitle">How curcumin % links to pricing and applications.</p>
+  </header>
 
-  <h1>Lakadong Turmeric: Curcumin Basics for Buyers</h1>
-  <div class="meta">
-    <span class="badge">Lakadong</span>
-    <span>Published: <time datetime="2025-11-01">Nov 1, 2025</time></span>
+  <!-- META -->
+  <div class="meta" style="margin-top:8px">
     <span id="rt" class="badge">Reading: —</span>
     <span class="byline">By <b>Seechur Agro — Editorial Team</b></span>
   </div>
 
-  <article class="article" id="article">
+  <!-- ARTICLE -->
+  <article class="article-card" id="article">
     <p>
-      <b>Curcumin %</b> is a primary quality signal for Lakadong turmeric. Premium buyers often seek lab-verified curcumin
-      above typical commodity ranges, while balancing aroma (volatile oils), colour, cleanliness, and traceability.
+      <b>Curcumin %</b> is a primary quality signal for Lakadong turmeric. Premium buyers often seek lab-verified
+      curcumin above typical commodity ranges, while balancing aroma (volatile oils), colour, cleanliness, and traceability.
     </p>
 
     <h2>What curcumin tells a buyer</h2>
@@ -111,18 +198,23 @@
     </div>
   </article>
 
-  <div class="meta" style="margin-top:10px">
+  <div class="meta" style="margin-top:12px">
     <a class="btn" href="../articles.html">← All articles</a>
     <span class="byline"></span>
     <a class="btn" href="./microgreens-basics.html">Next → Microgreens 101</a>
   </div>
 </main>
 
-<footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
+<footer>
+  © <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice
+</footer>
 
 <script>
 (function(){
+  // Footer year
   const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+
+  // Reading time
   const el=document.getElementById('article'); if(!el) return;
   const words=(el.innerText||'').trim().split(/\s+/).length;
   const mins=Math.max(1, Math.round(words/220));
