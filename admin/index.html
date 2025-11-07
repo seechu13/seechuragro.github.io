@@ -1,72 +1,80 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
   <title>Seechur Agro — Admin</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--glass:rgba(255,255,255,.12);--text:#f3fff6}
-    body{margin:0;font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);
-         min-height:100vh;display:grid;place-items:center;
-         background:
-          linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-          url('../hydroponic-bg.jpg?v=31') center/cover no-repeat;}
-    .wrap{width:min(780px,92vw);background:var(--glass);border:1px solid rgba(255,255,255,.2);
-          border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden}
-    .head{display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.35);padding:12px 16px}
-    .head img{width:34px;height:34px;object-fit:contain}
-    .head h1{font-size:1.2rem;margin:0}
-    .body{padding:18px}
-    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .btn{padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.25);
-         background:rgba(0,0,0,.25);color:#eafff4;text-decoration:none;cursor:pointer}
-    .hint{opacity:.9}
-  </style>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Netlify Identity widget -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <!-- Netlify CMS -->
-  <script src="https://unpkg.com/netlify-cms@^2/dist/netlify-cms.js"></script>
+  <!-- Decap (Netlify) CMS -->
+  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <style>
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      color:#fff; background:#0b1a0f;
+      background-image: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.45)),
+                       url("../hydroponic-bg.jpg?v=31");
+      background-size:cover; background-position:center;
+    }
+    .shell{max-width:880px;margin:60px auto;padding:0 16px}
+    .panel{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);
+           border-radius:16px; box-shadow:0 10px 28px rgba(0,0,0,.45); overflow:hidden}
+    .head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(0,0,0,.35)}
+    .head img{width:36px;height:36px;border-radius:8px;object-fit:cover}
+    .body{padding:18px;color:#e8fff4}
+    .btn{display:inline-block;margin-left:auto;padding:8px 12px;border-radius:999px;
+         background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+         color:#eafff5;text-decoration:none}
+    .btn:hover{background:rgba(255,255,255,.2)}
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="head">
-      <img src="../logo.png" alt="Seechur Agro logo">
-      <h1>Seechur Agro — Admin</h1>
-      <div style="margin-left:auto" class="row">
-        <button class="btn" id="loginBtn" type="button">Log in</button>
-        <button class="btn" id="logoutBtn" type="button" style="display:none">Log out</button>
+  <div class="shell">
+    <div class="panel">
+      <div class="head">
+        <img src="../logo.png?v=27" alt="Seechur Agro">
+        <div style="font-weight:700">Seechur Agro — Admin</div>
+        <a class="btn" id="loginBtn" href="#">Log in</a>
       </div>
-    </div>
-    <div class="body">
-      <p class="hint">If you clicked an invite link and don’t see “Set password”, press <b>Log in</b> to open the Identity window.</p>
-      <!-- The CMS UI mounts itself; this page just hosts it -->
+      <div class="body" id="msg">
+        If you clicked an invite link and don’t see “Set password”, this page will open the Identity window for you.
+      </div>
     </div>
   </div>
 
   <script>
-    // Identity helpers
-    function showState(user){
-      const login=document.getElementById('loginBtn');
-      const logout=document.getElementById('logoutBtn');
-      if(user){ login.style.display='none'; logout.style.display='inline-block'; }
-      else   { login.style.display='inline-block'; logout.style.display='none'; }
-    }
+    // open the login/signup modal
+    const openLogin = () => netlifyIdentity && netlifyIdentity.open('login');
+    document.getElementById('loginBtn').addEventListener('click', (e)=>{ e.preventDefault(); openLogin(); });
 
-    document.getElementById('loginBtn').addEventListener('click', ()=>{
-      if(window.netlifyIdentity){ window.netlifyIdentity.open(); }
-    });
-    document.getElementById('logoutBtn').addEventListener('click', ()=>{
-      if(window.netlifyIdentity){ window.netlifyIdentity.logout(); }
-    });
+    // After login, reload Admin (CMS will mount itself)
+    netlifyIdentity.on('login', () => window.location.replace('/admin/'));
 
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.on('init', user => { showState(user); });
-      window.netlifyIdentity.on('login', () => { location.reload(); });
-      window.netlifyIdentity.on('logout', () => { location.reload(); });
-    }
+    // Accept invite tokens automatically:
+    (function autoAcceptInvite(){
+      const h = window.location.hash || '';
+      // Decap CMS routes invite as "#/invite/<token>" and the older flow as "#invite_token=<token>"
+      const invitePath = h.match(/#\/invite\/([^/?#]+)/);
+      const inviteQuery = h.match(/invite_token=([^&]+)/);
+      const token = invitePath ? invitePath[1] : (inviteQuery ? inviteQuery[1] : null);
+      if (!token) return;
+
+      // Ensure Identity is initialized, then accept the invite:
+      netlifyIdentity.on('init', (user) => {
+        if (!user) {
+          netlifyIdentity.acceptInvite(token)
+            .then(() => { netlifyIdentity.open('signup'); })
+            .catch((err) => {
+              console.error('Invite accept error:', err);
+              document.getElementById('msg').textContent =
+                'Invite token detected, but could not open the password screen. Click “Log in”.';
+              openLogin();
+            });
+        }
+      });
+      netlifyIdentity.init(); // triggers the 'init' event
+    })();
   </script>
 </body>
 </html>
