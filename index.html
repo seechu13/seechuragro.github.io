@@ -32,7 +32,6 @@
     filter:saturate(1.1) brightness(0.95);
   }
 
-  /* ===== Layout ===== */
   main{padding-top:70px;}
   .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
   .hero{
@@ -59,7 +58,6 @@
   }
   .section p{line-height:1.8;max-width:900px;color:var(--muted);}
 
-  /* Article cards */
   .articles-grid{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
   .article-card{
     background:rgba(255,255,255,.12);border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden;cursor:pointer;
@@ -92,15 +90,11 @@
       .then(html=>{
         const host = document.getElementById('navbar-placeholder');
         host.innerHTML = html;
-
-        // Execute any <script> tags inside navbar.html
         host.querySelectorAll('script').forEach(s=>{
           const n=document.createElement('script');
           if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
           document.body.appendChild(n);
         });
-
-        // Highlight active link
         const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
         document.querySelectorAll('.menu a').forEach(a=>{
           if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
@@ -109,7 +103,6 @@
   })();
 </script>
 
-<!-- ===== Main Content ===== -->
 <main class="container">
   <section class="hero">
     <h1>SEECHUR AGRO PRIVATE LIMITED</h1>
@@ -136,7 +129,6 @@
   </section>
 </main>
 
-<!-- === Latest Insights / Articles (AUTO-POPULATED) === -->
 <section class="container" style="margin-top:50px">
   <h2 style="font-size:1.8rem;font-weight:700;margin-bottom:16px;text-shadow:0 2px 6px rgba(0,0,0,.5)">
     Latest Insights
@@ -158,26 +150,21 @@
 
 <script>
 (function(){
-  // Footer year
   const y=document.getElementById('year');
   if(y) y.textContent=new Date().getFullYear();
 
-  // ---- Latest articles loader ----
   const grid = document.getElementById('articlesGrid');
-
   function fmtDate(iso){
     const d = new Date(iso);
     if(isNaN(d)) return iso;
     return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'2-digit'});
   }
-
   function cardHTML(a){
     const dateStr = a.date ? fmtDate(a.date) : '';
     const cat = a.category ? a.category : '';
     const meta = [cat, dateStr].filter(Boolean).join(' • ');
     const author = a.author?.name ? ` — ${a.author.name}` : '';
     const img = a.image || 'article-fallback.jpg';
-
     return `
       <article class="article-card" onclick="location.href='${a.url || '#'}'" role="button" tabindex="0"
                onkeydown="if(event.key==='Enter'){location.href='${a.url || '#'}'}">
@@ -192,10 +179,8 @@
       </article>
     `;
   }
-
   async function loadArticles(){
     try{
-      // Cache-buster so updates appear immediately after you push to GitHub
       const res = await fetch('articles.json?v=' + Date.now(), {cache:'no-cache'});
       if(!res.ok) throw new Error('HTTP ' + res.status);
       const all = await res.json();
@@ -203,20 +188,27 @@
         grid.innerHTML = `<div class="empty-note">No articles yet. We’ll publish our first insights soon.</div>`;
         return;
       }
-
-      // sort desc by date, then take top 2
       all.sort((a,b)=> new Date(b.date||0) - new Date(a.date||0));
       const top2 = all.slice(0,2);
-
       grid.innerHTML = top2.map(cardHTML).join('');
     }catch(err){
       console.warn('Failed to load articles.json:', err);
       grid.innerHTML = `<div class="empty-note">Couldn’t load insights right now. Please check back later.</div>`;
     }
   }
-
   loadArticles();
 })();
 </script>
+
+<!-- ✅ Redirect invite tokens automatically -->
+<script>
+(function () {
+  var h = window.location.hash || '';
+  if (/invite_token=|#\/invite\//.test(h)) {
+    window.location.replace('/admin/' + (h.startsWith('#') ? h : '#' + h));
+  }
+})();
+</script>
+
 </body>
 </html>
