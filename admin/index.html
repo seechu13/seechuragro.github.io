@@ -1,30 +1,72 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Seechur Agro • Admin</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seechur Agro — Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;margin:0;min-height:100vh;background:#0b1d14;color:#eafff5;display:grid;place-items:center}
-    .card{width:min(520px,92vw);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.45);overflow:hidden}
-    header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.12)}
-    header img{width:40px;height:40px;object-fit:contain}
-    header h1{font-size:1.05rem;margin:0}
-    #cms{height:70vh}
+    :root{--glass:rgba(255,255,255,.12);--text:#f3fff6}
+    body{margin:0;font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);
+         min-height:100vh;display:grid;place-items:center;
+         background:
+          linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+          url('../hydroponic-bg.jpg?v=31') center/cover no-repeat;}
+    .wrap{width:min(780px,92vw);background:var(--glass);border:1px solid rgba(255,255,255,.2);
+          border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden}
+    .head{display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.35);padding:12px 16px}
+    .head img{width:34px;height:34px;object-fit:contain}
+    .head h1{font-size:1.2rem;margin:0}
+    .body{padding:18px}
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .btn{padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.25);
+         background:rgba(0,0,0,.25);color:#eafff4;text-decoration:none;cursor:pointer}
+    .hint{opacity:.9}
   </style>
+
+  <!-- Netlify Identity widget -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <!-- Netlify CMS -->
+  <script src="https://unpkg.com/netlify-cms@^2/dist/netlify-cms.js"></script>
 </head>
 <body>
-  <div class="card">
-    <header>
-      <img src="/logo.png" alt="Seechur Agro" />
+  <div class="wrap">
+    <div class="head">
+      <img src="../logo.png" alt="Seechur Agro logo">
       <h1>Seechur Agro — Admin</h1>
-    </header>
-    <div id="cms"></div>
+      <div style="margin-left:auto" class="row">
+        <button class="btn" id="loginBtn" type="button">Log in</button>
+        <button class="btn" id="logoutBtn" type="button" style="display:none">Log out</button>
+      </div>
+    </div>
+    <div class="body">
+      <p class="hint">If you clicked an invite link and don’t see “Set password”, press <b>Log in</b> to open the Identity window.</p>
+      <!-- The CMS UI mounts itself; this page just hosts it -->
+    </div>
   </div>
 
-  <!-- Decap (Netlify) CMS -->
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <script>
+    // Identity helpers
+    function showState(user){
+      const login=document.getElementById('loginBtn');
+      const logout=document.getElementById('logoutBtn');
+      if(user){ login.style.display='none'; logout.style.display='inline-block'; }
+      else   { login.style.display='inline-block'; logout.style.display='none'; }
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', ()=>{
+      if(window.netlifyIdentity){ window.netlifyIdentity.open(); }
+    });
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{
+      if(window.netlifyIdentity){ window.netlifyIdentity.logout(); }
+    });
+
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on('init', user => { showState(user); });
+      window.netlifyIdentity.on('login', () => { location.reload(); });
+      window.netlifyIdentity.on('logout', () => { location.reload(); });
+    }
+  </script>
 </body>
 </html>
