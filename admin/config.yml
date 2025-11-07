@@ -7,14 +7,18 @@ public_folder: "/images/uploads"
 
 publish_mode: editorial_workflow
 
-# TEMP collection just so the Admin UI loads.
-# We'll add the real Articles collection in the next step.
 collections:
-  - name: placeholders
-    label: “Placeholders”
-    files:
-      - name: welcome
-        label: “Welcome (no action needed)”
-        file: "cms/placeholder.md"
-        fields:
-          - { label: Note, name: body, widget: text, default: "Welcome to Seechur Agro Admin." }
+  - name: "articles"
+    label: "Articles"
+    folder: "articles"
+    create: true
+    slug: "{{slug}}"
+    sort: "date:desc"
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Date", name: "date", widget: "datetime"}
+      - {label: "Category", name: "category", widget: "select", options: ["Hydroponics","Lakadong","Microgreens"]}
+      - {label: "Author", name: "author", widget: "string", default: "Seechur Agro — Editorial Team"}
+      - {label: "Cover Image", name: "image", widget: "image", choose_url: true}
+      - {label: "Summary", name: "excerpt", widget: "text"}
+      - {label: "Body", name: "body", widget: "markdown"}
