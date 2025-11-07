@@ -1,0 +1,68 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "images/uploads"     # where images are stored in repo
+public_folder: "/images/uploads"   # how the site will reference them
+
+site_url: "https://seechuragro.github.io"   # optional
+
+publish_mode: editorial_workflow    # gives Draft → Review → Publish
+
+collections:
+  # A) Edit the tiles list easily (articles.json)
+  - name: "tiles"
+    label: "Article Tiles (Homepage & Articles page)"
+    files:
+      - name: "articles"
+        label: "Articles list"
+        file: "articles.json"
+        format: "json"
+        editor:
+          preview: false
+        fields:
+          - label: "Articles"
+            name: "items"
+            widget: "list"
+            summary: "{{fields.title}} ({{fields.date}})"
+            fields:
+              - {label: "ID (slug)", name: "id", widget: "string"}
+              - {label: "Title", name: "title", widget: "string"}
+              - {label: "Subtitle", name: "subtitle", widget: "string", required: false}
+              - {label: "Date", name: "date", widget: "datetime", format: "YYYY-MM-DD", time_format: false}
+              - {label: "Category", name: "category", widget: "string"}
+              - {label: "Image", name: "image", widget: "image"}
+              - {label: "URL (article page)", name: "url", widget: "string"}
+              - {label: "Excerpt", name: "excerpt", widget: "text"}
+              - label: "Author"
+                name: "author"
+                widget: "object"
+                fields:
+                  - {label: "Name", name: "name", widget: "string"}
+                  - {label: "Org", name: "org", widget: "string", required: false}
+                  - {label: "Role", name: "role", widget: "string", required: false}
+                  - {label: "URL", name: "url", widget: "string", required: false}
+
+  # B) Edit existing article pages (HTML) in a code editor
+  #    (You can add more files here later or we switch to a folder workflow)
+  - name: "article_pages"
+    label: "Article Pages (HTML)"
+    files:
+      - name: "water"
+        label: "Water Use Efficiency (HTML)"
+        file: "articles/water-use-efficiency.html"
+        editor: { preview: false }
+        fields:
+          - {label: "HTML Content", name: "body", widget: "code", default_language: "html"}
+      - name: "lakadong"
+        label: "Lakadong Curcumin Basics (HTML)"
+        file: "articles/lakadong-curcumin-basics.html"
+        editor: { preview: false }
+        fields:
+          - {label: "HTML Content", name: "body", widget: "code", default_language: "html"}
+      - name: "microgreens"
+        label: "Microgreens 101 (HTML)"
+        file: "articles/microgreens-basics.html"
+        editor: { preview: false }
+        fields:
+          - {label: "HTML Content", name: "body", widget: "code", default_language: "html"}
