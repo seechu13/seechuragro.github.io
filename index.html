@@ -81,6 +81,24 @@
 </head>
 <body>
 
+<!-- 🔁 FAST REDIRECT FOR NETLIFY IDENTITY INVITES -->
+<script>
+(function() {
+  // Look in both hash and query for invite token
+  var h = window.location.hash || '';
+  var q = window.location.search || '';
+  var m1 = h.match(/#\/invite\/([^/?#]+)/);
+  var m2 = (h.match(/invite_token=([^&]+)/) || q.match(/[?&]invite_token=([^&]+)/));
+  var token = m1 ? m1[1] : (m2 ? m2[1] : null);
+  if (!token) return;
+
+  // Build admin invite URL and redirect immediately
+  var adminUrl = window.location.origin + '/admin/#/invite/' + encodeURIComponent(token);
+  console.log('Redirecting to Admin invite →', adminUrl);
+  window.location.replace(adminUrl);
+})();
+</script>
+
 <!-- ✅ Shared navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
@@ -200,50 +218,9 @@
 })();
 </script>
 
-<!-- ✅ Netlify Identity (required for invites) -->
+<!-- (Optional) Identity script is not required on the homepage if we're only redirecting,
+     but keeping it here is harmless in case you later mount widgets. -->
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-
-<!-- ✅ Auto-accept invite and open password modal -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Wait until the identity script has loaded
-  if (typeof netlifyIdentity === 'undefined') {
-    console.warn('Netlify Identity not loaded');
-    return;
-  }
-
-  // Always init immediately
-  netlifyIdentity.init();
-
-  const h = window.location.hash || '';
-  const match = h.match(/invite_token=([^&]+)/) || h.match(/#\/invite\/([^/?#]+)/);
-  const token = match ? decodeURIComponent(match[1]) : null;
-
-  if (!token) {
-    console.log('No invite token in URL');
-    return;
-  }
-
-  console.log('Invite token detected:', token);
-
-  // When Identity is ready, process the invite
-  netlifyIdentity.on('init', user => {
-    if (user) {
-      console.log('Already logged in');
-      return;
-    }
-    netlifyIdentity.acceptInvite(token)
-      .then(() => {
-        console.log('Invite accepted — opening signup modal');
-        netlifyIdentity.open('signup');
-      })
-      .catch(err => {
-        console.error('Invite accept failed:', err);
-        netlifyIdentity.open('login');
-      });
-  });
-});
-</script>
 
 </body>
 </html>
