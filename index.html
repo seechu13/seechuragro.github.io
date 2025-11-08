@@ -200,13 +200,30 @@
 })();
 </script>
 
-<!-- ✅ Redirect invite tokens automatically -->
+<!-- ✅ Netlify Identity (needed for invite handling) -->
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
+<!-- ✅ Auto-accept Netlify Identity invite tokens and open password screen -->
 <script>
 (function () {
   var h = window.location.hash || '';
-  if (/invite_token=|#\/invite\//.test(h)) {
-    window.location.replace('/admin/' + (h.startsWith('#') ? h : '#' + h));
-  }
+  // Matches "#/invite/<token>" OR "...invite_token=<token>"
+  var m = h.match(/#\/invite\/([^/?#]+)/) || h.match(/invite_token=([^&]+)/);
+  var token = m ? decodeURIComponent(m[1]) : null;
+  if (!token || typeof netlifyIdentity === 'undefined') return;
+
+  netlifyIdentity.on('init', function (user) {
+    if (user) return;
+    netlifyIdentity.acceptInvite(token)
+      .then(function () {
+        netlifyIdentity.open('signup'); // show "Set password"
+      })
+      .catch(function (err) {
+        console.warn('acceptInvite failed:', err);
+        netlifyIdentity.open('login');
+      });
+  });
+  netlifyIdentity.init();
 })();
 </script>
 
