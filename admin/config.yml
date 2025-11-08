@@ -1,6 +1,8 @@
 backend:
   name: git-gateway
   branch: main
+  identity_url: https://tiny-lokum-cbf662.netlify.app/.netlify/identity
+  gateway_url:  https://tiny-lokum-cbf662.netlify.app/.netlify/git
 
 media_folder: "images/uploads"
 public_folder: "/images/uploads"
@@ -15,10 +17,10 @@ collections:
     slug: "{{slug}}"
     sort: "date:desc"
     fields:
-      - {label: "Title", name: "title", widget: "string"}
-      - {label: "Date", name: "date", widget: "datetime"}
-      - {label: "Category", name: "category", widget: "select", options: ["Hydroponics","Lakadong","Microgreens"]}
-      - {label: "Author", name: "author", widget: "string", default: "Seechur Agro — Editorial Team"}
-      - {label: "Cover Image", name: "image", widget: "image", choose_url: true}
-      - {label: "Summary", name: "excerpt", widget: "text"}
-      - {label: "Body", name: "body", widget: "markdown"}
+      - { label: "Title",    name: "title",   widget: "string" }
+      - { label: "Date",     name: "date",    widget: "datetime" }
+      - { label: "Category", name: "category", widget: "select", options: ["Hydroponics","Lakadong","Microgreens"] }
+      - { label: "Author",   name: "author",  widget: "string", default: "Seechur Agro — Editorial Team" }
+      - { label: "Cover Image", name: "image", widget: "image", choose_url: true }
+      - { label: "Summary",  name: "excerpt", widget: "text" }
+      - { label: "Body",     name: "body",    widget: "markdown" }
