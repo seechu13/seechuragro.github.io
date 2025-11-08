@@ -1,123 +1,154 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Seechur Agro — Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Netlify Identity Widget (deferred to ensure proper load) -->
-  <script defer src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-
-  <!-- Decap (Netlify) CMS -->
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <!-- Netlify Identity Widget only (load first). We will load Decap CMS later after auth. -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
   <style>
     html, body { height: 100%; margin: 0; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      color: #fff;
+    /* Background image layer that cannot block clicks */
+    .bg {
+      position: fixed; inset: 0;
       background: #0b1a0f url("../hydroponic-bg.jpg?v=31") center/cover no-repeat;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-attachment: fixed;
+      filter: saturate(1.05) brightness(.95);
+      pointer-events: none;   /* <- important: never block clicks */
+    }
+    /* Foreground panel */
+    .wrap {
+      position: relative; z-index: 10;   /* <- ensure it’s on top and clickable */
+      min-height: 100%;
+      display: grid;
+      place-items: center;
     }
     .panel {
-      background: rgba(0, 0, 0, .45);
-      border: 1px solid rgba(255, 255, 255, .2);
-      border-radius: 16px;
-      box-shadow: 0 10px 28px rgba(0,0,0,.5);
-      width: 90%;
-      max-width: 500px;
-      padding: 22px;
+      width: 92%; max-width: 560px;
+      padding: 28px 22px;
       text-align: center;
+      color: #eafff5;
+      background: rgba(0, 0, 0, .50);
+      border: 1px solid rgba(255, 255, 255, .25);
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.55);
+      backdrop-filter: blur(2px);
     }
     .logo {
-      width: 60px;
-      height: 60px;
-      border-radius: 12px;
-      object-fit: cover;
-      margin-bottom: 12px;
+      width: 64px; height: 64px; border-radius: 12px; object-fit: cover; margin-bottom: 10px;
     }
-    h1 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-    p { color: #d9fff0; line-height: 1.5; margin-bottom: 22px; }
+    h1 { font-size: 1.35rem; margin: 6px 0 10px; }
+    p  { margin: 0 0 18px; line-height: 1.55; color: #d8fff0; }
     .btn {
-      display: inline-block;
-      padding: 10px 18px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.3);
-      color: #eafff5;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all .2s;
+      display: inline-block; cursor: pointer;
+      padding: 11px 20px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.35);
+      background: rgba(255,255,255,.14); color: #eafff5;
+      font-weight: 700; text-decoration: none;
+      transition: filter .15s ease, background .15s ease;
+      position: relative; z-index: 20;   /* <- button itself is above everything */
     }
-    .btn:hover { background: rgba(255,255,255,.25); }
+    .btn:hover { background: rgba(255,255,255,.22); }
+    .hint { font-size: .9rem; opacity: .9; margin-top: 8px; }
+
+    /* Safety: if anything else on the page uses ::before overlays, disable their pointer events */
+    *, *::before, *::after { pointer-events: auto; } /* default */
+    body::before { pointer-events: none !important; } /* just in case a theme adds one */
   </style>
 </head>
 <body>
-  <div class="panel">
-    <img src="../logo.png?v=27" alt="Seechur Agro Logo" class="logo">
-    <h1>Seechur Agro — Admin</h1>
-    <p>If you clicked an invite link and don’t see “Set password”, click below to open the login window.</p>
-    <a href="#" class="btn" id="loginBtn">Log in</a>
+  <div class="bg" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="panel">
+      <img src="../logo.png?v=27" alt="Seechur Agro" class="logo" />
+      <h1>Seechur Agro — Admin</h1>
+      <p>If you clicked an invite link and don’t see “Set password”, click below to open the login window.</p>
+      <a id="loginBtn" class="btn" href="#">Log in</a>
+      <div id="status" class="hint"></div>
+    </div>
   </div>
 
   <script>
-    // Ensure Netlify Identity is ready
-    function identityReady(cb) {
-      if (window.netlifyIdentity) return cb();
-      const check = setInterval(() => {
-        if (window.netlifyIdentity) {
-          clearInterval(check);
-          cb();
-        }
+    // --- Utilities ---
+    const $ = (sel) => document.querySelector(sel);
+    const statusMsg = (t) => { const s = $('#status'); if (s) s.textContent = t || ''; };
+
+    function whenIdentityReady(cb) {
+      if (window.netlifyIdentity) { cb(); return; }
+      let tries = 0;
+      const timer = setInterval(() => {
+        tries++;
+        if (window.netlifyIdentity) { clearInterval(timer); cb(); }
+        else if (tries > 40) { clearInterval(timer); statusMsg('Identity failed to load. Refresh and try again.'); }
       }, 150);
     }
 
-    // Handle login button
-    identityReady(() => {
-      const btn = document.getElementById('loginBtn');
+    function loadDecapCMS() {
+      // Load Decap CMS only after we’re authenticated or user finished invite flow
+      if (document.getElementById('decap-loader')) return;
+      const s = document.createElement('script');
+      s.id = 'decap-loader';
+      s.src = 'https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js';
+      document.body.appendChild(s);
+    }
+
+    // --- Main ---
+    whenIdentityReady(() => {
+      const id = window.netlifyIdentity;
+      id.init();
+      statusMsg('');
+
+      // Make the button definitely clickable
+      const btn = $('#loginBtn');
       btn.addEventListener('click', (e) => {
         e.preventDefault();
-        window.netlifyIdentity.init();
-        window.netlifyIdentity.open('login');
+        statusMsg('Opening login…');
+        id.open('login');
       });
 
-      // When user logs in, redirect to CMS
-      window.netlifyIdentity.on('login', () => {
-        window.location.replace('/admin/');
+      // If user is already logged in, go straight into CMS
+      id.on('init', (user) => {
+        if (user) {
+          statusMsg('Logged in. Loading CMS…');
+          loadDecapCMS();
+        } else {
+          statusMsg('');
+        }
       });
 
-      // Auto-accept invite tokens
+      // After login -> load CMS
+      id.on('login', () => {
+        statusMsg('Login successful. Loading CMS…');
+        loadDecapCMS();
+      });
+
+      // Accept invite tokens automatically (supports both formats)
       const h = window.location.hash || '';
-      const invitePath = h.match(/#\/invite\/([^/?#]+)/);
-      const inviteQuery = h.match(/invite_token=([^&]+)/);
-      const token = invitePath ? invitePath[1] : (inviteQuery ? inviteQuery[1] : null);
+      const m1 = h.match(/#\/invite\/([^/?#]+)/);
+      const m2 = h.match(/invite_token=([^&]+)/);
+      const token = m1 ? m1[1] : (m2 ? m2[1] : null);
 
       if (token) {
-        console.log('Invite token detected:', token);
-        window.netlifyIdentity.init();
-        window.netlifyIdentity.on('init', (user) => {
+        statusMsg('Invite detected. Preparing signup…');
+        id.on('init', (user) => {
           if (!user) {
-            window.netlifyIdentity.acceptInvite(token)
-              .then(() => {
-                console.log('Invite accepted — opening signup modal');
-                window.netlifyIdentity.open('signup');
-              })
+            id.acceptInvite(token)
+              .then(() => { statusMsg('Invite accepted. Opening signup…'); id.open('signup'); })
               .catch((err) => {
-                console.error('Invite accept failed:', err);
-                alert('Invite link detected but could not open signup. Please click “Log in” manually.');
-                window.netlifyIdentity.open('login');
+                console.error('Invite accept failed', err);
+                statusMsg('Invite detected, but could not open signup. Click “Log in”.');
+                id.open('login');
               });
           }
         });
       } else {
-        window.netlifyIdentity.init();
+        // As a convenience, auto-open the login after ~1s if not logged in.
+        setTimeout(() => {
+          const u = id.currentUser();
+          if (!u) { id.open('login'); }
+        }, 1000);
       }
     });
   </script>
