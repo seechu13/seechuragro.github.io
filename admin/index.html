@@ -2,112 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Seechur Agro — Admin</title>
 
-  <!-- Netlify Identity (for login/invites) -->
+  <!-- Identity first -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
-  <!-- Ask Decap to wait; we’ll init so we can show helpful UI if it fails -->
+  <!-- Tell Decap we'll initialize it manually -->
   <script>window.CMS_MANUAL_INIT = true;</script>
+
+  <!-- Decap (Netlify) CMS -->
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 
   <style>
-    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+    html,body{height:100%}
     body{
-      color:#e8fff4;
-      background:#0b1a0f url("../hydroponic-bg.jpg?v=31") center/cover no-repeat fixed;
+      margin:0; font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      color:#fff; background:#0b1a0f;
+      background-image: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.45)),
+                       url("../hydroponic-bg.jpg?v=33");
+      background-size:cover; background-position:center;
     }
-    /* small helper bar so you always have controls visible */
-    .helper {
-      position: fixed; inset: 16px 16px auto 16px;
-      display: inline-flex; gap: 8px; align-items: center;
-      background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.15);
-      border-radius: 12px; padding: 8px 10px; z-index: 9999;
-      backdrop-filter: blur(4px);
-    }
-    .helper b{font-weight:700; margin-right: 6px;}
-    .btn {
-      appearance: none; border:1px solid rgba(255,255,255,.25);
-      background: rgba(255,255,255,.12); color:#eafff5;
-      padding: 6px 10px; border-radius: 999px; cursor: pointer;
-    }
+    .shell{max-width:900px;margin:56px auto;padding:0 16px}
+    .panel{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);
+           border-radius:16px; box-shadow:0 10px 28px rgba(0,0,0,.45); overflow:hidden}
+    .head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(0,0,0,.35)}
+    .head img{width:36px;height:36px;border-radius:8px;object-fit:cover}
+    .body{padding:18px;color:#e8fff4}
+    .btn{margin-left:auto;padding:8px 12px;border-radius:999px;
+         background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+         color:#eafff5;text-decoration:none}
     .btn:hover{background:rgba(255,255,255,.2)}
-    .status{opacity:.9; font-size:.9rem}
-    .error{color:#ffd6d6}
   </style>
 </head>
 <body>
-
-  <!-- Tiny helper toolbar -->
-  <div class="helper" id="helper">
-    <b>Admin</b>
-    <button class="btn" id="loginBtn" type="button">Log in</button>
-    <button class="btn" id="reloadBtn" type="button">Reload CMS</button>
-    <span class="status" id="status">Initializing…</span>
+  <div class="shell">
+    <div class="panel">
+      <div class="head">
+        <img src="../logo.png?v=28" alt="Seechur Agro">
+        <div style="font-weight:700">Seechur Agro — Admin</div>
+        <a class="btn" id="loginBtn" href="#">Log in</a>
+      </div>
+      <div class="body" id="msg">
+        If you clicked an invite link and don’t see “Set password”, this page will open the Identity window for you.
+      </div>
+    </div>
   </div>
 
   <script>
-    (function () {
-      // Normalize old invite hash to the modern route the CMS expects
-      if (location.pathname === '/admin/' && /invite_token=/.test(location.hash)) {
-        const t = (location.hash.match(/invite_token=([^&]+)/) || [])[1];
-        if (t) location.replace('/admin/#/invite/' + t);
-      }
+    // Open login popup on click
+    const openLogin = () => window.netlifyIdentity && netlifyIdentity.open('login');
+    document.getElementById('loginBtn').addEventListener('click', (e) => { e.preventDefault(); openLogin(); });
 
-      // Identity events
-      function ensureIdentityInit() {
-        if (typeof netlifyIdentity !== 'undefined') {
-          netlifyIdentity.init();
-          netlifyIdentity.on('login', () => {
-            if (/^#\/invite\//.test(location.hash)) {
-              history.replaceState(null, '', '/admin/'); // drop invite hash
-            }
-          });
+    // When Identity is ready, initialize CMS explicitly
+    function initCMS() {
+      if (!window.CMS) return;
+      CMS.init({
+        config: {
+          backend: {
+            name: 'git-gateway',
+            branch: 'main',
+            identity_url: 'https://tiny-lokum-cbf662.netlify.app/.netlify/identity',
+            gateway_url:  'https://tiny-lokum-cbf662.netlify.app/.netlify/git',
+          },
+          media_folder: 'images/uploads',
+          public_folder: '/images/uploads',
+          publish_mode: 'editorial_workflow',
+          collections: [
+            {
+              name: 'articles',
+              label: 'Articles',
+              folder: 'articles',
+              create: true,
+              slug: '{{slug}}',
+              sort: 'date:desc',
+              fields: [
+                { label: 'Title', name: 'title', widget: 'string' },
+                { label: 'Date', name: 'date', widget: 'datetime' },
+                { label: 'Category', name: 'category', widget: 'select', options: ['Hydroponics','Lakadong','Microgreens'] },
+                { label: 'Author', name: 'author', widget: 'string', default: 'Seechur Agro — Editorial Team' },
+                { label: 'Cover Image', name: 'image', widget: 'image', choose_url: true },
+                { label: 'Summary', name: 'excerpt', widget: 'text' },
+                { label: 'Body', name: 'body', widget: 'markdown' },
+              ],
+            },
+          ],
         }
-      }
+      });
+    }
 
-      // Wire up helper buttons
-      const statusEl = document.getElementById('status');
-      document.getElementById('loginBtn').onclick = () => {
-        if (typeof netlifyIdentity !== 'undefined') netlifyIdentity.open('login');
-      };
-      document.getElementById('reloadBtn').onclick = () => location.reload();
+    // Reload page after login so the editor mounts properly
+    if (window.netlifyIdentity) {
+      netlifyIdentity.on('login', () => window.location.reload());
+      netlifyIdentity.on('logout', () => window.location.reload());
+      netlifyIdentity.init();
+    }
 
-      // Start Identity
-      ensureIdentityInit();
-
-      // Initialize Decap CMS (manual init)
-      // It will still read /admin/config.yml from your repo.
-      function initCMS() {
-        try {
-          if (window.CMS && typeof window.CMS.init === 'function') {
-            window.CMS.init();
-            statusEl.textContent = 'CMS requested…';
-          } else {
-            statusEl.textContent = 'CMS script not ready yet…';
-          }
-        } catch (e) {
-          statusEl.textContent = 'CMS init error';
-          console.error(e);
-        }
-      }
-      initCMS();
-
-      // After a short wait, check if the CMS iframe appeared
-      function checkMounted() {
-        const iframe = document.querySelector('iframe[src*="decap-cms"]') || document.querySelector('#nc-root, iframe');
-        if (iframe) {
-          statusEl.textContent = 'CMS loaded.';
-          // Optional: hide helper after load; comment this out if you want it always
-          // document.getElementById('helper').style.display = 'none';
-        } else {
-          statusEl.innerHTML = '<span class="error">CMS did not mount. Click “Reload CMS” or “Log in”.</span>';
-        }
-      }
-      // Give the script a moment, then verify
-      setTimeout(checkMounted, 1500);
-    })();
+    // Decap may load after Identity; ensure we init when it’s available
+    if (document.readyState === 'complete') initCMS();
+    else window.addEventListener('load', initCMS);
   </script>
 </body>
 </html>
