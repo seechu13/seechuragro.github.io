@@ -200,31 +200,49 @@
 })();
 </script>
 
-<!-- ✅ Netlify Identity (needed for invite handling) -->
+<!-- ✅ Netlify Identity (required for invites) -->
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
-<!-- ✅ Auto-accept Netlify Identity invite tokens and open password screen -->
+<!-- ✅ Auto-accept invite and open password modal -->
 <script>
-(function () {
-  var h = window.location.hash || '';
-  // Matches "#/invite/<token>" OR "...invite_token=<token>"
-  var m = h.match(/#\/invite\/([^/?#]+)/) || h.match(/invite_token=([^&]+)/);
-  var token = m ? decodeURIComponent(m[1]) : null;
-  if (!token || typeof netlifyIdentity === 'undefined') return;
+document.addEventListener('DOMContentLoaded', function() {
+  // Wait until the identity script has loaded
+  if (typeof netlifyIdentity === 'undefined') {
+    console.warn('Netlify Identity not loaded');
+    return;
+  }
 
-  netlifyIdentity.on('init', function (user) {
-    if (user) return;
+  // Always init immediately
+  netlifyIdentity.init();
+
+  const h = window.location.hash || '';
+  const match = h.match(/invite_token=([^&]+)/) || h.match(/#\/invite\/([^/?#]+)/);
+  const token = match ? decodeURIComponent(match[1]) : null;
+
+  if (!token) {
+    console.log('No invite token in URL');
+    return;
+  }
+
+  console.log('Invite token detected:', token);
+
+  // When Identity is ready, process the invite
+  netlifyIdentity.on('init', user => {
+    if (user) {
+      console.log('Already logged in');
+      return;
+    }
     netlifyIdentity.acceptInvite(token)
-      .then(function () {
-        netlifyIdentity.open('signup'); // show "Set password"
+      .then(() => {
+        console.log('Invite accepted — opening signup modal');
+        netlifyIdentity.open('signup');
       })
-      .catch(function (err) {
-        console.warn('acceptInvite failed:', err);
+      .catch(err => {
+        console.error('Invite accept failed:', err);
         netlifyIdentity.open('login');
       });
   });
-  netlifyIdentity.init();
-})();
+});
 </script>
 
 </body>
