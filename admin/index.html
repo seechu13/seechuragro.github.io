@@ -7,60 +7,106 @@
 
   <!-- Netlify Identity (for login/invites) -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <!-- Decap (Netlify) CMS -->
+
+  <!-- Ask Decap to wait; we’ll init so we can show helpful UI if it fails -->
+  <script>window.CMS_MANUAL_INIT = true;</script>
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 
   <style>
-    /* zero chrome; no overlay at all */
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial}
     body{
       color:#e8fff4;
       background:#0b1a0f url("../hydroponic-bg.jpg?v=31") center/cover no-repeat fixed;
     }
+    /* small helper bar so you always have controls visible */
+    .helper {
+      position: fixed; inset: 16px 16px auto 16px;
+      display: inline-flex; gap: 8px; align-items: center;
+      background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.15);
+      border-radius: 12px; padding: 8px 10px; z-index: 9999;
+      backdrop-filter: blur(4px);
+    }
+    .helper b{font-weight:700; margin-right: 6px;}
+    .btn {
+      appearance: none; border:1px solid rgba(255,255,255,.25);
+      background: rgba(255,255,255,.12); color:#eafff5;
+      padding: 6px 10px; border-radius: 999px; cursor: pointer;
+    }
+    .btn:hover{background:rgba(255,255,255,.2)}
+    .status{opacity:.9; font-size:.9rem}
+    .error{color:#ffd6d6}
   </style>
 </head>
 <body>
-  <!-- Decap CMS mounts itself; we keep the page empty so nothing blocks it -->
+
+  <!-- Tiny helper toolbar -->
+  <div class="helper" id="helper">
+    <b>Admin</b>
+    <button class="btn" id="loginBtn" type="button">Log in</button>
+    <button class="btn" id="reloadBtn" type="button">Reload CMS</button>
+    <span class="status" id="status">Initializing…</span>
+  </div>
 
   <script>
     (function () {
-      // If the invite arrives as "#invite_token=TOKEN", normalize it to "#/invite/TOKEN"
+      // Normalize old invite hash to the modern route the CMS expects
       if (location.pathname === '/admin/' && /invite_token=/.test(location.hash)) {
         const t = (location.hash.match(/invite_token=([^&]+)/) || [])[1];
         if (t) location.replace('/admin/#/invite/' + t);
       }
 
-      // Handle invite acceptance automatically (for "#/invite/TOKEN")
-      function autoAcceptInvite() {
-        const h = location.hash || '';
-        const m = h.match(/^#\/invite\/([^/?#]+)/);
-        const token = m ? decodeURIComponent(m[1]) : null;
-        if (!token || typeof netlifyIdentity === 'undefined') return;
-
-        netlifyIdentity.on('init', (user) => {
-          if (user) return; // already logged in
-          netlifyIdentity.acceptInvite(token)
-            .then(() => netlifyIdentity.open('signup'))
-            .catch(() => netlifyIdentity.open('login'));
-        });
-        netlifyIdentity.init();
+      // Identity events
+      function ensureIdentityInit() {
+        if (typeof netlifyIdentity !== 'undefined') {
+          netlifyIdentity.init();
+          netlifyIdentity.on('login', () => {
+            if (/^#\/invite\//.test(location.hash)) {
+              history.replaceState(null, '', '/admin/'); // drop invite hash
+            }
+          });
+        }
       }
 
-      // Clear invite hash after successful login so the CMS router is happy
-      if (typeof netlifyIdentity !== 'undefined') {
-        netlifyIdentity.on('login', () => {
-          if (/^#\/invite\//.test(location.hash)) {
-            history.replaceState(null, '', '/admin/'); // remove the invite fragment
+      // Wire up helper buttons
+      const statusEl = document.getElementById('status');
+      document.getElementById('loginBtn').onclick = () => {
+        if (typeof netlifyIdentity !== 'undefined') netlifyIdentity.open('login');
+      };
+      document.getElementById('reloadBtn').onclick = () => location.reload();
+
+      // Start Identity
+      ensureIdentityInit();
+
+      // Initialize Decap CMS (manual init)
+      // It will still read /admin/config.yml from your repo.
+      function initCMS() {
+        try {
+          if (window.CMS && typeof window.CMS.init === 'function') {
+            window.CMS.init();
+            statusEl.textContent = 'CMS requested…';
+          } else {
+            statusEl.textContent = 'CMS script not ready yet…';
           }
-        });
+        } catch (e) {
+          statusEl.textContent = 'CMS init error';
+          console.error(e);
+        }
       }
+      initCMS();
 
-      // Always initialize Identity (safe to call multiple times)
-      if (typeof netlifyIdentity !== 'undefined') {
-        netlifyIdentity.init();
+      // After a short wait, check if the CMS iframe appeared
+      function checkMounted() {
+        const iframe = document.querySelector('iframe[src*="decap-cms"]') || document.querySelector('#nc-root, iframe');
+        if (iframe) {
+          statusEl.textContent = 'CMS loaded.';
+          // Optional: hide helper after load; comment this out if you want it always
+          // document.getElementById('helper').style.display = 'none';
+        } else {
+          statusEl.innerHTML = '<span class="error">CMS did not mount. Click “Reload CMS” or “Log in”.</span>';
+        }
       }
-
-      autoAcceptInvite();
+      // Give the script a moment, then verify
+      setTimeout(checkMounted, 1500);
     })();
   </script>
 </body>
