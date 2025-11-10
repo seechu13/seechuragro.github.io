@@ -10,44 +10,102 @@
       display:flex;align-items:center;justify-content:center;height:100vh;margin:0;
       background:#0b1a0f;color:#fff;
     }
-    .box{max-width:720px;padding:24px;border-radius:8px;background:rgba(0,0,0,0.45);text-align:center}
-    a.button{display:inline-block;margin-top:16px;padding:10px 16px;border-radius:6px;background:#1f7a5b;color:#fff;text-decoration:none}
-    .small{font-size:0.9rem;opacity:0.9}
+    .box{
+      max-width:820px;padding:28px;border-radius:10px;background:rgba(0,0,0,0.50);
+      text-align:center;box-shadow:0 6px 30px rgba(0,0,0,0.4);
+    }
+    input#token {
+      padding:10px 12px;border-radius:8px;border: none;width:68%;
+      box-sizing:border-box;font-size:1rem;margin-right:10px;
+    }
+    a.button{
+      display:inline-block;padding:10px 16px;border-radius:8px;background:#1f7a5b;
+      color:#fff;text-decoration:none;font-weight:600;
+    }
+    .small{font-size:0.92rem;opacity:0.95;line-height:1.4}
+    @media (max-width:600px){
+      input#token{width:100%;margin-bottom:10px}
+      a.button{width:100%;display:block}
+    }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Seechur Agro — Account setup</h1>
-    <p class="small">If you arrived here using the invite link, your password setup dialog should open automatically. If it does not, paste the invite token (the part after <code>#/invite/</code>) into the box below and click Open.</p>
+  <div class="box" role="main" aria-labelledby="invite-title">
+    <h1 id="invite-title" style="margin:0 0 10px 0">Seechur Agro — Account setup</h1>
+    <p class="small" style="margin:0 0 18px 0">
+      If you arrived here using the invite link, your password setup dialog should open automatically.
+      If it does not, paste just the invite <strong>token</strong> (the part after <code>#/invite/</code>) into the box below and click <em>Open</em>.
+    </p>
 
-    <div style="margin-top:12px;">
-      <input id="token" placeholder="paste invite token here (optional)" style="padding:8px;width:70%;border-radius:6px;border:none" />
-      <a id="openBtn" class="button" href="#">Open</a>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap">
+      <input id="token" placeholder="paste invite token here (optional)" aria-label="Invite token" />
+      <a id="openBtn" class="button" href="#" role="button">Open</a>
     </div>
 
-    <p class="small" style="margin-top:12px">After completing password setup you'll be directed to the CMS. If that doesn't happen, open <code>/admin/</code>.</p>
+    <p class="small" style="margin-top:16px">
+      After completing password setup you'll be directed to the CMS. If that doesn't happen, open <code>/admin/</code>.
+    </p>
   </div>
 
+  <!-- Netlify Identity -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
   <script>
     (function(){
-      function log(){ if (window.console) console.log.apply(console, arguments); }
+      // small helper to open signup; declared up-front so it is callable after init
       function openSignupWithHash(hashToken){
-        if (!window.netlifyIdentity || typeof window.netlifyIdentity.open !== 'function'){
-          return setTimeout(()=>openSignupWithHash(hashToken), 300);
+        if (!window.netlifyIdentity || typeof window.netlifyIdentity.open !== 'function') {
+          // If widget not ready, retry shortly
+          return setTimeout(function(){ openSignupWithHash(hashToken); }, 300);
         }
-        if (hashToken) window.location.hash = '#/invite/' + hashToken;
-        try { window.netlifyIdentity.open('signup'); log('open signup called'); } catch(e){ log('open error', e); }
+        try {
+          if (hashToken) {
+            // ensure the hash is set correctly so identity recognizes this as an invite flow
+            window.location.hash = '#/invite/' + hashToken;
+          }
+          window.netlifyIdentity.open('signup');
+          console.log('[invite] netlifyIdentity.open("signup") called');
+        } catch (err) {
+          console.error('[invite] openSignupWithHash error', err);
+        }
       }
-      try{ window.netlifyIdentity && window.netlifyIdentity.init(); }catch(e){}
-      const curHash = window.location.hash || '';
-      const tokenMatch = curHash.match(/#\/invite\/(.+)$/);
-      if (tokenMatch && tokenMatch[1]) openSignupWithHash(tokenMatch[1]);
-      else document.getElementById('openBtn').addEventListener('click', function(e){
-        e.preventDefault(); const t = document.getElementById('token').value.trim();
-        if (!t) return alert('Paste the invite token or open the invite link first.');
-        openSignupWithHash(t);
-      }, false);
+
+      // Ensure widget is initialized, then open after a small pause
+      function ensureInitThenOpen(token){
+        if (!window.netlifyIdentity) {
+          // widget script not loaded yet — keep retrying
+          return setTimeout(function(){ ensureInitThenOpen(token); }, 300);
+        }
+        try {
+          // initialize (safe if already initialized)
+          window.netlifyIdentity.init();
+        } catch(e) {
+          console.warn('[invite] identity.init() warning', e);
+        }
+        // small delay to make sure internal widget setup finishes
+        setTimeout(function(){ openSignupWithHash(token); }, 600);
+      }
+
+      // Hook up the manual Open button
+      document.getElementById('openBtn').addEventListener('click', function(e){
+        e.preventDefault();
+        var t = document.getElementById('token').value.trim();
+        if (!t) {
+          alert('Please paste your invite token (the part after #/invite/ in your invite link).');
+          return;
+        }
+        ensureInitThenOpen(t);
+      });
+
+      // If the token already exists in the URL hash, trigger the automatic flow
+      (function autoFlow(){
+        var curHash = window.location.hash || '';
+        var m = curHash.match(/#\/invite\/(.+)$/);
+        if (m && m[1]) {
+          // token found — init+open
+          ensureInitThenOpen(m[1]);
+        }
+      })();
     })();
   </script>
 </body>
