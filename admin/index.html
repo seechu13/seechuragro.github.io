@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Seechur Agro — Admin</title>
 
-  <!-- Netlify Identity (for invite, login, password set) -->
+  <!-- Netlify Identity -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
   <style>
@@ -23,66 +23,124 @@
 </head>
 <body>
   <script>
-    // Defensive init for Netlify Identity with debug logs and invite fix
     (function(){
       function debugLog(...args){
         if (window.console && window.console.log) window.console.log('[admin]', ...args);
       }
 
-      function initIdentity(){
-        if (!window.netlifyIdentity){
-          debugLog('Netlify Identity widget not available yet.');
-          return;
-        }
-
+      function openSignupIfInvite() {
         try {
-          debugLog('Initializing Netlify Identity...');
-          window.netlifyIdentity.init();
-
-          // ✅ Automatically handle invite link → open password setup
-          window.netlifyIdentity.on('init', (user) => {
-            const hash = window.location.hash;
-            if (!user && hash && hash.includes('invite')) {
-              debugLog('Invite link detected – opening password set widget');
-              window.netlifyIdentity.open('signup');
+          const hash = window.location.hash || '';
+          // detect invite token in hash (#/invite/xxx)
+          if (hash.includes('invite')) {
+            debugLog('Invite hash found:', hash);
+            // if widget available and no user, try opening signup
+            if (window.netlifyIdentity) {
+              const user = window.netlifyIdentity.currentUser && window.netlifyIdentity.currentUser();
+              debugLog('currentUser at open attempt:', user);
+              if (!user) {
+                try {
+                  window.netlifyIdentity.open('signup');
+                  debugLog('Called netlifyIdentity.open("signup")');
+                } catch (e) {
+                  debugLog('Error calling open("signup"):', e);
+                }
+              } else {
+                debugLog('User already logged in, skipping signup open');
+              }
             } else {
-              debugLog('Identity initialized; user =', user);
+              debugLog('netlifyIdentity not present when trying to open signup');
             }
-          });
-
-          // Event listeners for visibility in logs
-          window.netlifyIdentity.on('login', () => debugLog('User logged in'));
-          window.netlifyIdentity.on('logout', () => debugLog('User logged out'));
-          window.netlifyIdentity.on('error', (err) => debugLog('Identity error:', err));
+          }
         } catch (e) {
-          debugLog('Error while calling netlifyIdentity.init():', e);
+          debugLog('openSignupIfInvite error', e);
         }
       }
 
-      // Wait for widget to load
+      function initIdentityWithRetries(){
+        if (!window.netlifyIdentity){
+          debugLog('netlifyIdentity script not loaded yet - will retry init');
+          return false;
+        }
+        try {
+          debugLog('Initializing netlifyIdentity...');
+          window.netlifyIdentity.init();
+
+          window.netlifyIdentity.on('init', (user) => {
+            debugLog('netlifyIdentity init event, user:', user);
+            // Try opening signup immediately on init if invite present and no user
+            openSignupIfInvite();
+          });
+
+          window.netlifyIdentity.on('login', () => debugLog('netlifyIdentity login event'));
+          window.netlifyIdentity.on('logout', () => debugLog('netlifyIdentity logout event'));
+          window.netlifyIdentity.on('error', (err) => debugLog('netlifyIdentity error:', err));
+          return true;
+        } catch (e) {
+          debugLog('Error initializing netlifyIdentity:', e);
+          return false;
+        }
+      }
+
+      // Strategy:
+      // 1) Poll for widget to load and init it (20 tries).
+      // 2) After init, make multiple open attempts (short retries), and a final delayed fallback.
+      let tries = 0;
+      const initInterval = setInterval(() => {
+        tries++;
+        const ok = initIdentityWithRetries();
+        if (ok) {
+          clearInterval(initInterval);
+
+          // Quick retry loop to call openSignupIfInvite a few times (in case the invite token handling needs it)
+          let openAttempts = 0;
+          const openRetry = setInterval(() => {
+            openAttempts++;
+            openSignupIfInvite();
+            // stop after a few attempts
+            if (openAttempts > 8) clearInterval(openRetry);
+          }, 250);
+
+          // Final fallback: if still not shown, try once after 2 seconds
+          setTimeout(() => {
+            debugLog('Final fallback: trying to open signup if invite present');
+            openSignupIfInvite();
+          }, 2000);
+
+        } else if (tries > 20) {
+          clearInterval(initInterval);
+          debugLog('Stopped trying to init netlifyIdentity after many attempts');
+          // Still attempt final fallback tries in case widget arrives late
+          let lateAttempts = 0;
+          const lateRetry = setInterval(() => {
+            lateAttempts++;
+            if (window.netlifyIdentity) {
+              debugLog('Late netlifyIdentity load detected; attempting init now');
+              if (initIdentityWithRetries()) {
+                clearInterval(lateRetry);
+                openSignupIfInvite();
+              }
+            }
+            if (lateAttempts > 20) {
+              clearInterval(lateRetry);
+            }
+          }, 300);
+        }
+      }, 200);
+
+      // Also try a one-off immediate attempt (if script already loaded)
       if (window.netlifyIdentity) {
-        initIdentity();
-      } else {
-        let tries = 0;
-        const t = setInterval(() => {
-          tries++;
-          if (window.netlifyIdentity) {
-            clearInterval(t);
-            initIdentity();
-          } else if (tries > 20) {
-            clearInterval(t);
-            debugLog('Netlify Identity widget did not load after waiting.');
-          }
-        }, 200);
+        initIdentityWithRetries();
+        openSignupIfInvite();
       }
     })();
   </script>
 
-  <!-- Load Decap CMS AFTER Identity init attempt above -->
+  <!-- Decap CMS -->
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 
   <script>
-    // Extra debug for runtime errors
+    // Runtime error logging for debugging
     window.addEventListener('error', function(e){
       console.log('[admin] window error', e.message, e.filename, e.lineno);
     });
