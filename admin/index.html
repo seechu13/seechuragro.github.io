@@ -49,72 +49,83 @@
   </div>
 
   <script>
-    // Helper
-    const $ = s => document.querySelector(s);
+  const $ = s => document.querySelector(s);
+  $('#loginBtn').addEventListener('click', e => { e.preventDefault(); netlifyIdentity && netlifyIdentity.open('login'); });
 
-    // Open the Identity modal manually
-    $('#loginBtn').addEventListener('click', e => { e.preventDefault(); netlifyIdentity && netlifyIdentity.open('login'); });
+  function getInviteToken() {
+    const h = window.location.hash || '';
+    const m = h.match(/#\/invite\/([^/?#]+)/);
+    if (m) return m[1];
+    const q = new URLSearchParams(location.search);
+    return q.get('invite_token');
+  }
 
-    // Initialize Identity (NO custom identity_url/gateway_url!)
-    netlifyIdentity.init();
-
-    // Accept invite tokens like #/invite/<token> or ?invite_token=<token>
-    function getInviteToken() {
-      const h = window.location.hash || '';
-      const p = h.match(/#\/invite\/([^/?#]+)/);
-      if (p) return p[1];
-      const q = new URLSearchParams(window.location.search);
-      return q.get('invite_token');
-    }
-
-    function initCMS() {
-      // Start CMS only after Identity has completed init
-      CMS.init({
-        config: {
-          backend: { name: 'git-gateway', branch: 'main' }, // uses THIS site's Git Gateway
-          media_folder: 'images/uploads',
-          public_folder: '/images/uploads',
-          publish_mode: 'editorial_workflow',
-          collections: [{
-            name: 'articles',
-            label: 'Articles',
-            folder: 'articles',
-            create: true,
-            slug: '{{slug}}',
-            sort: 'date:desc',
-            fields: [
-              { label: 'Title', name: 'title', widget: 'string' },
-              { label: 'Date', name: 'date', widget: 'datetime' },
-              { label: 'Category', name: 'category', widget: 'select', options: ['Hydroponics','Lakadong','Microgreens'] },
-              { label: 'Author', name: 'author', widget: 'string', default: 'Seechur Agro — Editorial Team' },
-              { label: 'Cover Image', name: 'image', widget: 'image', choose_url: true },
-              { label: 'Summary', name: 'excerpt', widget: 'text' },
-              { label: 'Body', name: 'body', widget: 'markdown' },
-            ]
-          }]
-        }
-      });
-    }
-
-    netlifyIdentity.on('init', user => {
-      const token = getInviteToken();
-      if (token && !user) {
-        $('#status').textContent = 'Invite detected. Opening password screen...';
-        netlifyIdentity.acceptInvite(token)
-          .then(() => netlifyIdentity.open('signup'))
-          .catch(err => {
-            console.error('Invite accept error:', err);
-            $('#status').textContent = 'Could not open password screen. Click “Log in”.';
-            netlifyIdentity.open('login');
-          });
+  function initCMS() {
+    CMS.init({
+      config: {
+        backend: { name: 'git-gateway', branch: 'main' },   // uses THIS site's Identity/Gateway
+        media_folder: 'images/uploads',
+        public_folder: '/images/uploads',
+        publish_mode: 'editorial_workflow',
+        collections: [{
+          name: 'articles',
+          label: 'Articles',
+          folder: 'articles',
+          create: true,
+          slug: '{{slug}}',
+          sort: 'date:desc',
+          fields: [
+            { label: 'Title',    name: 'title',   widget: 'string' },
+            { label: 'Date',     name: 'date',    widget: 'datetime' },
+            { label: 'Category', name: 'category', widget: 'select', options: ['Hydroponics','Lakadong','Microgreens'] },
+            { label: 'Author',   name: 'author',  widget: 'string',  default: 'Seechur Agro — Editorial Team' },
+            { label: 'Cover Image', name: 'image', widget: 'image', choose_url: true },
+            { label: 'Summary',  name: 'excerpt', widget: 'text' },
+            { label: 'Body',     name: 'body',    widget: 'markdown' },
+          ]
+        }]
       }
-      // Now it's safe to start CMS
-      initCMS();
     });
+  }
 
-    // If user logs in/out, refresh so CMS mounts cleanly
-    netlifyIdentity.on('login', () => location.reload());
-    netlifyIdentity.on('logout', () => location.reload());
-  </script>
+  // 1) Initialize Identity (no custom identity_url/gateway_url!)
+  netlifyIdentity.init();
+
+  // 2) Handle invite if present. If it stalls, fall back to Login after 1.5s.
+  netlifyIdentity.on('init', user => {
+    const token = getInviteToken();
+    const status = document.getElementById('status');
+
+    if (token && !user) {
+      status.textContent = 'Invite detected. Opening password screen...';
+      let fellBack = false;
+
+      const fallback = setTimeout(() => {
+        if (!fellBack) {
+          fellBack = true;
+          status.textContent = 'Could not open password screen automatically. Click “Log in”, or use “Forgot password?”.';
+          netlifyIdentity.open('login');
+        }
+      }, 1500);
+
+      netlifyIdentity.acceptInvite(token)
+        .then(() => { if (!fellBack) { clearTimeout(fallback); netlifyIdentity.open('signup'); } })
+        .catch(() => {
+          if (!fellBack) {
+            clearTimeout(fallback);
+            status.textContent = 'Invite invalid or already used. Click “Log in” then “Forgot password?”.';
+            netlifyIdentity.open('login');
+          }
+        });
+    }
+
+    // Start the CMS after Identity is initialized
+    initCMS();
+  });
+
+  netlifyIdentity.on('login',  () => location.reload());
+  netlifyIdentity.on('logout', () => location.reload());
+</script>
+
 </body>
 </html>
