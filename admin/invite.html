@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seechur Agro — Invite</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      display:flex;align-items:center;justify-content:center;height:100vh;margin:0;
+      background:#0b1a0f;color:#fff; }
+    .box{max-width:720px;padding:24px;border-radius:8px;background:rgba(0,0,0,0.45);text-align:center}
+    a.button{display:inline-block;margin-top:16px;padding:10px 16px;border-radius:6px;background:#1f7a5b;color:#fff;text-decoration:none}
+    .small{font-size:0.9rem;opacity:0.9}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Seechur Agro — Account setup</h1>
+    <p class="small">If you arrived here using the invite link, your password setup dialog should open automatically. If it does not, paste the invite token (the part after <code>#/invite/</code>) into the box below and click Open.</p>
+
+    <div style="margin-top:12px;">
+      <input id="token" placeholder="paste invite token here (optional)" style="padding:8px;width:70%;border-radius:6px;border:none" />
+      <a id="openBtn" class="button" href="#">Open</a>
+    </div>
+
+    <p class="small" style="margin-top:12px">After completing password setup you'll be directed to the CMS. If that doesn't happen, open <code>/admin/</code>.</p>
+  </div>
+
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    (function(){
+      function log(){ if (window.console) console.log.apply(console, arguments); }
+      function openSignupWithHash(hashToken){
+        if (!window.netlifyIdentity || typeof window.netlifyIdentity.open !== 'function'){
+          return setTimeout(()=>openSignupWithHash(hashToken), 300);
+        }
+        if (hashToken) window.location.hash = '#/invite/' + hashToken;
+        try { window.netlifyIdentity.open('signup'); log('open signup called'); } catch(e){ log('open error', e); }
+      }
+      try{ window.netlifyIdentity && window.netlifyIdentity.init(); }catch(e){}
+      const curHash = window.location.hash || '';
+      const tokenMatch = curHash.match(/#\/invite\/(.+)$/);
+      if (tokenMatch && tokenMatch[1]) openSignupWithHash(tokenMatch[1]);
+      else document.getElementById('openBtn').addEventListener('click', function(e){
+        e.preventDefault(); const t = document.getElementById('token').value.trim();
+        if (!t) return alert('Paste the invite token or open the invite link first.');
+        openSignupWithHash(t);
+      }, false);
+    })();
+  </script>
+</body>
+</html>
