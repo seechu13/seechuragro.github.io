@@ -9,52 +9,67 @@
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
   <style>
-    html,body{height:100%}
-    body{
-      margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-      color:#fff; background:#0b1a0f;
-      background-image:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.45)),url("../hydroponic-bg.jpg?v=40");
-      background-size:cover; background-position:center;
+    html,body {
+      height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #fff;
+      background: #0b1a0f;
+      background-image: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.45)), url("../hydroponic-bg.jpg?v=40");
+      background-size: cover;
+      background-position: center;
     }
   </style>
 </head>
 <body>
   <script>
-    // Defensive init for Netlify Identity with debug logs
+    // Defensive init for Netlify Identity with debug logs and invite fix
     (function(){
       function debugLog(...args){
         if (window.console && window.console.log) window.console.log('[admin]', ...args);
       }
 
-      // Wait for the identity script to load and then init it.
       function initIdentity(){
         if (!window.netlifyIdentity){
           debugLog('Netlify Identity widget not available yet.');
           return;
         }
+
         try {
           debugLog('Initializing Netlify Identity...');
-          window.netlifyIdentity.init(); // important for invite/password flows
-          window.netlifyIdentity.on('init', user => debugLog('netlifyIdentity init event, user:', user));
-          window.netlifyIdentity.on('login', () => { debugLog('netlifyIdentity login'); });
-          window.netlifyIdentity.on('logout', () => { debugLog('netlifyIdentity logout'); });
+          window.netlifyIdentity.init();
+
+          // ✅ Automatically handle invite link → open password setup
+          window.netlifyIdentity.on('init', (user) => {
+            const hash = window.location.hash;
+            if (!user && hash && hash.includes('invite')) {
+              debugLog('Invite link detected – opening password set widget');
+              window.netlifyIdentity.open('signup');
+            } else {
+              debugLog('Identity initialized; user =', user);
+            }
+          });
+
+          // Event listeners for visibility in logs
+          window.netlifyIdentity.on('login', () => debugLog('User logged in'));
+          window.netlifyIdentity.on('logout', () => debugLog('User logged out'));
+          window.netlifyIdentity.on('error', (err) => debugLog('Identity error:', err));
         } catch (e) {
           debugLog('Error while calling netlifyIdentity.init():', e);
         }
       }
 
-      // If the script already loaded, init now; otherwise wait a short while
+      // Wait for widget to load
       if (window.netlifyIdentity) {
         initIdentity();
       } else {
-        // Poll a few times for the widget to load
-        var tries = 0;
-        var t = setInterval(function(){
+        let tries = 0;
+        const t = setInterval(() => {
           tries++;
-          if (window.netlifyIdentity){
+          if (window.netlifyIdentity) {
             clearInterval(t);
             initIdentity();
-          } else if (tries > 20){
+          } else if (tries > 20) {
             clearInterval(t);
             debugLog('Netlify Identity widget did not load after waiting.');
           }
@@ -63,11 +78,11 @@
     })();
   </script>
 
-  <!-- Load Decap CMS AFTER identity init attempt above -->
+  <!-- Load Decap CMS AFTER Identity init attempt above -->
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 
   <script>
-    // Small additional debug: catch CMS errors
+    // Extra debug for runtime errors
     window.addEventListener('error', function(e){
       console.log('[admin] window error', e.message, e.filename, e.lineno);
     });
