@@ -8,9 +8,6 @@
   <!-- Netlify Identity (for invite, login, password set) -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
-  <!-- Decap CMS: will automatically read /admin/config.yml (no inline CMS.init) -->
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
-
   <style>
     html,body{height:100%}
     body{
@@ -21,5 +18,62 @@
     }
   </style>
 </head>
-<body></body>
+<body>
+  <script>
+    // Defensive init for Netlify Identity with debug logs
+    (function(){
+      function debugLog(...args){
+        if (window.console && window.console.log) window.console.log('[admin]', ...args);
+      }
+
+      // Wait for the identity script to load and then init it.
+      function initIdentity(){
+        if (!window.netlifyIdentity){
+          debugLog('Netlify Identity widget not available yet.');
+          return;
+        }
+        try {
+          debugLog('Initializing Netlify Identity...');
+          window.netlifyIdentity.init(); // important for invite/password flows
+          window.netlifyIdentity.on('init', user => debugLog('netlifyIdentity init event, user:', user));
+          window.netlifyIdentity.on('login', () => { debugLog('netlifyIdentity login'); });
+          window.netlifyIdentity.on('logout', () => { debugLog('netlifyIdentity logout'); });
+        } catch (e) {
+          debugLog('Error while calling netlifyIdentity.init():', e);
+        }
+      }
+
+      // If the script already loaded, init now; otherwise wait a short while
+      if (window.netlifyIdentity) {
+        initIdentity();
+      } else {
+        // Poll a few times for the widget to load
+        var tries = 0;
+        var t = setInterval(function(){
+          tries++;
+          if (window.netlifyIdentity){
+            clearInterval(t);
+            initIdentity();
+          } else if (tries > 20){
+            clearInterval(t);
+            debugLog('Netlify Identity widget did not load after waiting.');
+          }
+        }, 200);
+      }
+    })();
+  </script>
+
+  <!-- Load Decap CMS AFTER identity init attempt above -->
+  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+
+  <script>
+    // Small additional debug: catch CMS errors
+    window.addEventListener('error', function(e){
+      console.log('[admin] window error', e.message, e.filename, e.lineno);
+    });
+    window.addEventListener('unhandledrejection', function(e){
+      console.log('[admin] unhandled promise rejection', e.reason);
+    });
+  </script>
+</body>
 </html>
