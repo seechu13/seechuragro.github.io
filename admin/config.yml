@@ -5,6 +5,7 @@ backend:
 media_folder: "images/uploads"
 public_folder: "/images/uploads"
 
+# This keeps your "admin must approve" flow
 publish_mode: editorial_workflow
 
 collections:
