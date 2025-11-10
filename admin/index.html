@@ -5,102 +5,116 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Seechur Agro — Admin</title>
 
-  <!-- Netlify Identity (for invites / auth) -->
+  <!-- Netlify Identity (uses THIS site's Identity by default) -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
-  <!-- Let Decap (Netlify CMS) know we'll init it ourselves -->
-  <script>window.CMS_MANUAL_INIT = true;</script>
-
   <!-- Decap CMS -->
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <script>window.CMS_MANUAL_INIT = true;</script>
+  <script src="https://unpkg.com/decap-cms@^3/dist/decap-cms.js"></script>
 
   <style>
     html,body{height:100%}
     body{
       margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
       color:#fff; background:#0b1a0f;
-      background-image:
-        linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.45)),
-        url("../hydroponic-bg.jpg?v=40");
+      background-image:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.45)),url("../hydroponic-bg.jpg?v=34");
       background-size:cover; background-position:center;
     }
-    .wrap{max-width:900px;margin:56px auto;padding:0 16px}
-    .card{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);
-          border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.45);overflow:hidden}
+    .shell{max-width:900px;margin:56px auto;padding:0 16px}
+    .panel{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);
+           border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.45);overflow:hidden}
     .head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(0,0,0,.35)}
     .head img{width:36px;height:36px;border-radius:8px;object-fit:cover}
     .body{padding:18px;color:#e8fff4}
-    .btn{margin-left:auto;padding:8px 12px;border-radius:999px;
-         background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
-         color:#eafff5;text-decoration:none}
+    .btn{margin-left:auto;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.12);
+         border:1px solid rgba(255,255,255,.2);color:#eafff5;text-decoration:none}
     .btn:hover{background:rgba(255,255,255,.2)}
-    .note{margin-top:8px;opacity:.9}
+    .note{font-size:.95rem;opacity:.9}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
+  <div class="shell">
+    <div class="panel">
       <div class="head">
         <img src="../logo.png?v=28" alt="Seechur Agro">
         <div style="font-weight:700">Seechur Agro — Admin</div>
-        <a id="loginBtn" class="btn" href="#">Log in</a>
+        <a class="btn" id="loginBtn" href="#">Log in</a>
       </div>
-      <div class="body" id="msg">
-        If you clicked an invite link and don’t see <b>“Set password”</b>, this page will open the Identity window for you.
-        <div class="note" id="status"></div>
+      <div class="body">
+        <div id="status" class="note">
+          If you clicked an invite link and don’t see “Set password”, this page will open the Identity window for you.
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // IMPORTANT: do NOT set identity_url/gateway_url here.
-    // By default, Identity auto-binds to THIS site's subdomain (gentle-twilight-37079a.netlify.app).
+    // Helper
+    const $ = s => document.querySelector(s);
 
-    // Open login on click
-    const openLogin = () => window.netlifyIdentity && netlifyIdentity.open('login');
-    document.getElementById('loginBtn').addEventListener('click', (e)=>{ e.preventDefault(); openLogin(); });
+    // Open the Identity modal manually
+    $('#loginBtn').addEventListener('click', e => { e.preventDefault(); netlifyIdentity && netlifyIdentity.open('login'); });
 
-    // Initialize CMS with the same config that is in admin/config.yml
-    function initCMS() {
-      if (!window.CMS) return;
-      CMS.init(); // it will read /admin/config.yml
+    // Initialize Identity (NO custom identity_url/gateway_url!)
+    netlifyIdentity.init();
+
+    // Accept invite tokens like #/invite/<token> or ?invite_token=<token>
+    function getInviteToken() {
+      const h = window.location.hash || '';
+      const p = h.match(/#\/invite\/([^/?#]+)/);
+      if (p) return p[1];
+      const q = new URLSearchParams(window.location.search);
+      return q.get('invite_token');
     }
 
-    // Handle invite tokens like #/invite/<token> or ?invite_token=<token>
-    function processInviteIfPresent() {
-      if (!window.netlifyIdentity) return;
-      const h = window.location.hash || '';
-      const q = window.location.search || '';
-      const pathToken = (h.match(/#\/invite\/([^/?#]+)/) || [])[1];
-      const queryToken = (q.match(/[?&]invite_token=([^&]+)/) || [])[1];
-      const token = pathToken || queryToken;
-      const status = document.getElementById('status');
-
-      netlifyIdentity.on('init', (user) => {
-        if (token && !user) {
-          status.textContent = 'Invite detected. Opening password screen…';
-          netlifyIdentity.acceptInvite(decodeURIComponent(token))
-            .then(() => netlifyIdentity.open('signup'))
-            .catch((err) => {
-              console.error('Invite accept error:', err);
-              status.textContent = 'Invite detected but could not open password screen. Click “Log in”.';
-              openLogin();
-            });
+    function initCMS() {
+      // Start CMS only after Identity has completed init
+      CMS.init({
+        config: {
+          backend: { name: 'git-gateway', branch: 'main' }, // uses THIS site's Git Gateway
+          media_folder: 'images/uploads',
+          public_folder: '/images/uploads',
+          publish_mode: 'editorial_workflow',
+          collections: [{
+            name: 'articles',
+            label: 'Articles',
+            folder: 'articles',
+            create: true,
+            slug: '{{slug}}',
+            sort: 'date:desc',
+            fields: [
+              { label: 'Title', name: 'title', widget: 'string' },
+              { label: 'Date', name: 'date', widget: 'datetime' },
+              { label: 'Category', name: 'category', widget: 'select', options: ['Hydroponics','Lakadong','Microgreens'] },
+              { label: 'Author', name: 'author', widget: 'string', default: 'Seechur Agro — Editorial Team' },
+              { label: 'Cover Image', name: 'image', widget: 'image', choose_url: true },
+              { label: 'Summary', name: 'excerpt', widget: 'text' },
+              { label: 'Body', name: 'body', widget: 'markdown' },
+            ]
+          }]
         }
       });
-
-      netlifyIdentity.init();
     }
 
-    // Reload after login/logout so CMS mounts cleanly
-    if (window.netlifyIdentity) {
-      netlifyIdentity.on('login', () => window.location.replace('/admin/'));
-      netlifyIdentity.on('logout', () => window.location.replace('/admin/'));
-    }
+    netlifyIdentity.on('init', user => {
+      const token = getInviteToken();
+      if (token && !user) {
+        $('#status').textContent = 'Invite detected. Opening password screen...';
+        netlifyIdentity.acceptInvite(token)
+          .then(() => netlifyIdentity.open('signup'))
+          .catch(err => {
+            console.error('Invite accept error:', err);
+            $('#status').textContent = 'Could not open password screen. Click “Log in”.';
+            netlifyIdentity.open('login');
+          });
+      }
+      // Now it's safe to start CMS
+      initCMS();
+    });
 
-    // Start everything
-    if (document.readyState === 'complete') { initCMS(); processInviteIfPresent(); }
-    else window.addEventListener('load', () => { initCMS(); processInviteIfPresent(); });
+    // If user logs in/out, refresh so CMS mounts cleanly
+    netlifyIdentity.on('login', () => location.reload());
+    netlifyIdentity.on('logout', () => location.reload());
   </script>
 </body>
 </html>
