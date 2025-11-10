@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Seechur Agro — Admin</title>
 
-  <!-- Netlify Identity (must load before Decap) -->
+  <!-- Netlify Identity -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
-  <!-- Tell Decap we will provide the config manually -->
+  <!-- Tell Decap we will supply config inline -->
   <script>window.CMS_MANUAL_INIT = true;</script>
 
   <!-- Decap (Netlify) CMS -->
@@ -19,13 +19,13 @@
     body{
       margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
       color:#fff; background:#0b1a0f;
-      background-image: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.45)),
-                       url("../hydroponic-bg.jpg?v=34");
+      background-image:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.45)),
+                       url("../hydroponic-bg.jpg?v=40");
       background-size:cover; background-position:center;
     }
     .shell{max-width:900px;margin:56px auto;padding:0 16px}
     .panel{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);
-           border-radius:16px; box-shadow:0 10px 28px rgba(0,0,0,.45); overflow:hidden}
+           border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.45);overflow:hidden}
     .head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(0,0,0,.35)}
     .head img{width:36px;height:36px;border-radius:8px;object-fit:cover}
     .body{padding:18px;color:#e8fff4}
@@ -39,7 +39,7 @@
   <div class="shell">
     <div class="panel">
       <div class="head">
-        <img src="../logo.png?v=28" alt="Seechur Agro">
+        <img src="../logo.png?v=40" alt="Seechur Agro">
         <div style="font-weight:700">Seechur Agro — Admin</div>
         <a class="btn" id="loginBtn" href="#">Log in</a>
       </div>
@@ -50,19 +50,43 @@
   </div>
 
   <script>
-    // Open login popup on click
-    function openLogin(){ if (window.netlifyIdentity) netlifyIdentity.open('login'); }
-    document.getElementById('loginBtn').addEventListener('click', (e)=>{ e.preventDefault(); openLogin(); });
+    // ---- Identity helpers ---------------------------------------------------
+    function openLogin(kind) {
+      if (!window.netlifyIdentity) return;
+      netlifyIdentity.open(kind || 'login');
+    }
 
-    // Initialize CMS with inline config
-    function initCMS(){
+    // Accept invite tokens like "#/invite/<token>"
+    function acceptInviteIfPresent() {
+      const h = window.location.hash || '';
+      const m = h.match(/#\/invite\/([^/?#]+)/);
+      if (!m) return;
+      const token = decodeURIComponent(m[1]);
+      netlifyIdentity.on('init', (user) => {
+        if (!user) {
+          netlifyIdentity.acceptInvite(token)
+            .then(() => netlifyIdentity.open('signup'))
+            .catch(() => netlifyIdentity.open('login'));
+        }
+      });
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', (e) => {
+      e.preventDefault(); openLogin('login');
+    });
+
+    // ---- CMS init (INLINE CONFIG) ------------------------------------------
+    function initCMS() {
       if (!window.CMS) return;
+
       CMS.init({
         config: {
           backend: {
             name: 'git-gateway',
-            branch: 'main'
-            // Do NOT hardcode identity_url or gateway_url; Netlify will use same-origin automatically.
+            branch: 'main',
+            // Explicitly tell CMS to use THIS site's Identity & Git endpoints
+            identity_url: 'https://gentle-twilight-37079a.netlify.app/.netlify/identity',
+            gateway_url:  'https://gentle-twilight-37079a.netlify.app/.netlify/git'
           },
           media_folder: 'images/uploads',
           public_folder: '/images/uploads',
@@ -84,24 +108,27 @@
                   default: 'Seechur Agro — Editorial Team' },
                 { label: 'Cover Image', name: 'image', widget: 'image', choose_url: true },
                 { label: 'Summary', name: 'excerpt', widget: 'text' },
-                { label: 'Body', name: 'body', widget: 'markdown' },
-              ],
-            },
-          ],
+                { label: 'Body', name: 'body', widget: 'markdown' }
+              ]
+            }
+          ]
         }
       });
     }
 
-    // Identity lifecycle – reload so the editor mounts after auth
-    if (window.netlifyIdentity){
-      netlifyIdentity.on('login', ()=>window.location.reload());
-      netlifyIdentity.on('logout', ()=>window.location.reload());
-      netlifyIdentity.init(); // same-origin site: https://gentle-twilight-37079a.netlify.app
+    // Identity lifecycle: reload on login/logout so the editor mounts cleanly
+    if (window.netlifyIdentity) {
+      netlifyIdentity.on('login',  () => window.location.reload());
+      netlifyIdentity.on('logout', () => window.location.reload());
+      netlifyIdentity.init();
+      acceptInviteIfPresent();
     }
 
-    // Decap may load after identity; init when ready
-    if (document.readyState === 'complete') initCMS();
-    else window.addEventListener('load', initCMS);
+    // Start CMS when Decap is ready
+    (document.readyState === 'complete')
+      ? initCMS()
+      : window.addEventListener('load', initCMS);
   </script>
 </body>
 </html>
+
