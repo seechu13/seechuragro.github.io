@@ -5,6 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Seechur Agro — Admin</title>
 
+  <!-- === EARLY REDIRECT: If URL contains #/invite/<token> redirect to invite landing page ===
+       This must run BEFORE the Identity widget and Decap CMS load so the invite modal opens reliably.
+       It preserves the token in the hash and uses location.replace so the browser history is clean. -->
+  <script>
+    (function(){
+      try {
+        var h = window.location.hash || '';
+        if (h.indexOf('#/invite/') === 0) {
+          // If admin is served at /admin/ use /admin/invite.html, otherwise fall back to /invite.html
+          var path = window.location.pathname || '/';
+          // prefer admin/invite.html when on /admin/* path
+          var invitePath;
+          if (path.indexOf('/admin') === 0 || path.indexOf('/admin/') === 0) {
+            invitePath = path.replace(/\/admin(\/.*)?$/,'/admin/invite.html');
+            if (invitePath === '' || invitePath.slice(-1) !== '/') invitePath = invitePath;
+          } else {
+            // default to /admin/invite.html
+            invitePath = '/admin/invite.html';
+          }
+          // Redirect to invite landing page preserving the hash (token)
+          window.location.replace(invitePath + h);
+        }
+      } catch (e) {
+        // Fail silently so no user-visible errors
+        // (we still allow the admin page to load normally)
+      }
+    })();
+  </script>
+
   <!-- Netlify Identity -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
@@ -31,10 +60,8 @@
       function openSignupIfInvite() {
         try {
           const hash = window.location.hash || '';
-          // detect invite token in hash (#/invite/xxx)
           if (hash.includes('invite')) {
             debugLog('Invite hash found:', hash);
-            // if widget available and no user, try opening signup
             if (window.netlifyIdentity) {
               const user = window.netlifyIdentity.currentUser && window.netlifyIdentity.currentUser();
               debugLog('currentUser at open attempt:', user);
@@ -68,7 +95,6 @@
 
           window.netlifyIdentity.on('init', (user) => {
             debugLog('netlifyIdentity init event, user:', user);
-            // Try opening signup immediately on init if invite present and no user
             openSignupIfInvite();
           });
 
@@ -82,9 +108,7 @@
         }
       }
 
-      // Strategy:
-      // 1) Poll for widget to load and init it (20 tries).
-      // 2) After init, make multiple open attempts (short retries), and a final delayed fallback.
+      // Poll/init pattern
       let tries = 0;
       const initInterval = setInterval(() => {
         tries++;
@@ -92,16 +116,15 @@
         if (ok) {
           clearInterval(initInterval);
 
-          // Quick retry loop to call openSignupIfInvite a few times (in case the invite token handling needs it)
+          // Retry opening signup a few times in case of timing issues
           let openAttempts = 0;
           const openRetry = setInterval(() => {
             openAttempts++;
             openSignupIfInvite();
-            // stop after a few attempts
             if (openAttempts > 8) clearInterval(openRetry);
           }, 250);
 
-          // Final fallback: if still not shown, try once after 2 seconds
+          // Final fallback open attempt after short delay
           setTimeout(() => {
             debugLog('Final fallback: trying to open signup if invite present');
             openSignupIfInvite();
@@ -110,7 +133,7 @@
         } else if (tries > 20) {
           clearInterval(initInterval);
           debugLog('Stopped trying to init netlifyIdentity after many attempts');
-          // Still attempt final fallback tries in case widget arrives late
+          // Late fallback: keep trying a few more times if the script is slow
           let lateAttempts = 0;
           const lateRetry = setInterval(() => {
             lateAttempts++;
@@ -128,7 +151,7 @@
         }
       }, 200);
 
-      // Also try a one-off immediate attempt (if script already loaded)
+      // immediate attempt if widget present
       if (window.netlifyIdentity) {
         initIdentityWithRetries();
         openSignupIfInvite();
