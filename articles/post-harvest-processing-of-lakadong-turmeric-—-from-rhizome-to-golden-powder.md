@@ -1,13 +1,16 @@
 ---
-title: Post-Harvest Processing of Lakadong Turmeric — From Rhizome to Golden Powder
+title: "Post-Harvest Processing of Lakadong Turmeric — From Rhizome to Golden Powder"
 date: 2025-11-11T17:08:00.000+05:30
-category: Lakadong
-author: Seechur Agro — Editorial Team
-image: /images/uploads/lakadong-rhizome.jpg
-excerpt: A detailed look at how Lakadong turmeric undergoes careful post-harvest
+category: "Lakadong"
+author: "Seechur Agro — Editorial Team"
+image: "/images/uploads/lakadong-rhizome.jpg"
+excerpt: >
+  A detailed look at how Lakadong turmeric undergoes careful post-harvest
   processing to preserve curcumin quality and aroma — from washing and boiling
   to drying and polishing.
+published: true
 ---
+
 \## The Journey from Rhizome to Powder
 
 
