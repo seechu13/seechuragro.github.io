@@ -1,0 +1,13 @@
+{
+  "name": "seechuragro-cms-build",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^13.0.1",
+    "slugify": "^1.6.6"
+  }
+}
