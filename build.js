@@ -15,10 +15,13 @@ function readMdFiles() {
 }
 
 function safeSlug(title, filename) {
-  if (title && title.length) return slugify(title, { lower: true, strict: true });
-  // fallback: strip extension from filename
-  return path.basename(filename, '.md');
+  // normalize fancy dashes and spaces before slugifying
+  let base = title && title.length ? title : path.basename(filename, '.md');
+  base = base.replace(/[—–−]/g, '-'); // convert all dash variants to a simple "-"
+  base = base.replace(/-+/g, '-');    // collapse multiple consecutive dashes
+  return slugify(base, { lower: true, strict: true });
 }
+
 
 function wrapHtml(title, contentHtml, meta = {}) {
   // Basic wrapper — tweak to match your site's look (links to /assets/style.css)
@@ -88,3 +91,4 @@ function main() {
 }
 
 main();
+
