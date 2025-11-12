@@ -7,137 +7,75 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-
 <link rel="stylesheet" href="assets/style.css">
 
 <style>
   :root{
-    --text:#f3fff6; --muted:#cfe9d8;
-    --glass:rgba(255,255,255,.12);
-    --max:1100px;
+    --text:#f3fff6; --muted:#cfe9d8; --glass:rgba(255,255,255,.12); --max:1100px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
+  body{font-family:'Poppins',system-ui,sans-serif;color:var(--text);min-height:100vh;}
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-      url('hydroponic-bg.jpg?v=31') center/cover no-repeat;
-    filter:saturate(1.05) brightness(.97);
+    background:linear-gradient(180deg,rgba(0,0,0,.3),rgba(0,0,0,.4)),url('hydroponic-bg.jpg?v=40') center/cover no-repeat;
+    filter:saturate(1.05) brightness(0.95);
   }
-
-  .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
-  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  h2{font-size:1.2rem; margin:6px 0 4px; text-shadow:0 2px 6px rgba(0,0,0,.5)}
-  p{line-height:1.8; color:var(--muted); margin-bottom:12px;}
-  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));}
-
-  .card{
-    background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px;
-    display:flex; gap:14px; align-items:flex-start;
-    opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease;
-  }
-  .card.show{opacity:1; transform:translateY(0);}
-  .avatar{flex:0 0 96px; width:96px; aspect-ratio:1/1; border-radius:12px; overflow:hidden; background:#0b0b0b22}
-  .avatar img{width:100%; height:100%; object-fit:cover; display:block}
-  .tags{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px}
-  .tag{padding:6px 10px; border-radius:999px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.12); color:#eafff4; font-size:.9rem}
-
-  .note{margin-top:18px; font-size:.95rem; color:#dcffe9}
-  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+  .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
+  h1{font-size:2.2rem;font-weight:700;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  p{line-height:1.8;color:var(--muted);margin-bottom:16px;}
+  .grid{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
+  .card{background:var(--glass);border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,.4);padding:18px;display:flex;flex-direction:column;align-items:center;text-align:center;opacity:0;transform:translateY(14px);transition:opacity .7s,transform .7s;}
+  .card.show{opacity:1;transform:translateY(0);}
+  .avatar{width:120px;height:120px;border-radius:50%;overflow:hidden;margin-bottom:10px;}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  h2{font-size:1.3rem;margin:8px 0 4px;color:#fff;}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;}
+  .tag{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);color:#eafff4;font-size:.9rem}
+  footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);}
 </style>
 </head>
 <body>
 
-<!-- ✅ Shared navbar include -->
+<!-- Shared Navbar -->
 <div id="navbar-placeholder"></div>
 <script>
-  (function loadNavbar(){
-    fetch('navbar.html', {cache:'no-cache'})
-      .then(r=>r.text())
-      .then(html=>{
-        const host=document.getElementById('navbar-placeholder');
-        host.innerHTML=html;
-        host.querySelectorAll('script').forEach(s=>{
-          const n=document.createElement('script');
-          if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
-          document.body.appendChild(n);
-        });
-        const current=(location.pathname.split('/').pop()||'advisors.html').toLowerCase();
-        document.querySelectorAll('.menu a').forEach(a=>{
-          if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
-        });
-      });
-  })();
+(function loadNavbar(){
+ fetch('navbar.html',{cache:'no-cache'})
+  .then(r=>r.text()).then(html=>{
+    const host=document.getElementById('navbar-placeholder');host.innerHTML=html;
+    host.querySelectorAll('script').forEach(s=>{const n=document.createElement('script');if(s.src)n.src=s.src;else n.textContent=s.textContent;document.body.appendChild(n);});
+    const current=(location.pathname.split('/').pop()||'advisors.html').toLowerCase();
+    document.querySelectorAll('.menu a').forEach(a=>{if(a.getAttribute('href')?.toLowerCase()===current)a.classList.add('active');});
+  });
+})();
 </script>
 
 <main class="container">
   <h1>Technical Advisors</h1>
-  <p>Our advisors bring deep expertise in protected cultivation, Lakadong turmeric, and agri-value chains.</p>
+  <p>Seechur Agro benefits from a network of subject-matter experts in protected cultivation, Lakadong turmeric, and sustainable water-efficient farming.</p>
 
-  <section class="grid" id="advisorGrid">
-    <!-- Example Advisor 1 -->
+  <section class="grid">
     <article class="card">
-      <div class="avatar">
-        <img src="advisor-mission-lakadong.jpg" alt="Advisor — Mission Lakadong (Meghalaya)" onerror="this.src='avatar-placeholder.jpg'">
-      </div>
-      <div>
-        <h2>Mission Lakadong (Meghalaya) — Advisor Panel</h2>
-        <p style="margin:0 0 4px 0"><i>GI authenticity • Curcumin testing • Value addition</i></p>
-        <p>
-          Guidance on nursery practices, curcumin verification, and branding alignment for Lakadong turmeric, including
-          protocols for curing, drying, and lot-level documentation for premium buyers.
-        </p>
-        <div class="tags">
-          <span class="tag">Curcumin QA</span>
-          <span class="tag">GI & Origin</span>
-          <span class="tag">Value-addition</span>
-        </div>
-      </div>
+      <div class="avatar"><img src="advisor-mission-lakadong.jpg" alt="Mission Lakadong Advisory" onerror="this.src='avatar-placeholder.jpg'"></div>
+      <h2>Mission Lakadong (Meghalaya)</h2>
+      <p>Expert guidance on Lakadong varietal selection, curcumin testing, and origin authentication to maintain GI compliance and product traceability.</p>
+      <div class="tags"><span class="tag">GI & Origin</span><span class="tag">Curcumin QA</span><span class="tag">Value Chain</span></div>
     </article>
 
-    <!-- Example Advisor 2 -->
     <article class="card">
-      <div class="avatar">
-        <img src="advisor-tnau.jpg" alt="Advisor — TNAU (Hydroponics)" onerror="this.src='avatar-placeholder.jpg'">
-      </div>
-      <div>
-        <h2>Tamil Nadu Agricultural University — Hydroponics</h2>
-        <p style="margin:0 0 4px 0"><i>Protected cultivation • Fertigation • Crop scheduling</i></p>
-        <p>
-          Advisory on greenhouse retrofitting, climate control, fertigation automation, and staggered crop cycles for
-          vegetables and nursery establishment for Lakadong.
-        </p>
-        <div class="tags">
-          <span class="tag">Hydroponics</span>
-          <span class="tag">Greenhouse</span>
-          <span class="tag">Fertigation</span>
-        </div>
-      </div>
+      <div class="avatar"><img src="advisor-tnau.jpg" alt="TNAU Advisor" onerror="this.src='avatar-placeholder.jpg'"></div>
+      <h2>Tamil Nadu Agricultural University</h2>
+      <p>Technical collaboration in fertigation management, protected cultivation, and precision greenhouse environment control systems.</p>
+      <div class="tags"><span class="tag">Fertigation</span><span class="tag">Climate Control</span><span class="tag">Protected Cultivation</span></div>
     </article>
 
-    <!-- Example Advisor 3 -->
     <article class="card">
-      <div class="avatar">
-        <img src="advisor-pc.jpg" alt="Protected Cultivation Consultant" onerror="this.src='avatar-placeholder.jpg'">
-      </div>
-      <div>
-        <h2>Protected Cultivation Consultant</h2>
-        <p style="margin:0 0 4px 0"><i>Refurbishment • Commissioning • SOPs</i></p>
-        <p>
-          On-ground oversight for refurbishment, commissioning checklists, SOPs for hygiene and grading, and training for
-          daily operations and preventive maintenance.
-        </p>
-        <div class="tags">
-          <span class="tag">SOPs</span>
-          <span class="tag">QA & Hygiene</span>
-          <span class="tag">Commissioning</span>
-        </div>
-      </div>
+      <div class="avatar"><img src="advisor-hydroponic.jpg" alt="Hydroponic Consultant" onerror="this.src='avatar-placeholder.jpg'"></div>
+      <h2>Hydroponic Systems Consultant</h2>
+      <p>Operational support for nutrient management, production planning, and automation integration in Seechur Agro’s hydroponic facility.</p>
+      <div class="tags"><span class="tag">Automation</span><span class="tag">Nutrient Film Technique</span><span class="tag">Yield Optimization</span></div>
     </article>
   </section>
-
-  <p class="note">Note: Advisors are engaged as per project needs; formal MoUs/NDAs executed as required.</p>
 </main>
 
 <footer>
@@ -146,11 +84,10 @@
 
 <script>
 (function(){
-  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
-  // fade-in
-  const cards=[...document.querySelectorAll('.card')];
-  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target);}})},{threshold:.18});
-  cards.forEach(c=>io.observe(c));
+ const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+ const cards=document.querySelectorAll('.card');
+ const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target);}}),{threshold:.2});
+ cards.forEach(c=>io.observe(c));
 })();
 </script>
 </body>
