@@ -11,10 +11,14 @@
   --glass: rgba(255, 255, 255, 0.12);
 }
 
+/* Reset / base */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  /* ensure text wraps nicely */
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 body {
@@ -32,6 +36,7 @@ body {
   padding: 32px 18px;
 }
 
+/* Headings */
 h1, h2, h3 {
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
   font-weight: 600;
@@ -68,7 +73,8 @@ p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
   gap: 20px;
 }
 
-.card {
+/* generic card used across site */
+.card, .cards, .card--article {
   background: var(--glass);
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
@@ -76,7 +82,8 @@ p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
   overflow: hidden;
 }
 
-.card img {
+/* thumbnails inside card */
+.card img, .card .thumb img, .card--article img {
   display: block;
   width: 100%;
   height: auto;
@@ -85,13 +92,91 @@ p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
 }
 
 /* --- Footer --- */
-footer {
+footer, .site-footer {
   text-align: center;
   color: #d9ffe6;
   padding: 40px 12px 60px;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
   font-size: 0.95rem;
+}
+
+/* ===============================================================
+   ARTICLE-SPECIFIC LAYOUT (keeps new pages matching old design)
+   These rules were merged to ensure generated /articles/*.html
+   look the same as manually created article pages.
+   =============================================================== */
+
+/* Article page root container (wrap the article for centered fixed width) */
+.container.article-page {
+  max-width: 1100px;
+  margin: 36px auto;
+  padding: 28px;
+  box-sizing: border-box;
+}
+
+/* Article wrapper & title */
+.article-wrap {
+  background: transparent;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+
+.article-title {
+  font-size: 2.6rem;
+  font-weight: 700;
+  margin: 8px 0 18px;
+  line-height: 1.08;
+  color: var(--text);
+}
+
+/* published meta on article */
+.article-wrap .meta {
+  color: #9fcfb4;
+  margin-bottom: 18px;
+  font-size: .95rem;
+}
+
+/* article body text */
+.article-body {
+  font-size: 1.05rem;
+  line-height: 1.9;
+  color: #dfeee0;
+  margin-bottom: 36px;
+}
+
+/* images inside article body: consistent sizing and presentation */
+.article-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+}
+
+/* ensure code blocks, preformatted and lists inside article are readable */
+.article-body pre, .article-body code {
+  background: rgba(255,255,255,0.03);
+  color: var(--muted);
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.article-body ul, .article-body ol {
+  margin-left: 1.15rem;
+  margin-bottom: 16px;
+}
+
+/* keep the 'tiles' on articles.html consistent */
+.grid a.card .thumb img { object-fit: cover; width:100%; height:190px; }
+
+/* small "all articles" button style if present */
+.btn--ghost {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text);
 }
 
 /* ===============================================================
@@ -187,9 +272,13 @@ html {
   table {
     min-width: 480px;
   }
+
+  /* small-screen article title scaling */
+  .article-title { font-size: 1.6rem; }
 }
 
-/* === Prevent any overflow === */
+/* === Prevent any overflow (redundant safety) === */
+/* (already applied above, kept here to ensure no accidental overflow) */
 * {
   max-width: 100%;
   overflow-wrap: break-word;
@@ -216,3 +305,9 @@ html {
   }
 }
 
+/* === Utility classes used in a few article templates --- */
+.kicker { font-size: .9rem; color: var(--muted); display:block; margin-bottom:6px; }
+.lead { color: var(--muted); line-height:1.8; margin-bottom:18px; }
+.small-meta { font-size:.88rem; color:#9fcfb4; }
+
+/* End of file */
