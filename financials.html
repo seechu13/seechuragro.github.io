@@ -7,16 +7,17 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-<!-- ✅ Global stylesheet (with cache-busting) -->
-<link rel="stylesheet" href="assets/style.css?v=7">
+
+<!-- ✅ Global stylesheet -->
+<link rel="stylesheet" href="assets/style.css">
 
 <style>
   :root{
     --text:#f3fff6; --muted:#cfe9d8;
     --nav-bg:rgba(10,25,10,0.7);   /* desktop transparent */
-    --nav-solid:#1b4332;           /* mobile drawer solid (in navbar.html) */
+    --nav-solid:#1b4332;           /* mobile drawer solid */
     --glass:rgba(255,255,255,.12); --max:1100px;
-    --accent:#2dbb7f; --hover:#33d18f;
+    --c100:#24b269; --c80:#f4a000; --c70:#e45858; /* chart colors */
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
@@ -24,47 +25,38 @@
     content:""; position:fixed; inset:0; z-index:-1;
     background:
       linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-      url('hydroponic-bg.jpg?v=26') center/cover no-repeat;
-    filter:saturate(1.05) brightness(.97);
+      url('hydroponic-bg.jpg?v=14') center/cover no-repeat;
+    filter:saturate(1.08) brightness(.97);
   }
 
-  /* Page layout */
+  /* ===== Layout / your original styles ===== */
   .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
   h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  h2{font-size:1.3rem; margin:18px 0 10px; text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; text-shadow:0 2px 6px rgba(0,0,0,.5)}
   p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
-  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
-  .card{
-    background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:18px;
-    opacity:0; transform:translateY(14px); transition:opacity .7s ease, transform .7s ease;
-  }
-  .card.show{opacity:1; transform:translateY(0);}
-  .pill{display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.12); color:#eafff4; margin-right:8px; font-size:.92rem}
+  .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px; margin:12px 0}
 
-  /* Buttons */
-  .buttons{display:flex; gap:12px; flex-wrap:wrap}
-  .btn{
-    display:inline-flex; align-items:center; gap:8px; text-decoration:none;
-    padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.2);
-    background:rgba(0,0,0,.25); color:#eafff4; transition:.2s; cursor:pointer;
-  }
-  .btn:hover{ transform:translateY(-1px); background:rgba(0,0,0,.35) }
-  .btn svg{width:18px; height:18px; fill:#eafff4}
-
-  /* Table */
-  .table-wrap{overflow:auto; border-radius:12px; border:1px solid rgba(255,255,255,.16); background:rgba(0,0,0,.18)}
-  table{width:100%; border-collapse:collapse; min-width:680px}
-  th, td{padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.12); color:#eafff4}
-  th{font-weight:700; text-align:left; background:rgba(255,255,255,.06)}
+  .table-wrap{overflow:auto; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); margin:10px 0}
+  table{width:100%; border-collapse:collapse; min-width:720px;}
+  th,td{border-bottom:1px solid rgba(255,255,255,.18); padding:12px 14px; text-align:left; color:#f3fff6}
+  th{background:rgba(0,0,0,.25); font-weight:600}
   tr:last-child td{border-bottom:none}
-  .num{text-align:right}
+
+  .chart{width:100%; height:320px; background:rgba(0,0,0,.20); border-radius:16px; overflow:hidden; position:relative}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; color:#eafff4; font-size:.92rem}
+  .key{display:inline-block; width:14px; height:14px; border-radius:3px; margin-right:6px; vertical-align:-2px}
+  .cap{font-size:.92rem; color:#eaf9f0; margin-top:6px}
+  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+
+  .badges{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0 4px}
+  .badge{padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.25); color:#eafff4; font-size:.92rem; border:1px solid rgba(255,255,255,.15)}
 
   footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
 </style>
 </head>
 <body>
 
-<!-- ✅ Shared Navbar include -->
+<!-- ✅ Shared navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
   (function loadNavbar(){
@@ -74,151 +66,112 @@
         const host=document.getElementById('navbar-placeholder');
         host.innerHTML=html;
 
-        // Run any scripts inside navbar.html (drawer logic, etc.)
-        const scripts=host.querySelectorAll('script');
-        scripts.forEach(s=>{
+        // run any scripts contained inside navbar.html (drawer, etc.)
+        host.querySelectorAll('script').forEach(s=>{
           const n=document.createElement('script');
           if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
           document.body.appendChild(n);
         });
 
-        // Mark active menu item for this page
+        // highlight active link for this page
         const current=(location.pathname.split('/').pop()||'financials.html').toLowerCase();
         document.querySelectorAll('.menu a').forEach(a=>{
-          if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
+          if(a.getAttribute('href')?.toLowerCase()===current) a.classList.add('active');
         });
       });
   })();
 </script>
 
 <main class="container">
-  <h1>Financials</h1>
-  <p>Snapshot of our funding requirement, use of funds, and base-case operating projections. Detailed models are available on request.</p>
+  <h1>Financials & Investor Outlook</h1>
+  <p>
+    We plan to reactivate the farm and scale premium crops with a flexible blend of <b>equity and/or investor debt</b>.
+    Final terms (equity %) are <b>open for discussion</b> to preserve negotiating power. The projections below
+    align with our Portfolio steady-state (~₹5 Cr revenue) and Investor Pack highlights.
+  </p>
 
-  <!-- Top cards -->
-  <section class="grid">
+  <!-- Use of Funds -->
+  <h2>Use of Funds (₹3.0 Cr)</h2>
+  <div class="card">
+    <div id="fundsChart" class="chart" role="img" aria-label="Use of funds donut chart"></div>
+    <div class="legend">
+      <span><span class="key" style="background:#2dbb7f"></span>Refurbishment & reactivation — 45% (₹1.35 Cr)</span>
+      <span><span class="key" style="background:#56cfe1"></span>Working capital — 25% (₹0.75 Cr)</span>
+      <span><span class="key" style="background:#ffb703"></span>Crop inputs & commissioning — 20% (₹0.60 Cr)</span>
+      <span><span class="key" style="background:#ef476f"></span>Nursery & Lakadong setup — 10% (₹0.30 Cr)</span>
+    </div>
+    <p class="cap">Allocation prioritises rapid restart (0–3 months), microgreens from Day-30, and Lakadong nursery to enable the Month-7 turmeric cheque.</p>
+  </div>
+
+  <!-- Projections -->
+  <h2>Key Projections (Aligned with Investor Pack)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th><th>Revenue (₹ Cr)</th><th>EBITDA (₹ Cr)</th><th>Net Profit (₹ Cr)</th><th>Cumulative Dividends (₹ Cr)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Y1</td><td>1.9</td><td>0.3</td><td>0.2</td><td>—</td></tr>
+        <tr><td>Y2</td><td>3.7</td><td>0.9</td><td>0.7</td><td>0.2</td></tr>
+        <tr><td>Y3</td><td><b>5.2</b></td><td>2.0</td><td>1.5</td><td>0.5</td></tr>
+        <tr><td>Y4</td><td>5.2</td><td>2.1</td><td>1.7</td><td>0.9</td></tr>
+        <tr><td>Y5</td><td>5.2</td><td>2.2</td><td>1.8</td><td>1.3</td></tr>
+        <tr><td>Y6</td><td>5.2</td><td>2.3</td><td><b>3.19</b></td><td><b>1.90</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Yield Scenario Charts -->
+  <h2>Yield Scenario Visuals</h2>
+  <div class="card">
+    <h3 style="margin-bottom:8px">Revenue (₹ Cr) by Yield Scenario</h3>
+    <div id="revChart" class="chart" role="img" aria-label="Revenue by yield scenario line chart"></div>
+    <div class="legend">
+      <span><span class="key" style="background:var(--c100)"></span>100% Yield</span>
+      <span><span class="key" style="background:var(--c80)"></span>80% Yield</span>
+      <span><span class="key" style="background:var(--c70)"></span>70% Yield</span>
+    </div>
+    <p class="cap">Revenue aligns with Portfolio steady-state (~₹5.2 Cr at 100% yield), with proportionate downside at 80% and 70% scenarios.</p>
+  </div>
+
+  <div class="grid">
     <div class="card">
-      <h2 style="margin-top:0">Funding Requirement</h2>
-      <p><span class="pill">Ask</span> ~<b>₹3.0 Cr</b> (mix of equity and/or investor debt as mutually agreed).</p>
-      <div class="buttons" style="margin-top:6px">
-        <a class="btn" href="investor-pack.html">
-          <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5zm0 14h5v2H3v-7h2v5zm14-5h2v7h-7v-2h5v-5z"/></svg>
-          View Investor Pack
-        </a>
-        <a class="btn" href="mailto:seechu@seechuragro.in?subject=Financial%20Model%20Request">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-          Request Excel Model
-        </a>
+      <h3 style="margin-bottom:8px">Net Profit (₹ Cr) by Yield Scenario</h3>
+      <div id="npChart" class="chart" role="img" aria-label="Net profit by yield scenario line chart"></div>
+      <div class="legend">
+        <span><span class="key" style="background:var(--c100)"></span>100% Yield</span>
+        <span><span class="key" style="background:var(--c80)"></span>80% Yield</span>
+        <span><span class="key" style="background:var(--c70)"></span>70% Yield</span>
       </div>
+      <p class="cap">Investor Pack exit NP guidance ≈ <b>₹3.19 Cr</b> under 100% scenario; stress-tested at 80% and 70% yields.</p>
     </div>
 
     <div class="card">
-      <h2 style="margin-top:0">Use of Funds</h2>
-      <ul style="margin-left:18px; line-height:1.8; color:#cfe9d8">
-        <li>Polyhouse refurbishment (cladding, structural fixes)</li>
-        <li>Irrigation, fertigation, benches & electricals</li>
-        <li>Nursery setup for Lakadong + microgreens benches</li>
-        <li>Working capital for initial crop cycles</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h2 style="margin-top:0">Ramp-up Timeline</h2>
-      <ul style="margin-left:18px; line-height:1.8; color:#cfe9d8">
-        <li><b>0–3 months:</b> Refurbish & recommission; microgreens by Day-30</li>
-        <li><b>Month 4–6:</b> Vegetables stabilise; Lakadong nursery underway</li>
-        <li><b>~Month 7:</b> First Lakadong production cheque</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- Summary Table -->
-  <section style="margin-top:22px">
-    <h2>Base-Case Summary (Illustrative)</h2>
-    <p>These are high-level, rounded figures; line-by-line assumptions are available in the Excel model.</p>
-    <div class="card">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th class="num">Year 1</th>
-              <th class="num">Year 2</th>
-              <th class="num">Year 3</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Total Revenue</td>
-              <td class="num">₹1.8 Cr</td>
-              <td class="num">₹3.6 Cr</td>
-              <td class="num">₹5.2 Cr</td>
-            </tr>
-            <tr>
-              <td>Gross Margin (%)</td>
-              <td class="num">42%</td>
-              <td class="num">48%</td>
-              <td class="num">50%</td>
-            </tr>
-            <tr>
-              <td>EBITDA (₹)</td>
-              <td class="num">₹0.3 Cr</td>
-              <td class="num">₹0.8 Cr</td>
-              <td class="num">₹1.3 Cr</td>
-            </tr>
-            <tr>
-              <td>Capex (cumulative)</td>
-              <td class="num">₹1.2 Cr</td>
-              <td class="num">₹1.6 Cr</td>
-              <td class="num">₹1.8 Cr</td>
-            </tr>
-            <tr>
-              <td>Operating Cash Flow</td>
-              <td class="num">₹0.1 Cr</td>
-              <td class="num">₹0.5 Cr</td>
-              <td class="num">₹0.9 Cr</td>
-            </tr>
-          </tbody>
-        </table>
+      <h3 style="margin-bottom:8px">Dividend Payout (₹ Cr) by Yield Scenario</h3>
+      <div id="divChart" class="chart" role="img" aria-label="Dividend payout by yield scenario line chart"></div>
+      <div class="legend">
+        <span><span class="key" style="background:var(--c100)"></span>100% Yield</span>
+        <span><span class="key" style="background:var(--c80)"></span>80% Yield</span>
+        <span><span class="key" style="background:var(--c70)"></span>70% Yield</span>
       </div>
-      <p style="margin-top:12px" class="hint">Note: Figures are placeholders for layout. Replace with your final numbers or embed your sheet below.</p>
+      <p class="cap">Illustrative dividends assume policy of ~40% of NP when profitable; exact policy to be finalised with investors.</p>
     </div>
-  </section>
+  </div>
 
-  <!-- Optional Sheet/Viewer -->
-  <section class="grid" style="margin-top:22px">
-    <div class="card">
-      <h2 style="margin-top:0">Detailed Model (Optional Embed)</h2>
-      <p class="hint">If you have a Google Sheet/Drive file, replace the src below with your preview URL.</p>
-      <div style="background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.16); border-radius:12px; overflow:hidden">
-        <!-- Replace with your own Google Drive/Sheet preview link -->
-        <iframe
-          src="about:blank"
-          style="width:100%; height:60vh; border:0"
-          title="Financial Model (Preview)">
-        </iframe>
-      </div>
+  <!-- Highlights / Exit -->
+  <h2>Highlights & Exit</h2>
+  <div class="card">
+    <div class="badges">
+      <span class="badge">Exit NP (Y6): ~₹3.19 Cr</span>
+      <span class="badge">Exit Valuation (6× NP): ~₹19.16 Cr</span>
+      <span class="badge">Cumulative Dividends: ~₹1.90 Cr</span>
+      <span class="badge">Potential Total Return: ~₹7.65 Cr</span>
+      <span class="badge">Overall Multiple (illustrative): ~5.1×</span>
     </div>
-
-    <div class="card">
-      <h2 style="margin-top:0">Downloads & Contact</h2>
-      <div class="buttons" style="margin:6px 0 14px">
-        <a class="btn" href="investor-pack.html">
-          <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5zm0 14h5v2H3v-7h2v5zm14-5h2v7h-7v-2h5v-5z"/></svg>
-          Investor Pack
-        </a>
-        <a class="btn" href="mailto:seechu@seechuragro.in?subject=Request%20Detailed%20Financials">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-          Email Us
-        </a>
-        <a class="btn" target="_blank" rel="noopener" href="https://wa.me/918056021869?text=Hello%20Seechur%20Agro%2C%20please%20share%20the%20detailed%20financial%20model.">
-          <svg viewBox="0 0 24 24"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
-          WhatsApp
-        </a>
-      </div>
-      <p class="hint" style="color:#dcffe9">We provide view-only Drive access (download/print/copy disabled) to approved investors.</p>
-    </div>
-  </section>
+    <p class="cap">Figures are directional; final equity/debt mix and payout policies will be negotiated with investors.</p>
+  </div>
 </main>
 
 <footer>
@@ -226,4 +179,169 @@
 </footer>
 
 <script>
+/* ====== tiny SVG chart helpers (no libraries) ====== */
+function lineChart(el, series, opts){
+  const W = el.clientWidth, H = el.clientHeight, P = 36;
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width','100%'); svg.setAttribute('height','100%');
+  el.innerHTML = ''; el.appendChild(svg);
+
+  const xs = series[0].data.map((_,i)=>i+1);
+  const allY = series.flatMap(s=>s.data);
+  const yMax = Math.max(...allY) * 1.1;
+  const yMin = Math.min(0, ...allY);
+  const xMin=1, xMax=xs.length;
+
+  const x = v => P + (v - xMin) * (W - 2*P) / (xMax - xMin);
+  const y = v => H - P - (v - yMin) * (H - 2*P) / (yMax - yMin);
+
+  const grid = document.createElementNS(svgNS,'g');
+  grid.setAttribute('stroke','rgba(255,255,255,.20)');
+  grid.setAttribute('stroke-width','1');
+  for(let i=0;i<=4;i++){
+    const yy = y(yMin + i*(yMax-yMin)/4);
+    const ln = document.createElementNS(svgNS,'line');
+    ln.setAttribute('x1',P); ln.setAttribute('x2',W-P);
+    ln.setAttribute('y1',yy); ln.setAttribute('y2',yy);
+    grid.appendChild(ln);
+  }
+  svg.appendChild(grid);
+
+  const axes = document.createElementNS(svgNS,'g');
+  axes.setAttribute('stroke','rgba(255,255,255,.45)');
+  axes.setAttribute('stroke-width','1.5');
+  const xAxis = document.createElementNS(svgNS,'line');
+  xAxis.setAttribute('x1',P); xAxis.setAttribute('x2',W-P);
+  xAxis.setAttribute('y1',y(0)); xAxis.setAttribute('y2',y(0));
+  axes.appendChild(xAxis);
+  svg.appendChild(axes);
+
+  const font = '12px Poppins, system-ui, sans-serif';
+  xs.forEach((yr,i)=>{
+    const tx = document.createElementNS(svgNS,'text');
+    tx.setAttribute('x', x(yr)); tx.setAttribute('y', y(0)+18);
+    tx.setAttribute('text-anchor','middle');
+    tx.setAttribute('fill','#e8fff2'); tx.style.font = font;
+    tx.textContent = yr;
+    svg.appendChild(tx);
+  });
+
+  series.forEach(s=>{
+    const path = document.createElementNS(svgNS,'path');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', s.color);
+    path.setAttribute('stroke-width','3');
+    let d='';
+    s.data.forEach((v,i)=>{
+      const cx = x(i+1), cy = y(v);
+      d += (i? ' L':'M') + cx + ' ' + cy;
+      const c = document.createElementNS(svgNS,'circle');
+      c.setAttribute('cx',cx); c.setAttribute('cy',cy);
+      c.setAttribute('r',3.5); c.setAttribute('fill',s.color);
+      svg.appendChild(c);
+    });
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  });
+
+  const yMaxLabel = document.createElementNS(svgNS,'text');
+  yMaxLabel.setAttribute('x', W-P); yMaxLabel.setAttribute('y', y(yMax) + 14);
+  yMaxLabel.setAttribute('text-anchor','end');
+  yMaxLabel.setAttribute('fill','#e8fff2'); yMaxLabel.style.font = font;
+  yMaxLabel.textContent = (Math.round(yMax*10)/10) + (opts && opts.unit || '');
+  svg.appendChild(yMaxLabel);
+}
+
+function donutChart(el, slices){
+  const W = el.clientWidth, H = el.clientHeight, R = Math.min(W,H)/2 - 18;
+  const cx=W/2, cy=H/2;
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width','100%'); svg.setAttribute('height','100%');
+  el.innerHTML = ''; el.appendChild(svg);
+
+  let total = slices.reduce((a,s)=>a+s.value,0), a0=-Math.PI/2;
+  slices.forEach(s=>{
+    const a1 = a0 + 2*Math.PI*(s.value/total);
+    const x0 = cx + R*Math.cos(a0), y0 = cy + R*Math.sin(a0);
+    const x1 = cx + R*Math.cos(a1), y1 = cy + R*Math.sin(a1);
+    const large = (a1-a0)>Math.PI ? 1 : 0;
+
+    const path = document.createElementNS(svgNS,'path');
+    const d = [
+      `M ${x0} ${y0}`,
+      `A ${R} ${R} 0 ${large} 1 ${x1} ${y1}`,
+      `L ${cx} ${cy}`,
+      'Z'
+    ].join(' ');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', s.color);
+    path.setAttribute('opacity', .95);
+    svg.appendChild(path);
+    a0=a1;
+  });
+
+  const hole = document.createElementNS(svgNS,'circle');
+  hole.setAttribute('cx',cx); hole.setAttribute('cy',cy);
+  hole.setAttribute('r', R*0.58);
+  hole.setAttribute('fill','rgba(0,0,0,.25)');
+  hole.setAttribute('stroke','rgba(255,255,255,.18)');
+  hole.setAttribute('stroke-width','1');
+  svg.appendChild(hole);
+
+  const txt = document.createElementNS(svgNS,'text');
+  txt.setAttribute('x',cx); txt.setAttribute('y',cy+4);
+  txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#f3fff6');
+  txt.style.font='600 14px Poppins, system-ui, sans-serif';
+  txt.textContent='₹3.0 Cr';
+  svg.appendChild(txt);
+}
+
 (function(){
+  // Footer year
+  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+
+  // charts data (in ₹ Cr)
+  const revenue100 = [1.8, 3.2, 5.2, 5.2, 5.2, 5.2];
+  const revenue80  = revenue100.map(v => +(v*0.80).toFixed(2));
+  const revenue70  = revenue100.map(v => +(v*0.70).toFixed(2));
+
+  const np100 = [0.8, 1.8, 3.10, 3.15, 3.18, 3.19];
+  const np80  = [0.5, 1.2, 1.80, 1.80, 1.80, 1.80];
+  const np70  = [0.3, 0.9, 1.30, 1.30, 1.30, 1.30];
+
+  const div100 = np100.map(v=>+(v*0.40).toFixed(2));
+  const div80  = np80 .map(v=>+(v*0.40).toFixed(2));
+  const div70  = np70 .map(v=>+(v*0.40).toFixed(2));
+
+  lineChart(document.getElementById('revChart'), [
+    {name:'100%', color:getComputedStyle(document.documentElement).getPropertyValue('--c100'), data:revenue100},
+    {name:'80%',  color:getComputedStyle(document.documentElement).getPropertyValue('--c80'),  data:revenue80},
+    {name:'70%',  color:getComputedStyle(document.documentElement).getPropertyValue('--c70'),  data:revenue70},
+  ], {unit:' Cr'});
+
+  lineChart(document.getElementById('npChart'), [
+    {name:'100%', color:getComputedStyle(document.documentElement).getPropertyValue('--c100'), data:np100},
+    {name:'80%',  color:getComputedStyle(document.documentElement).getPropertyValue('--c80'),  data:np80},
+    {name:'70%',  color:getComputedStyle(document.documentElement).getPropertyValue('--c70'),  data:np70},
+  ], {unit:' Cr'});
+
+  lineChart(document.getElementById('divChart'), [
+    {name:'100%', color:getComputedStyle(document.documentElement).getPropertyValue('--c100'), data:div100},
+    {name:'80%',  color:getComputedStyle(document.documentElement).getPropertyValue('--c80'),  data:div80},
+    {name:'70%',  color:getComputedStyle(document.documentElement).getPropertyValue('--c70'),  data:div70},
+  ], {unit:' Cr'});
+
+  donutChart(document.getElementById('fundsChart'), [
+    {label:'Refurbishment', value:45, color:'#2dbb7f'},
+    {label:'Working capital', value:25, color:'#56cfe1'},
+    {label:'Inputs & commissioning', value:20, color:'#ffb703'},
+    {label:'Nursery & Lakadong setup', value:10, color:'#ef476f'},
+  ]);
+})();
+</script>
+</body>
+</html>
