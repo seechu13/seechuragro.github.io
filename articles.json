@@ -1,8 +1,24 @@
 [
   {
+    "id": "test-article-from-script-2025-11-12",
+    "title": "Test Article from Script",
+    "subtitle": "Test subtitle",
+    "date": "2025-11-12",
+    "category": "Testing",
+    "image": "",
+    "url": "articles/test-article-from-script-2025-11-12.html",
+    "excerpt": "Short excerpt for testing",
+    "author": {
+      "name": "Tester",
+      "org": "",
+      "role": "",
+      "url": ""
+    }
+  },
+  {
     "id": "water-use-efficiency",
     "title": "Water Use Efficiency in Controlled Farming",
-    "subtitle": "Closed-loop fertigation can cut water use by ~80–90%.",
+    "subtitle": "Closed-loop fertigation can cut water use by ~80?90%.",
     "date": "2025-11-05",
     "category": "Hydroponics",
     "image": "images/articles/water-use-efficiency/hero.jpg",
