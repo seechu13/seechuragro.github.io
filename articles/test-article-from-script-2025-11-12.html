@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Test Article from Script ? Seechur Agro</title>
+  <meta name="description" content="Short excerpt for testing"/>
+  <!-- keep styling linkage consistent with your site -->
+  <link href="/assets/style.css" rel="stylesheet">
+  <style>
+    /* Minimal article-specific styling to match your example (optional) */
+    .container{max-width:1100px;margin:28px auto;padding:0 18px}
+    .article-image{width:100%;height:auto;display:block;margin:16px 0;border-radius:6px;object-fit:cover}
+    .subtitle{font-style:italic;color:#666;margin-bottom:6px}
+    .meta-row{color:#666;margin-bottom:10px}
+    .byline{font-size:0.95rem;color:#444;margin-bottom:6px}
+    .content{line-height:1.75;color:#222}
+    hr{margin:28px 0;border:none;border-top:1px solid #e6e6e6}
+    footer{margin-top:36px;padding:30px 0;color:#666;text-align:center}
+  </style>
+</head>
+<body>
+  <!-- navbar placeholder & loader (same pattern used on your site) -->
+  <div id="navbar-placeholder"></div>
+  <script>
+    (function loadNavbar(){
+      fetch('/navbar.html', {cache:'no-cache'})
+        .then(r=>r.text())
+        .then(html=>{
+          const host = document.getElementById('navbar-placeholder');
+          host.innerHTML = html;
+          // execute scripts inside navbar include
+          host.querySelectorAll('script').forEach(s=>{
+            const n = document.createElement('script');
+            if(s.src){ n.src = s.src; } else { n.textContent = s.textContent; }
+            document.body.appendChild(n);
+          });
+          // mark Articles active (if present)
+          document.querySelectorAll('.menu a').forEach(a=>{
+            const href = (a.getAttribute('href')||'').toLowerCase();
+            if(href.endsWith('articles.html')) a.classList.add('active');
+          });
+        }).catch(()=>{/* ignore navbar errors */});
+    })();
+  </script>
+
+  <main id="article" class="container">
+    <div class="meta-row">
+      <span class="cat">Testing</span> <span class="date">2025-11-12</span>
+    </div>
+
+    <h1>Test Article from Script</h1>
+    <div class="byline">
+      <span id="rt">Reading:</span> ? <span class="author">Tester</span> ? By Tester 
+    </div>
+
+    <div class="subtitle">Test subtitle</div>
+    <p class="excerpt">Short excerpt for testing</p>
+    
+
+    <div class="content">
+      <p>This is a <strong>test</strong> body from Apps Script.</p>
+    </div>
+
+    <hr/>
+
+    <p><strong>Seechur Agro Pvt. Ltd.</strong> ensures every step ? from cultivation to packaging ? aligns with our traceability and purity standards, making <strong>Lakadong turmeric</strong> a globally trusted ingredient.</p>
+
+    <nav style="margin-top:18px;">
+      <a href="/articles.html">? All articles</a> &nbsp; &nbsp;
+      <a href="/articles/water-use-efficiency.html">Next ? Water Use Efficiency</a>
+    </nav>
+  </main>
+
+  <footer>
+    ? <span id="year"></span> Seechur Agro Private Limited ? Human by Chance, Farmer by Choice
+  </footer>
+
+  <script>
+    (function(){
+      // Footer year
+      const y = document.getElementById('year');
+      if(y) y.textContent = new Date().getFullYear();
+
+      // Reading time calculation (est. 220 wpm)
+      try {
+        const el = document.getElementById('article');
+        if(!el) return;
+        const words = (el.innerText || '').trim().split(/\s+/).filter(Boolean).length;
+        const mins = Math.max(1, Math.round(words / 220));
+        const rt = document.getElementById('rt');
+        if(rt) rt.textContent = 'Reading: ~' + mins + ' min';
+      } catch(e) {
+        console.warn('reading time calc failed', e);
+      }
+    })();
+  </script>
+</body>
+</html>
