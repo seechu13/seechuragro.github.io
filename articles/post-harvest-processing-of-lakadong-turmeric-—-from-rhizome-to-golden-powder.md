@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Post-Harvest Processing of Lakadong Turmeric — From Rhizome to Golden Powder • Seechur Agro</title>
 <meta name="description" content="A detailed look at how Lakadong turmeric undergoes careful post-harvest processing to preserve curcumin quality and aroma." />
 <link rel="stylesheet" href="/assets/style.css"/>
@@ -9,9 +10,26 @@
 </head>
 <body class="article-page">
 
+<!-- Navbar include (keeps navigation identical to index) -->
 <div id="navbar-placeholder"></div>
 <script>
-(function loadNavbar(){ fetch('/navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{ document.getElementById('navbar-placeholder').innerHTML=html; document.querySelectorAll('.menu a').forEach(a=>{}); }).catch(()=>{}); })();
+(function loadNavbar(){
+  fetch('/navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
+    const host=document.getElementById('navbar-placeholder');
+    host.innerHTML=html;
+    // execute any scripts inside the navbar include
+    host.querySelectorAll('script').forEach(s=>{
+      const n=document.createElement('script');
+      if(s.src){ n.src = s.src; } else { n.textContent = s.textContent; }
+      document.body.appendChild(n);
+    });
+    // mark active link for Articles
+    document.querySelectorAll('.menu a').forEach(a=>{
+      const href=(a.getAttribute('href')||'').toLowerCase();
+      if(href.endsWith('articles.html')) a.classList.add('active');
+    });
+  }).catch(()=>{/* ignore */});
+})();
 </script>
 
 <main class="container">
@@ -35,11 +53,11 @@
 
     <h2>1. Cleaning and Sorting</h2>
     <p>Freshly harvested rhizomes are washed thoroughly to remove soil and fibrous roots. Sorting helps separate mother and finger rhizomes, which have slightly different curcumin concentrations.</p>
-    <img src="/images/uploads/turmeric-cleaning.jpg" alt="Turmeric cleaning"/>
+    <img src="/images/uploads/turmeric-cleaning.jpg" alt="Turmeric cleaning" class="article-image"/>
 
     <h2>2. Boiling or Curing</h2>
     <p>The cleaned rhizomes are boiled at around <strong>95°C for 45 minutes</strong> to gelatinize the starch and bring out the rich golden color. This also reduces drying time and improves grinding texture.</p>
-    <img src="/images/uploads/turmeric-boiling.jpg" alt="Turmeric boiling"/>
+    <img src="/images/uploads/turmeric-boiling.jpg" alt="Turmeric boiling" class="article-image"/>
 
     <h2>3. Drying</h2>
     <p>The boiled rhizomes are sun-dried for 10–15 days or mechanically dried at <strong>50–60°C</strong>. Proper drying is essential to maintain curcumin content and prevent mold.</p>
@@ -62,9 +80,18 @@
 </main>
 
 <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
+
 <script>
-(function(){ const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
-  const el=document.getElementById('article'); if(!el) return; const words=(el.innerText||'').trim().split(/\s+/).length; const mins=Math.max(1, Math.round(words/220)); const rt=document.getElementById('rt'); if(rt) rt.textContent=`Reading: ~${mins} min`; })();
+(function(){
+  // footer year
+  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+
+  // Reading time calculation
+  const el=document.getElementById('article'); if(!el) return;
+  const words=(el.innerText||'').trim().split(/\s+/).length;
+  const mins=Math.max(1, Math.round(words/220));
+  const rt=document.getElementById('rt'); if(rt) rt.textContent=`Reading: ~${mins} min`;
+})();
 </script>
 </body>
 </html>
