@@ -9,25 +9,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/style.css"/>
-
 </head>
 <body>
 
-<!-- Shared navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
 (function loadNavbar(){
   fetch('/navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
     const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
-    host.querySelectorAll('script').forEach(s=>{
-      const n=document.createElement('script');
-      if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
-      document.body.appendChild(n);
-    });
-    document.querySelectorAll('.menu a').forEach(a=>{
-      const href=(a.getAttribute('href')||'').toLowerCase();
-      if(href.endsWith('articles.html')) a.classList.add('active');
-    });
+    host.querySelectorAll('script').forEach(s=>{ const n=document.createElement('script'); if(s.src){ n.src=s.src } else { n.textContent=s.textContent } document.body.appendChild(n); });
+    document.querySelectorAll('.menu a').forEach(a=>{ const href=(a.getAttribute('href')||'').toLowerCase(); if(href.endsWith('articles.html')) a.classList.add('active'); });
   }).catch(()=>{/* ignore */});
 })();
 </script>
@@ -43,65 +34,26 @@
 <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
 
 <script>
-(function(){
-  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
-
-  const grid = document.getElementById('grid');
-  const fallback = document.getElementById('fallback');
-
-  // load the JSON from absolute path so it works from any page
-  fetch('/articles/articles.json?ver=3', {cache:'no-cache'})
-    .then(r => r.ok ? r.json() : Promise.reject(r.status))
-    .then(list => {
-      if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
-
-      // sort descending by date (safe lexical fallback)
-      list.sort((a,b)=> String(b.date).localeCompare(String(a.date)));
-
-      const frag = document.createDocumentFragment();
-      list.forEach(item=>{
-        const url   = item.url   || '#';
-        const img   = item.image || '';
-        const cat   = item.category || '';
-        const date  = item.date ? (new Date(item.date)).toLocaleDateString() : '';
-        const title = item.title || '';
-        const ex    = item.excerpt || item.subtitle || '';
-
-        const a = document.createElement('a');
-        a.className = 'card';
-        a.href = url;
-        a.setAttribute('aria-label', title);
-
-        // thumbnail wrapper
-        const t = document.createElement('div'); t.className='thumb';
-        if(img){
-          const im = document.createElement('img');
-          im.loading='lazy';
-          im.alt = title || 'Article image';
-          // if the author put a relative path, ensure root-based
-          im.src = img.startsWith('/') ? img : '/' + img;
-          im.onerror = ()=>{ t.remove(); }; // remove thumb if 404
-          t.appendChild(im);
-        }
-        a.appendChild(t);
-
-        // body
-        const b = document.createElement('div'); b.className='body';
-        const m = document.createElement('div'); m.className='meta';
-        m.textContent = [cat, date].filter(Boolean).join(' • ');
-        const ti = document.createElement('div'); ti.className='title'; ti.textContent=title;
-        const exd = document.createElement('div'); exd.className='excerpt'; exd.textContent=ex;
-
-        b.appendChild(m); b.appendChild(ti); b.appendChild(exd);
-        a.appendChild(b);
-
-        frag.appendChild(a);
-      });
-
-      grid.innerHTML='';
-      grid.appendChild(frag);
-    })
-    .catch(()=>{ fallback.style.display='block'; });
+(function(){ const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+ const grid=document.getElementById('grid'), fallback=document.getElementById('fallback');
+ fetch('/articles/articles.json?ts=' + Date.now(), {cache:'no-cache'}).then(r=>r.ok? r.json() : Promise.reject(r.status)).then(list=>{
+   if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
+   list.sort((a,b)=> new Date(b.date) - new Date(a.date));
+   const frag=document.createDocumentFragment();
+   list.forEach(item=>{
+     const a=document.createElement('a'); a.className='card'; a.href=item.url; a.setAttribute('aria-label', item.title);
+     const t=document.createElement('div'); t.className='thumb';
+     if(item.image){ const im=document.createElement('img'); im.src=item.image; im.alt=item.title; im.loading='lazy'; t.appendChild(im); }
+     a.appendChild(t);
+     const b=document.createElement('div'); b.className='body';
+     const m=document.createElement('div'); m.className='meta'; m.textContent=[item.category || '', (new Date(item.date)).toLocaleDateString()].filter(Boolean).join(' • ');
+     const ti=document.createElement('div'); ti.className='title'; ti.textContent=item.title;
+     const ex=document.createElement('div'); ex.className='excerpt'; ex.textContent=item.excerpt || '';
+     b.appendChild(m); b.appendChild(ti); b.appendChild(ex);
+     a.appendChild(b); frag.appendChild(a);
+   });
+   grid.innerHTML=''; grid.appendChild(frag);
+ }).catch(()=>{ fallback.style.display='block'; });
 })();
 </script>
 </body>
