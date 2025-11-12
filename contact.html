@@ -7,18 +7,21 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- ✅ Global stylesheet -->
 <link rel="stylesheet" href="assets/style.css">
 
 <style>
   :root{
     --text:#f3fff6; --muted:#cfe9d8;
-    --nav-bg:rgba(10,25,10,0.7);
-    --nav-solid:#1b4332;
     --glass:rgba(255,255,255,.12); --max:1100px;
-    --accent:#2dbb7f; --accent-2:#56cfe1; --hover:#33d18f;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:var(--text);min-height:100vh;}
+  body{
+    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--text); min-height:100vh;
+  }
+  /* Background */
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
     background:
@@ -27,90 +30,87 @@
     filter:saturate(1.05) brightness(.97);
   }
 
-  /* Navbar */
-  .site-nav{position:sticky; top:0; z-index:60; background:var(--nav-bg); backdrop-filter:blur(6px); border-bottom:1px solid rgba(255,255,255,.12);}
-  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
-  .brand img{width:110px; height:auto; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
-  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
-  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
-  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
-
-  .nav-toggle{display:none;margin-left:auto;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.25);color:#eafff5;padding:8px 12px;border-radius:10px;cursor:pointer;}
-  .nav-overlay{display:none;}
-
-  @media (max-width:768px){
-    .nav-inner{padding:10px 12px;}
-    .brand img{width:84px;}
-    .nav-toggle{display:inline-block;}
-    .menu{
-      position:fixed; top:0; right:-80%;
-      width:80%; height:100vh; margin:0;
-      display:flex; flex-direction:column; gap:8px;
-      padding:18px;
-      background:var(--nav-solid);
-      border-left:1px solid rgba(255,255,255,.18);
-      box-shadow:-10px 0 24px rgba(0,0,0,.45);
-      transition:right .28s ease-in-out;
-    }
-    .menu a{padding:12px 14px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);}
-    .site-nav.open .menu{right:0;}
-    .nav-overlay{position:fixed;inset:0;z-index:55;display:none;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);}
-    .site-nav.open + .nav-overlay{display:block;}
-  }
-
-  /* Page */
+  /* Page layout */
   .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
-  h1{font-size:2.2rem;font-weight:700;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  h2{font-size:1.3rem;margin:16px 0 10px 0;text-shadow:0 2px 6px rgba(0,0,0,.5)}
-  p{line-height:1.8;color:var(--muted);margin-bottom:16px;}
-  .grid{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
-  .card{background:var(--glass);border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,.4);padding:18px;opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease;}
-  .card.show{opacity:1;transform:translateY(0);}
-  .cta-buttons{display:flex;gap:12px;flex-wrap:wrap}
-  .btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:#eafff4;transition:.2s;}
-  .btn:hover{transform:translateY(-1px);background:rgba(0,0,0,.35)}
-  .btn svg{width:18px;height:18px;fill:#eafff4}
+  h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  h2{font-size:1.3rem; margin:16px 0 10px 0; text-shadow:0 2px 6px rgba(0,0,0,.5)}
+  p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
 
-  form{display:grid;gap:12px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  label{font-size:.92rem;color:#e9fff3}
-  input,textarea,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#f3fff6;outline:none;}
-  textarea{min-height:120px;resize:vertical}
-  .sendbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}
+  /* Cards & grid */
+  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+  .card{
+    background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:18px;
+    opacity:0; transform:translateY(14px); transition:opacity .7s ease, transform .7s ease;
+  }
+  .card.show{opacity:1; transform:translateY(0);}
+
+  /* Buttons */
+  .cta-buttons{display:flex; gap:12px; flex-wrap:wrap}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+    padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.2);
+    background:rgba(0,0,0,.25); color:#eafff4; transition:.2s;
+  }
+  .btn:hover{ transform:translateY(-1px); background:rgba(0,0,0,.35) }
+  .btn svg{width:18px; height:18px; fill:#eafff4}
+
+  /* Form */
+  form{display:grid; gap:12px}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  label{font-size:.92rem; color:#e9fff3}
+  input, textarea, select{
+    width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.18);
+    background:rgba(0,0,0,.25); color:#f3fff6; outline:none;
+  }
+  textarea{min-height:120px; resize:vertical}
+  .sendbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px}
   .send{cursor:pointer}
-  .mode{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .hint{font-size:.9rem;color:#d2ffe7}
-  footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px)}
-  @media (max-width:720px){.row{grid-template-columns:1fr}}
+  .mode{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .hint{font-size:.9rem; color:#d2ffe7}
+
+  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+
+  @media (max-width:720px){ .row{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 
-<nav class="site-nav" id="siteNav">
-  <div class="nav-inner">
-    <a class="brand" href="index.html"><img src="logo.png?v=23" alt="Seechur Agro logo"></a>
-    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu">☰ Menu</button>
-    <div class="menu" id="mobileMenu">
-      <a href="index.html">Home</a>
-      <a href="about.html">About</a>
-      <a href="why-lakadong.html">Why Lakadong</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="market.html">Market</a>
-      <a href="financials.html">Financials</a>
-      <a href="team.html">Team</a>
-      <a href="faq.html">FAQ</a>
-      <a class="active" href="contact.html">Contact</a>
-      <a href="investor-pack.html">Investor Pack</a>
-    </div>
-  </div>
-</nav>
-<div class="nav-overlay" id="navOverlay"></div>
+<!-- ✅ Navbar include (fetches shared navbar.html) -->
+<div id="navbar-placeholder"></div>
+<script>
+  (function loadNavbar(){
+    fetch('navbar.html', {cache:'no-cache'})
+      .then(r => r.text())
+      .then(html => {
+        const host = document.getElementById('navbar-placeholder');
+        host.innerHTML = html;
+
+        // Execute any inline scripts from navbar.html (for mobile drawer etc.)
+        const scripts = host.querySelectorAll('script');
+        scripts.forEach(oldS => {
+          const s = document.createElement('script');
+          if (oldS.src) { s.src = oldS.src; }
+          else { s.textContent = oldS.textContent; }
+          document.body.appendChild(s);
+        });
+
+        // Highlight active tab
+        const current = (location.pathname.split('/').pop() || 'contact.html').toLowerCase();
+        document.querySelectorAll('.menu a').forEach(a=>{
+          const href=(a.getAttribute('href')||'').toLowerCase();
+          if(href===current){ a.classList.add('active'); }
+        });
+      })
+      .catch(err => console.error('Navbar load failed:', err));
+  })();
+</script>
 
 <main class="container">
   <h1>Contact Us</h1>
   <p>We’d love to connect — whether you’re an investor, collaborator, or agritech enthusiast.</p>
 
   <section class="grid">
+    <!-- Quick Connect -->
     <div class="card">
       <h2>Quick Connect</h2>
       <p class="hint">Choose your preferred channel and reach us instantly.</p>
@@ -126,10 +126,11 @@
       </div>
     </div>
 
+    <!-- Smart Form (opens WhatsApp or Email with prefilled message) -->
     <div class="card">
       <h2>Send a Message</h2>
       <p class="hint">No backend needed — we’ll open your WhatsApp or email with your message ready to send.</p>
-      <form id="contactForm">
+      <form id="contactForm" novalidate>
         <div class="row">
           <div>
             <label for="name">Name</label>
@@ -151,6 +152,7 @@
             </select>
           </div>
           <div style="display:none">
+            <!-- Honeypot anti-bot field -->
             <label for="company">Company</label>
             <input id="company" name="company" autocomplete="off" tabindex="-1">
           </div>
@@ -159,6 +161,7 @@
           <label for="message">Message</label>
           <textarea id="message" name="message" placeholder="Write your message..."></textarea>
         </div>
+
         <div class="sendbar">
           <div class="mode">
             <label><input type="radio" name="sendmode" value="whatsapp" checked> Send via WhatsApp</label>
@@ -181,47 +184,53 @@
 
 <script>
 (function(){
+  // year
   const y=document.getElementById('year');
   if(y) y.textContent=new Date().getFullYear();
 
-  const current=(location.pathname.split('/').pop()||'contact.html').toLowerCase();
-  document.querySelectorAll('.menu a').forEach(a=>{
-    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
-  });
-
+  // fade-in
   const cards=[...document.querySelectorAll('.card')];
-  const io=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target);}});
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target);} });
   },{threshold:0.18});
   cards.forEach(c=>io.observe(c));
 
+  // form handler
   const form=document.getElementById('contactForm');
-  form.addEventListener('submit',e=>{
+  form.addEventListener('submit', (e)=>{
     e.preventDefault();
-    if(form.company && form.company.value)return;
-    const name=form.name.value.trim();
-    const email=form.email.value.trim();
+
+    // bot check (honeypot)
+    if (form.company && form.company.value) return;
+
+    const name=(form.name.value||'').trim();
+    const email=(form.email.value||'').trim();
     const topic=form.topic.value;
-    const msg=form.message.value.trim();
-    const mode=[...form.querySelectorAll('input[name="sendmode"]')].find(r=>r.checked)?.value||'whatsapp';
-    const composed=`Hello Seechur Agro,%0A%0AName: ${encodeURIComponent(name)}%0AEmail: ${encodeURIComponent(email)}%0ATopic: ${encodeURIComponent(topic)}%0AMessage: ${encodeURIComponent(msg||'(no additional message)')}`;
+    const msg=(form.message.value||'').trim();
+    const mode=[...form.querySelectorAll('input[name="sendmode"]')].find(r=>r.checked)?.value || 'whatsapp';
+
+    // basic validation
+    if(!name || !email){
+      alert('Please enter your name and a valid email.');
+      return;
+    }
+
+    const composed =
+      `Hello Seechur Agro,%0A%0A` +
+      `Name: ${encodeURIComponent(name)}%0A` +
+      `Email: ${encodeURIComponent(email)}%0A` +
+      `Topic: ${encodeURIComponent(topic)}%0A` +
+      `Message: ${encodeURIComponent(msg || '(no additional message)')}`;
+
     if(mode==='whatsapp'){
-      window.open(`https://wa.me/918056021869?text=${composed}`,'_blank');
+      const url = `https://wa.me/918056021869?text=${composed}`;
+      window.open(url, '_blank');
     }else{
-      const subject=encodeURIComponent(`[Contact] ${topic} — ${name}`);
-      window.location.href=`mailto:seechu@seechuragro.in?subject=${subject}&body=${composed}`;
+      const subject = encodeURIComponent(`[Contact] ${topic} — ${name}`);
+      const mailto = `mailto:seechu@seechuragro.in?subject=${subject}&body=${composed}`;
+      window.location.href = mailto;
     }
   });
-
-  // Mobile drawer
-  const nav=document.getElementById('siteNav');
-  const toggle=document.getElementById('navToggle');
-  const overlay=document.getElementById('navOverlay');
-  function openMenu(){nav.classList.add('open');toggle&&toggle.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';}
-  function closeMenu(){nav.classList.remove('open');toggle&&toggle.setAttribute('aria-expanded','false');document.body.style.overflow='';}
-  if(toggle){toggle.addEventListener('click',()=>{nav.classList.contains('open')?closeMenu():openMenu();});}
-  if(overlay){overlay.addEventListener('click',closeMenu);}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
 })();
 </script>
 </body>
