@@ -34,35 +34,23 @@
 
   main{padding-top:70px;}
   .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
-  .hero{
-    padding:60px 0 20px;
-    text-shadow:0 2px 8px rgba(0,0,0,.55);
-    animation:fadeIn 0.8s ease-out;
-  }
+  .hero{ padding:60px 0 20px; text-shadow:0 2px 8px rgba(0,0,0,.55); animation:fadeIn 0.8s ease-out;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .hero h1{font-size:2.6rem;font-weight:700;color:#ffffff;}
   .tagline{font-style:italic;color:var(--muted);margin-bottom:12px;}
   .hero p{color:var(--text);max-width:900px;line-height:1.7;}
 
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
-  .btn{
-    display:inline-block;padding:10px 20px;border-radius:999px;font-weight:700;text-decoration:none;color:#ffffff;background:var(--accent);
-    box-shadow:0 4px 20px rgba(0,0,0,.3);transition:filter .2s;
-  }
+  .btn{ display:inline-block;padding:10px 20px;border-radius:999px;font-weight:700;text-decoration:none;color:#ffffff;background:var(--accent); box-shadow:0 4px 20px rgba(0,0,0,.3);transition:filter .2s;}
   .btn:hover{filter:brightness(1.15);}
   .btn.outline{background:transparent;border:2px solid #ffffff;}
 
   .section{margin-top:36px;}
-  .section h3{
-    text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:8px;color:#ffffff;text-shadow:0 2px 6px rgba(0,0,0,.6);
-  }
+  .section h3{ text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:8px;color:#ffffff;text-shadow:0 2px 6px rgba(0,0,0,.6); }
   .section p{line-height:1.8;max-width:900px;color:var(--muted);}
 
   .articles-grid{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
-  .article-card{
-    background:rgba(255,255,255,.12);border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden;cursor:pointer;
-    transition:transform .25s ease, filter .25s ease;
-  }
+  .article-card{ background:rgba(255,255,255,.12);border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden;cursor:pointer; transition:transform .25s ease, filter .25s ease; }
   .article-card:hover{transform:translateY(-2px) scale(1.01);}
   .article-thumb{height:180px;overflow:hidden;background:#0b0b0b22;}
   .article-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -73,51 +61,31 @@
   .view-all{color:#a2ffd5;text-decoration:none;font-weight:600}
   .empty-note{color:#dcffe9;opacity:.9;padding:14px 0}
 
-  footer{
-    text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);
-  }
+  footer{ text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px); }
   @media (max-width:720px){.hero h1{font-size:2rem;}}
 </style>
 </head>
 <body>
 
-<!-- 🔁 FAST REDIRECT FOR NETLIFY IDENTITY INVITES -->
-<script>
-(function() {
-  // Look in both hash and query for invite token
-  var h = window.location.hash || '';
-  var q = window.location.search || '';
-  var m1 = h.match(/#\/invite\/([^/?#]+)/);
-  var m2 = (h.match(/invite_token=([^&]+)/) || q.match(/[?&]invite_token=([^&]+)/));
-  var token = m1 ? m1[1] : (m2 ? m2[1] : null);
-  if (!token) return;
-
-  // Build admin invite URL and redirect immediately
-  var adminUrl = window.location.origin + '/admin/#/invite/' + encodeURIComponent(token);
-  console.log('Redirecting to Admin invite →', adminUrl);
-  window.location.replace(adminUrl);
-})();
-</script>
-
-<!-- ✅ Shared navbar include -->
+<!-- Shared navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
   (function loadNavbar(){
-    fetch('navbar.html', {cache:'no-cache'})
+    fetch('/navbar.html', {cache:'no-cache'})
       .then(r=>r.text())
       .then(html=>{
         const host = document.getElementById('navbar-placeholder');
         host.innerHTML = html;
         host.querySelectorAll('script').forEach(s=>{
           const n=document.createElement('script');
-          if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+          if(s.src){ n.src=s.src; } else { n.textContent = s.textContent; }
           document.body.appendChild(n);
         });
         const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
         document.querySelectorAll('.menu a').forEach(a=>{
           if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
         });
-      });
+      }).catch(()=>{ /* ignore */ });
   })();
 </script>
 
@@ -135,30 +103,18 @@
       <a class="btn" href="mailto:seechu@seechuragro.in?subject=Inquiry%20via%20Website">Email Us</a>
     </div>
   </section>
-
-  <section class="section">
-    <h3>Vision</h3>
-    <p>To be a leading agri-tech venture creating sustainable, high-value crop ecosystems with technology, trust and transparency.</p>
-  </section>
-
-  <section class="section">
-    <h3>Mission</h3>
-    <p>To sustainably cultivate Lakadong turmeric and high-value crops using hydroponics and controlled environment farming to deliver consistent returns to stakeholders and healthier produce to consumers.</p>
-  </section>
 </main>
 
-<section class="container" style="margin-top:50px">
-  <h2 style="font-size:1.8rem;font-weight:700;margin-bottom:16px;text-shadow:0 2px 6px rgba(0,0,0,.5)">
-    Latest Insights
-  </h2>
-  <p style="color:#cfe9d8;margin-bottom:24px;">
+<section class="container" style="margin-top:20px">
+  <h2 style="font-size:1.8rem;font-weight:700;margin-bottom:12px">Latest Insights</h2>
+  <p style="color:#cfe9d8;margin-bottom:18px;">
     A glimpse from Seechur Agro’s knowledge desk — water-efficient hydroponics, Lakadong turmeric, and sustainable farming.
   </p>
 
   <div id="articlesGrid" class="articles-grid" aria-live="polite"></div>
 
   <div style="text-align:right;margin-top:18px;">
-    <a class="view-all" href="articles.html">View all articles →</a>
+    <a class="view-all" href="/articles.html">View all articles →</a>
   </div>
 </section>
 
@@ -168,59 +124,42 @@
 
 <script>
 (function(){
-  const y=document.getElementById('year');
-  if(y) y.textContent=new Date().getFullYear();
+  // year
+  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
 
-  const grid = document.getElementById('articlesGrid');
-  function fmtDate(iso){
-    const d = new Date(iso);
-    if(isNaN(d)) return iso;
-    return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'2-digit'});
-  }
-  function cardHTML(a){
-    const dateStr = a.date ? fmtDate(a.date) : '';
-    const cat = a.category ? a.category : '';
-    const meta = [cat, dateStr].filter(Boolean).join(' • ');
-    const author = a.author?.name ? ` — ${a.author.name}` : '';
-    const img = a.image || 'article-fallback.jpg';
-    return `
-      <article class="article-card" onclick="location.href='${a.url || '#'}'" role="button" tabindex="0"
-               onkeydown="if(event.key==='Enter'){location.href='${a.url || '#'}'}">
-        <div class="article-thumb">
-          <img src="${img}" alt="${(a.title||'Article')}" loading="lazy">
-        </div>
-        <div class="article-body">
-          <div class="article-meta">${meta}${author}</div>
-          <div class="article-title">${a.title || 'Untitled'}</div>
-          <div class="article-excerpt">${a.excerpt || ''}</div>
-        </div>
-      </article>
-    `;
-  }
-  async function loadArticles(){
+  // render top 2 articles from top-level /articles.json
+  async function loadTop2(){
     try{
-      const res = await fetch('articles.json?v=' + Date.now(), {cache:'no-cache'});
+      const res = await fetch('/articles.json?ts=' + Date.now(), {cache:'no-cache'});
       if(!res.ok) throw new Error('HTTP ' + res.status);
-      const all = await res.json();
-      if(!Array.isArray(all) || all.length===0){
-        grid.innerHTML = `<div class="empty-note">No articles yet. We’ll publish our first insights soon.</div>`;
+      const list = await res.json();
+      if(!Array.isArray(list) || list.length===0){
+        document.getElementById('articlesGrid').innerHTML = `<div class="empty-note">No articles yet.</div>`;
         return;
       }
-      all.sort((a,b)=> new Date(b.date||0) - new Date(a.date||0));
-      const top2 = all.slice(0,2);
-      grid.innerHTML = top2.map(cardHTML).join('');
+      // sort by date desc
+      list.sort((a,b) => new Date(b.date) - new Date(a.date));
+      const top2 = list.slice(0,2);
+      const html = top2.map(a=>{
+        const img = a.image || '/articles/images/preview-thumb.jpg';
+        return `
+          <article class="article-card" role="button" onclick="location.href='${a.url}'" tabindex="0" onkeydown="if(event.key==='Enter'){location.href='${a.url}'}">
+            <div class="article-thumb"><img src="${img}" alt="${a.title}"/></div>
+            <div class="article-body">
+              <div class="article-meta">${(a.category||'')} • ${new Date(a.date).toLocaleDateString()}</div>
+              <div class="article-title">${a.title}</div>
+              <div class="article-excerpt">${a.excerpt||''}</div>
+            </div>
+          </article>`;
+      }).join('');
+      document.getElementById('articlesGrid').innerHTML = html;
     }catch(err){
-      console.warn('Failed to load articles.json:', err);
-      grid.innerHTML = `<div class="empty-note">Couldn’t load insights right now. Please check back later.</div>`;
+      console.warn(err);
+      document.getElementById('articlesGrid').innerHTML = `<div class="empty-note">Couldn’t load insights right now.</div>`;
     }
   }
-  loadArticles();
+  loadTop2();
 })();
 </script>
-
-<!-- (Optional) Identity script is not required on the homepage if we're only redirecting,
-     but keeping it here is harmless in case you later mount widgets. -->
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-
 </body>
 </html>
