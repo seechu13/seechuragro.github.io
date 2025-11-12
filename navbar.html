@@ -1,30 +1,45 @@
-<nav style="position:fixed;left:0;right:0;top:0;z-index:999">
-  <div class="container" style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--nav-bg);backdrop-filter:blur(4px);border-bottom:1px solid rgba(255,255,255,0.03)">
-    <div style="display:flex;align-items:center;gap:12px">
-      <a href="/"><img src="/assets/images/logo.png" alt="Seechur Agro" style="width:72px;height:auto;background:#fff;padding:6px;border-radius:8px"/></a>
-      <div style="color:var(--text);font-weight:700">Seechur Agro Private Limited</div>
-    </div>
-    <div class="menu" style="display:flex;gap:12px;align-items:center">
-      <a href="/" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Home</a>
-      <a href="/about.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">About</a>
-      <a href="/why-lakadong.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Why Lakadong</a>
-      <a href="/portfolio.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Portfolio</a>
-      <a href="/market.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Market</a>
-      <a href="/financials.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Financials</a>
-      <a href="/team.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Team</a>
-      <a href="/articles.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Articles</a>
-      <a href="/contact.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Contact</a>
-      <a href="/investor-pack.html" style="color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:18px">Investor Pack</a>
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <img src="logo.png" alt="Seechur Agro logo">
+    </a>
+
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open Menu">☰ Menu</button>
+
+    <div class="menu" id="mobileMenu">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="why-lakadong.html">Why Lakadong</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="market.html">Market</a>
+      <a href="financials.html">Financials</a>
+      <a href="team.html">Team</a>
+      <a href="advisors.html">Advisors</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contact.html">Contact</a>
+      <a href="investor-pack.html">Investor Pack</a>
+      <a href="articles.html">Articles</a>
     </div>
   </div>
 </nav>
+<div class="nav-overlay" id="navOverlay"></div>
 
 <script>
-(function(){
+(() => {
+  const nav=document.getElementById('siteNav');
+  const btn=document.getElementById('navToggle');
+  const overlay=document.getElementById('navOverlay');
+
+  function openM(){ nav.classList.add('open'); btn.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
+  function closeM(){ nav.classList.remove('open'); btn.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
+
+  btn?.addEventListener('click', ()=> nav.classList.contains('open') ? closeM() : openM());
+  overlay?.addEventListener('click', closeM);
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeM(); });
+
   const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
   document.querySelectorAll('.menu a').forEach(a=>{
-    const href=(a.getAttribute('href')||'').toLowerCase();
-    if(href.endsWith(current) || (current==='index.html' && href==='/' )) a.classList.add('active');
+    if(a.getAttribute('href').toLowerCase()===current) a.classList.add('active');
   });
 })();
 </script>
