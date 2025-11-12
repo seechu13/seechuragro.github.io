@@ -6,32 +6,33 @@
 <title>Articles • Seechur Agro Private Limited</title>
 <meta name="description" content="Insights on hydroponics, Lakadong turmeric, microgreens, and sustainable farming from Seechur Agro." />
 
-<link rel="stylesheet" href="/assets/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css"/>
+
 </head>
 <body>
 
-<!-- inline navbar placeholder will be loaded from navbar.html on the client -->
+<!-- Shared navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
 (function loadNavbar(){
   fetch('/navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
     const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
-    // move any inline scripts in navbar into the page
     host.querySelectorAll('script').forEach(s=>{
       const n=document.createElement('script');
-      if(s.src){ n.src = s.src; } else { n.textContent = s.textContent; }
+      if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
       document.body.appendChild(n);
     });
-    // mark active link
     document.querySelectorAll('.menu a').forEach(a=>{
       const href=(a.getAttribute('href')||'').toLowerCase();
       if(href.endsWith('articles.html')) a.classList.add('active');
     });
-  }).catch(()=>{ /* silently fail if navbar not available */ });
+  }).catch(()=>{/* ignore */});
 })();
 </script>
 
-<main class="container articles-listing">
+<main class="container">
   <h1>Articles & Insights</h1>
   <p class="lead">Readable, practical notes on hydroponics, Lakadong turmeric, and microgreens.</p>
 
@@ -43,57 +44,64 @@
 
 <script>
 (function(){
-  document.getElementById('year').textContent = new Date().getFullYear();
-  const grid = document.getElementById('grid'), fallback = document.getElementById('fallback');
+  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
 
-  // fetch root articles.json (build writes this)
-  fetch('/articles.json?ver=1', {cache:'no-cache'}).then(r=>{
-    if(!r.ok) throw r.status;
-    return r.json();
-  }).then(list=>{
-    if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
-    // sort newest first (defensive)
-    list.sort((a,b)=> (new Date(b.date)) - (new Date(a.date)));
+  const grid = document.getElementById('grid');
+  const fallback = document.getElementById('fallback');
 
-    const frag = document.createDocumentFragment();
-    list.forEach(item=>{
-      const url = item.url || '#';
-      const img = item.image || '';
-      const cat = item.category || '';
-      const date = item.date ? (new Date(item.date)).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '';
-      const title = item.title || '';
-      const ex = item.excerpt || '';
+  // load the JSON from absolute path so it works from any page
+  fetch('/articles/articles.json?ver=3', {cache:'no-cache'})
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(list => {
+      if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
 
-      const a = document.createElement('a');
-      a.className = 'card';
-      a.href = url;
-      a.setAttribute('aria-label', title);
+      // sort descending by date (safe lexical fallback)
+      list.sort((a,b)=> String(b.date).localeCompare(String(a.date)));
 
-      const t = document.createElement('div'); t.className='thumb';
-      if(img){
-        const im = document.createElement('img'); im.loading='lazy'; im.alt = title || 'Article image';
-        im.src = (img.startsWith('/') || img.startsWith('http')) ? img : '/' + img;
-        im.onerror = ()=> t.remove();
-        t.appendChild(im);
-      }
-      a.appendChild(t);
+      const frag = document.createDocumentFragment();
+      list.forEach(item=>{
+        const url   = item.url   || '#';
+        const img   = item.image || '';
+        const cat   = item.category || '';
+        const date  = item.date ? (new Date(item.date)).toLocaleDateString() : '';
+        const title = item.title || '';
+        const ex    = item.excerpt || item.subtitle || '';
 
-      const b = document.createElement('div'); b.className='body';
-      const m = document.createElement('div'); m.className='meta'; m.textContent = [cat, date].filter(Boolean).join(' • ');
-      const ti = document.createElement('div'); ti.className='title'; ti.textContent = title;
-      const exd = document.createElement('div'); exd.className='excerpt'; exd.textContent = ex;
+        const a = document.createElement('a');
+        a.className = 'card';
+        a.href = url;
+        a.setAttribute('aria-label', title);
 
-      b.appendChild(m); b.appendChild(ti); b.appendChild(exd);
-      a.appendChild(b);
+        // thumbnail wrapper
+        const t = document.createElement('div'); t.className='thumb';
+        if(img){
+          const im = document.createElement('img');
+          im.loading='lazy';
+          im.alt = title || 'Article image';
+          // if the author put a relative path, ensure root-based
+          im.src = img.startsWith('/') ? img : '/' + img;
+          im.onerror = ()=>{ t.remove(); }; // remove thumb if 404
+          t.appendChild(im);
+        }
+        a.appendChild(t);
 
-      frag.appendChild(a);
-    });
+        // body
+        const b = document.createElement('div'); b.className='body';
+        const m = document.createElement('div'); m.className='meta';
+        m.textContent = [cat, date].filter(Boolean).join(' • ');
+        const ti = document.createElement('div'); ti.className='title'; ti.textContent=title;
+        const exd = document.createElement('div'); exd.className='excerpt'; exd.textContent=ex;
 
-    grid.innerHTML=''; grid.appendChild(frag);
-  }).catch(err=>{
-    console.warn('articles fetch failed', err);
-    fallback.style.display='block';
-  });
+        b.appendChild(m); b.appendChild(ti); b.appendChild(exd);
+        a.appendChild(b);
+
+        frag.appendChild(a);
+      });
+
+      grid.innerHTML='';
+      grid.appendChild(frag);
+    })
+    .catch(()=>{ fallback.style.display='block'; });
 })();
 </script>
 </body>
