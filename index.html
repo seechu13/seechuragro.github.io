@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SEECHUR AGRO PRIVATE LIMITED</title>
+<meta name="description" content="Seechur Agro — sustainable hydroponics & protected cultivation. Lakadong turmeric and premium vegetables from Edayarpakkam, Tamil Nadu." />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -16,13 +17,23 @@
     --nav-bg:rgba(10,25,10,0.7);
     --nav-solid:#1b4332;
     --max:1100px;
+
+    /* Card variables for article section */
+    --card-bg:#ffffff;
+    --card-text:#1d2a21;
+    --card-sub:#495a50;
+    --card-meta:#0f7a52;
+    --card-border:rgba(5,26,15,.12);
+    --shadow:0 12px 24px rgba(0,0,0,.18);
+    --shadow-hover:0 18px 36px rgba(0,0,0,.26);
   }
+
   *{box-sizing:border-box;margin:0;padding:0}
   body{
     font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
     color:var(--text);
     min-height:100vh;
-    scroll-padding-top:70px; /* avoids content hiding under sticky nav */
+    scroll-padding-top:70px;
   }
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
@@ -32,9 +43,9 @@
     filter:saturate(1.1) brightness(0.95);
   }
 
-  /* ===== Layout ===== */
-  main{padding-top:70px;} /* pushes hero below sticky nav */
+  main{padding-top:70px;}
   .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
+
   .hero{
     padding:60px 0 20px;
     text-shadow:0 2px 8px rgba(0,0,0,.55);
@@ -80,7 +91,36 @@
     background:rgba(0,0,0,0.4);
     backdrop-filter:blur(4px);
   }
-  @media (max-width:720px){.hero h1{font-size:2rem;}}
+
+  /* ===== Latest Articles Section ===== */
+  .articles-section{margin-top:34px;padding:18px 0;border-top:1px dashed rgba(255,255,255,0.03)}
+  .articles-section .header { display:flex;align-items:center;justify-content:space-between;gap:16px }
+  .articles-section .header h3 { margin:0 }
+  .grid{
+    display:grid; gap:22px;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    margin-top:16px;
+  }
+  a.card{
+    display:block; text-decoration:none; color:var(--card-text); cursor:pointer;
+    background:var(--card-bg); border:1px solid var(--card-border);
+    border-radius:18px; overflow:hidden;
+    box-shadow:var(--shadow);
+    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  }
+  a.card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-hover); filter:brightness(1.02); }
+  .thumb{height:160px; background:#f3f7f4; display:block; overflow:hidden;}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease;}
+  a.card:hover .thumb img{ transform:scale(1.04); }
+  .body{padding:14px 14px 16px}
+  .meta{font-size:.88rem; color:var(--card-meta); opacity:.95; margin-bottom:6px}
+  .title{font-weight:700; font-size:1.06rem; line-height:1.35; margin:2px 0 8px; color:var(--card-text)}
+  .excerpt{color:var(--card-sub); font-size:.98rem; line-height:1.55}
+  @media (max-width:420px){
+    .thumb{height:150px}
+    .title{font-size:1.02rem}
+    .excerpt{font-size:.96rem}
+  }
 </style>
 </head>
 <body>
@@ -95,14 +135,12 @@
         const host = document.getElementById('navbar-placeholder');
         host.innerHTML = html;
 
-        // Execute any <script> tags present inside navbar.html
         host.querySelectorAll('script').forEach(s=>{
           const n=document.createElement('script');
           if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
           document.body.appendChild(n);
         });
 
-        // Highlight active link
         const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
         document.querySelectorAll('.menu a').forEach(a=>{
           if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
@@ -136,6 +174,17 @@
     <h3>Mission</h3>
     <p>To sustainably cultivate Lakadong turmeric and high-value crops using hydroponics and controlled environment farming to deliver consistent returns to stakeholders and healthier produce to consumers.</p>
   </section>
+
+  <!-- ===== Latest Articles Section ===== -->
+  <section class="articles-section" aria-labelledby="latest-articles">
+    <div class="header">
+      <h3 id="latest-articles">Latest Articles</h3>
+      <a href="articles.html" style="color:var(--muted);font-weight:600;text-decoration:none">See all →</a>
+    </div>
+
+    <div id="home-grid" class="grid" role="list" aria-live="polite" aria-busy="true" style="min-height:10px"></div>
+    <div id="home-fallback" style="display:none;margin-top:12px;color:var(--muted)">No recent articles.</div>
+  </section>
 </main>
 
 <footer>
@@ -147,6 +196,74 @@
   // Footer year
   const y=document.getElementById('year');
   if(y) y.textContent=new Date().getFullYear();
+
+  // Fetch and show latest 2 articles
+  const grid = document.getElementById('home-grid');
+  const fallback = document.getElementById('home-fallback');
+  if(!grid) return;
+
+  function makeCard(item){
+    const url   = item.url   || '#';
+    const img   = item.image || '';
+    const cat   = item.category || '';
+    const date  = item.date || '';
+    const title = item.title || '';
+    const ex    = item.excerpt || item.subtitle || '';
+
+    const a = document.createElement('a');
+    a.className = 'card';
+    a.href = url;
+    a.setAttribute('aria-label', title);
+
+    const t = document.createElement('div');
+    t.className='thumb';
+    if(img){
+      const im = document.createElement('img');
+      im.loading='lazy';
+      im.alt = title || 'Article image';
+      im.src = img;
+      im.onerror = ()=>{ t.remove(); };
+      t.appendChild(im);
+    }
+    a.appendChild(t);
+
+    const b = document.createElement('div'); b.className='body';
+    const m = document.createElement('div'); m.className='meta';
+    m.textContent = [cat, date].filter(Boolean).join(' • ');
+    const ti = document.createElement('div'); ti.className='title'; ti.textContent=title;
+    const exd = document.createElement('div'); exd.className='excerpt'; exd.textContent=ex;
+
+    b.appendChild(m); b.appendChild(ti); b.appendChild(exd);
+    a.appendChild(b);
+
+    return a;
+  }
+
+  fetch('articles.json?ver=3', {cache:'no-cache'})
+    .then(resp => resp.ok ? resp.json() : Promise.reject(resp.status))
+    .then(list => {
+      if(!Array.isArray(list) || list.length === 0){
+        fallback.style.display = 'block';
+        grid.setAttribute('aria-busy','false');
+        return;
+      }
+
+      list.sort((a,b)=>{
+        const da = a && a.date ? Date.parse(a.date) : 0;
+        const db = b && b.date ? Date.parse(b.date) : 0;
+        if(!isNaN(da) && !isNaN(db)) return db - da;
+        return String(b.date).localeCompare(String(a.date));
+      });
+
+      const latest = list.slice(0,2);
+      const frag = document.createDocumentFragment();
+      latest.forEach(item => frag.appendChild(makeCard(item)));
+
+      grid.innerHTML = '';
+      grid.appendChild(frag);
+      grid.setAttribute('aria-busy','false');
+    })
+    .catch(()=>{ fallback.style.display='block'; });
 })();
 </script>
 </body>
