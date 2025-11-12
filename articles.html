@@ -8,108 +8,51 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
 
 <style>
-  :root{
-    --text:#f3fff6; --muted:#cfe9d8;
-    --nav-bg:rgba(10,25,10,0.7); --nav-solid:#1b4332;
-    --glass:rgba(255,255,255,.12); --max:1100px;
-    --accent:#2dbb7f; --hover:#33d18f;
-
-    /* Light card palette for readability */
-    --card-bg:#ffffff; 
-    --card-text:#1d2a21;
-    --card-sub:#495a50;
-    --card-meta:#0f7a52;
-    --card-border:rgba(5,26,15,.12);
-    --shadow:0 12px 24px rgba(0,0,0,.18);
-    --shadow-hover:0 18px 36px rgba(0,0,0,.26);
-  }
-
+  /* keep your current variables but keep it compact */
+  :root{ --text:#f3fff6; --muted:#cfe9d8; --max:1100px; --accent:#2dbb7f; }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
-    color:var(--text); min-height:100vh;
-  }
-  /* match site background */
-  body::before{
-    content:""; position:fixed; inset:0; z-index:-1;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-      url('hydroponic-bg.jpg?v=32') center/cover no-repeat;
-    filter:saturate(1.05) brightness(.97);
-  }
-
-  .container{max-width:var(--max); margin:0 auto; padding:28px 18px 40px;}
-  h1{font-size:2.3rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  p.lead{line-height:1.8; color:var(--muted); margin-bottom:18px;}
-
-  /* Grid of article cards */
-  .grid{
-    display:grid; gap:22px;
-    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-  }
-  a.card{
-    display:block; text-decoration:none; color:var(--card-text); cursor:pointer;
-    background:var(--card-bg); border:1px solid var(--card-border);
-    border-radius:18px; overflow:hidden;
-    box-shadow:var(--shadow);
-    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
-  }
-  a.card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-hover); filter:brightness(1.02); }
-
-  .thumb{
-    height:190px; background:#f3f7f4;
-    display:block; overflow:hidden;
-  }
-  .thumb img{
-    width:100%; height:100%; object-fit:cover; display:block;
-    transition:transform .35s ease;
-  }
+  body{ font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial; color:var(--text); min-height:100vh; }
+  body::before{ content:""; position:fixed; inset:0; z-index:-1; background: linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)), url('/assets/hydroponic-bg.jpg') center/cover no-repeat; filter:saturate(1.05) brightness(.97); }
+  .container{ max-width:var(--max); margin:0 auto; padding:28px 18px 40px; }
+  h1{ font-size:2.3rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55) }
+  p.lead{ line-height:1.8; color:var(--muted); margin-bottom:18px; }
+  .grid{ display:grid; gap:22px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+  a.card{ display:block; text-decoration:none; color:#1d2a21; background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 12px 24px rgba(0,0,0,.18); transition:transform .18s ease; }
+  .thumb{ height:190px; background:#f3f7f4; overflow:hidden; }
+  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease; }
   a.card:hover .thumb img{ transform:scale(1.04); }
-
-  .body{padding:16px 16px 18px}
-  .meta{font-size:.9rem; color:var(--card-meta); opacity:.95; margin-bottom:6px}
-  .title{font-weight:700; font-size:1.18rem; line-height:1.35; margin:2px 0 8px; color:var(--card-text)}
-  .excerpt{color:var(--card-sub); font-size:.98rem; line-height:1.65}
-
-  .empty{
-    padding:14px; border-radius:12px;
-    background:rgba(255,255,255,.10);
-    border:1px dashed rgba(255,255,255,.25);
-    color:#defbea; text-align:center;
-  }
-
+  .body{ padding:16px; }
+  .meta{ font-size:.9rem; color:#0f7a52; margin-bottom:6px }
+  .title{ font-weight:700; font-size:1.18rem; line-height:1.35; margin:2px 0 8px; color:#1d2a21 }
+  .excerpt{ color:#495a50; font-size:.98rem; line-height:1.65 }
+  .empty{ padding:14px; border-radius:12px; background:rgba(255,255,255,.10); border:1px dashed rgba(255,255,255,.25); color:#defbea; text-align:center; }
   footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:30px}
-
-  /* tighten small screens */
-  @media (max-width:420px){
-    .thumb{height:170px}
-    .title{font-size:1.08rem}
-    .excerpt{font-size:.96rem}
-  }
+  @media (max-width:420px){ .thumb{ height:170px } .title{ font-size:1.08rem } .excerpt{ font-size:.96rem } }
 </style>
 </head>
 <body>
 
-<!-- ✅ Shared navbar include -->
+<!-- navbar placeholder (same pattern your generated pages use) -->
 <div id="navbar-placeholder"></div>
 <script>
 (function loadNavbar(){
-  fetch('navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
-    const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
-    // execute any scripts embedded in navbar.html
-    host.querySelectorAll('script').forEach(s=>{
+  fetch('/navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
+    document.getElementById('navbar-placeholder').innerHTML = html;
+    // execute scripts in navbar if any
+    document.getElementById('navbar-placeholder').querySelectorAll('script').forEach(s=>{
       const n=document.createElement('script');
-      if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+      if(s.src){ n.src=s.src; } else { n.textContent = s.textContent; }
       document.body.appendChild(n);
     });
-    // highlight Articles in nav
+    // highlight current
     document.querySelectorAll('.menu a').forEach(a=>{
       const href=(a.getAttribute('href')||'').toLowerCase();
       if(href==='articles.html') a.classList.add('active');
     });
-  });
+  }).catch(()=>{/* ignore */});
 })();
 </script>
 
@@ -130,7 +73,7 @@
   const grid = document.getElementById('grid');
   const fallback = document.getElementById('fallback');
 
-  fetch('articles.json?ver=3', {cache:'no-cache'})
+  fetch('/articles/articles.json?ver=3', {cache:'no-cache'})
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(list => {
       if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
@@ -140,9 +83,9 @@
       const frag = document.createDocumentFragment();
       list.forEach(item=>{
         const url   = item.url   || '#';
-        const img   = item.image || '';
+        const img   = (item.image && item.image.length) ? item.image : '';
         const cat   = item.category || '';
-        const date  = item.date || '';
+        const date  = item.date ? new Date(item.date).toLocaleDateString('en-GB',{day:'2-digit', month:'short', year:'numeric'}) : '';
         const title = item.title || '';
         const ex    = item.excerpt || item.subtitle || '';
 
@@ -151,20 +94,17 @@
         a.href = url;
         a.setAttribute('aria-label', title);
 
-        // thumbnail
-        const t = document.createElement('div');
-        t.className='thumb';
+        const t = document.createElement('div'); t.className='thumb';
         if(img){
           const im = document.createElement('img');
           im.loading='lazy';
           im.alt = title || 'Article image';
           im.src = img;
-          im.onerror = ()=>{ t.remove(); }; // remove thumb if 404 to avoid odd color bars
+          im.onerror = ()=>{ t.remove(); };
           t.appendChild(im);
         }
         a.appendChild(t);
 
-        // body
         const b = document.createElement('div'); b.className='body';
         const m = document.createElement('div'); m.className='meta';
         m.textContent = [cat, date].filter(Boolean).join(' • ');
@@ -173,12 +113,10 @@
 
         b.appendChild(m); b.appendChild(ti); b.appendChild(exd);
         a.appendChild(b);
-
         frag.appendChild(a);
       });
 
-      grid.innerHTML='';
-      grid.appendChild(frag);
+      grid.innerHTML=''; grid.appendChild(frag);
     })
     .catch(()=>{ fallback.style.display='block'; });
 })();
