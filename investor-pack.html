@@ -11,8 +11,6 @@
 <style>
   :root{
     --text:#f3fff6; --muted:#cfe9d8;
-    --nav-bg:rgba(10,25,10,0.7);  /* desktop glass */
-    --nav-solid:#1b4332;          /* mobile drawer solid */
     --glass:rgba(255,255,255,.12);
     --max:1100px;
     --accent:#2dbb7f; --hover:#33d18f;
@@ -25,46 +23,6 @@
       linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
       url('hydroponic-bg.jpg?v=29') center/cover no-repeat;
     filter:saturate(1.05) brightness(.97);
-  }
-
-  /* ===== NAV (desktop) ===== */
-  .site-nav{position:sticky; top:0; z-index:60; background:var(--nav-bg); backdrop-filter:blur(6px); border-bottom:1px solid rgba(255,255,255,.12)}
-  .nav-inner{max-width:var(--max); margin:0 auto; padding:10px 18px; display:flex; align-items:center; gap:14px;}
-  .brand{display:flex; align-items:center; text-decoration:none}
-  .brand img{width:110px; height:auto; object-fit:contain; display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.45))}
-  .menu{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
-  .menu a{color:#fff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;}
-  .menu a:hover,.menu a.active{background:rgba(255,255,255,.18)}
-
-  /* ===== Mobile drawer ===== */
-  .nav-toggle{
-    display:none; margin-left:auto;
-    border:1px solid rgba(255,255,255,.28);
-    background:rgba(0,0,0,.25); color:#eafff5;
-    padding:8px 12px; border-radius:10px; cursor:pointer;
-  }
-  .nav-overlay{display:none;}
-  @media (max-width:768px){
-    .nav-inner{padding:10px 12px}
-    .brand img{width:84px}
-    .nav-toggle{display:inline-block}
-    .menu{
-      position:fixed; top:0; right:-80%;
-      width:80%; height:100vh; margin:0;
-      display:flex; flex-direction:column; gap:8px;
-      padding:18px;
-      background:var(--nav-solid);
-      border-left:1px solid rgba(255,255,255,.18);
-      box-shadow:-10px 0 24px rgba(0,0,0,.45);
-      transition:right .28s ease-in-out;
-    }
-    .menu a{padding:12px 14px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06)}
-    .site-nav.open .menu{ right:0; }
-    .nav-overlay{
-      position:fixed; inset:0; z-index:58;
-      display:none; background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
-    }
-    .site-nav.open + .nav-overlay{ display:block; }
   }
 
   /* Layout */
@@ -95,10 +53,10 @@
   .viewer iframe{display:block; width:100%; height:70vh; border:0;}
   .blurred{filter:blur(6px); pointer-events:none; user-select:none;}
 
-  /* Passphrase modal (overlay above drawer) */
+  /* Passphrase modal (sits above everything) */
   .lock-overlay{
     position:fixed; inset:0; display:none; place-items:center;
-    background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:70;
+    background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:999; /* higher than navbar + menu */
   }
   .lock-card{
     width:min(520px,92vw); background:rgba(255,255,255,.12); color:#eafff4;
@@ -120,30 +78,29 @@
 </head>
 <body>
 
-<!-- ===== Navbar with mobile drawer ===== -->
-<nav class="site-nav" id="siteNav">
-  <div class="nav-inner">
-    <a class="brand" href="index.html"><img src="logo.png?v=29" alt="Seechur Agro logo"></a>
-
-    <!-- Mobile hamburger -->
-    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open Menu">☰ Menu</button>
-
-    <!-- Menu (drawer on mobile) -->
-    <div class="menu" id="mobileMenu">
-      <a href="index.html">Home</a>
-      <a href="about.html">About</a>
-      <a href="why-lakadong.html">Why Lakadong</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="market.html">Market</a>
-      <a href="financials.html">Financials</a>
-      <a href="team.html">Team</a>
-      <a href="faq.html">FAQ</a>
-      <a href="contact.html">Contact</a>
-      <a class="active" href="investor-pack.html">Investor Pack</a>
-    </div>
-  </div>
-</nav>
-<div class="nav-overlay" id="navOverlay"></div>
+<!-- ✅ Shared navbar include -->
+<div id="navbar-placeholder"></div>
+<script>
+  (function loadNavbar(){
+    fetch('navbar.html', {cache:'no-cache'})
+      .then(r=>r.text())
+      .then(html=>{
+        const host = document.getElementById('navbar-placeholder');
+        host.innerHTML = html;
+        // Run any scripts inside navbar.html (for mobile drawer etc.)
+        host.querySelectorAll('script').forEach(s=>{
+          const n=document.createElement('script');
+          if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+          document.body.appendChild(n);
+        });
+        // Highlight active link
+        const current=(location.pathname.split('/').pop()||'investor-pack.html').toLowerCase();
+        document.querySelectorAll('.menu a').forEach(a=>{
+          if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
+        });
+      });
+  })();
+</script>
 
 <main class="container">
   <h1>Investor Pack (Confidential)</h1>
@@ -224,28 +181,14 @@
 
   // Fade-in cards
   const cards=[...document.querySelectorAll('.card')];
-  const io=new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target);} });
-  },{threshold:0.18});
+  const io=new IntersectionObserver((entries)=>entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target); }
+  }),{threshold:0.18});
   cards.forEach(c=>io.observe(c));
 
-  // ===== Mobile drawer logic (same as Home) =====
-  const nav = document.getElementById('siteNav');
-  const toggle = document.getElementById('navToggle');
-  const overlay = document.getElementById('navOverlay');
-
-  function openMenu(){ nav.classList.add('open'); if(toggle) toggle.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
-  function closeMenu(){ nav.classList.remove('open'); if(toggle) toggle.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
-
-  if(toggle){
-    toggle.addEventListener('click', ()=> nav.classList.contains('open') ? closeMenu() : openMenu());
-  }
-  if(overlay){ overlay.addEventListener('click', closeMenu); }
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
-
   // ===== Password Gate =====
-  const PASSPHRASE = 'SEECHUR2025';
-  const FILE_ID = '1rZK3yYDvwY2PILsvfUz6E6SYQ8K0FzPK';
+  const PASSPHRASE = 'SEECHUR2025';                // <-- change when you want
+  const FILE_ID = '1rZK3yYDvwY2PILsvfUz6E6SYQ8K0FzPK'; // <-- your Drive file id
 
   const lock = document.getElementById('lock');
   const input = document.getElementById('pass');
@@ -262,30 +205,29 @@
     if(openNew) openNew.href = src;
   }
 
-  // Show passphrase modal only on click
+  // Open the modal only when user clicks (prevents auto-open)
   openLockBtn.addEventListener('click', ()=>{
-    closeMenu();                 // ensure drawer is closed first on mobile
     lock.style.display='grid';
-    input.focus();
+    setTimeout(()=>input.focus(), 50);
   });
 
-  // Unlock logic
+  // Unlock
   btn.addEventListener('click', ()=>{
     const val = (input.value || '').trim();
     if(!val){ err.textContent = 'Please enter the passphrase.'; return; }
     if(val === PASSPHRASE){
+      err.textContent = '';
       lock.style.display='none';
       openViewer();
     }else{
       err.textContent = 'Incorrect passphrase. Please try again or request access.';
     }
   });
-
-  input.addEventListener('keydown',(e)=>{ if(e.key==='Enter') btn.click(); });
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') btn.click(); });
 
   // Close modal on outside click or Esc
-  lock.addEventListener('click',(e)=>{ if(e.target===lock) lock.style.display='none'; });
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape') lock.style.display='none'; });
+  lock.addEventListener('click', e=>{ if(e.target===lock) lock.style.display='none'; });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') lock.style.display='none'; });
 })();
 </script>
 </body>
