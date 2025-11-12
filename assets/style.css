@@ -8,18 +8,19 @@
   --muted: #cfe9d8;
   --accent: #2dbb7f;
   --dark: #0b1510;
-  --glass: rgba(255, 255, 255, 0.12);
+  --glass: rgba(255, 255, 255, 0.06);
+  --card-bg: rgba(20, 30, 26, 0.8);
+  --card-border: rgba(255,255,255,0.06);
+  --max-width: 1100px;
 }
 
-/* Reset / base */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  /* ensure text wraps nicely */
-  max-width: 100%;
-  overflow-wrap: break-word;
 }
+
+html { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
 
 body {
   font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -29,285 +30,101 @@ body {
   overflow-x: hidden;
 }
 
-/* --- Basic Sections --- */
+/* container */
 .container {
-  max-width: 1100px;
+  max-width: var(--max-width);
   margin: 0 auto;
   padding: 32px 18px;
 }
 
-/* Headings */
-h1, h2, h3 {
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  font-weight: 600;
-}
-
-h1 { font-size: 2.4rem; margin-bottom: 12px; }
-h2 { font-size: 1.6rem; margin: 18px 0 10px; }
+/* Headlines */
+h1, h2, h3 { text-shadow: 0 2px 6px rgba(0,0,0,.45); font-weight:600; }
+h1 { font-size: 2.4rem; margin-bottom: 12px; color: #e9fff2; }
+h2 { font-size: 1.6rem; margin: 18px 0 10px; color: #e9fff2; }
 p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
 
-/* --- Buttons --- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 16px;
-  background: rgba(0, 0, 0, 0.25);
-  color: #eafff4;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  text-decoration: none;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
+/* NAVBAR brand image small */
+.brand img { width:84px; height:auto; }
 
-.btn:hover {
-  background: rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
-}
-
-/* --- Grid Layout --- */
+/* Cards grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  gap: 22px;
 }
 
-/* generic card used across site */
-.card, .cards, .card--article {
-  background: var(--glass);
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  padding: 16px;
-  overflow: hidden;
+/* card link */
+a.card, .card {
+  display:block;
+  text-decoration:none;
+  color:var(--text);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04)), var(--card-bg);
+  border:1px solid var(--card-border);
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 12px 24px rgba(0,0,0,.45);
+  transition: transform .18s ease, box-shadow .18s ease;
 }
 
-/* thumbnails inside card */
-.card img, .card .thumb img, .card--article img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 12px;
-  object-fit: cover;
-}
+/* card hover */
+a.card:hover, .card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,.5); }
 
-/* --- Footer --- */
-footer, .site-footer {
+/* thumb area: consistent height */
+.thumb{
+  height:200px; background:#14261f; display:block; overflow:hidden;
+}
+.thumb img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease; }
+a.card:hover .thumb img{ transform:scale(1.04); }
+
+.body{ padding:18px; }
+.meta{ font-size:.9rem; color:var(--accent); opacity:.95; margin-bottom:8px; }
+.title{ font-weight:700; font-size:1.22rem; line-height:1.3; margin:2px 0 10px; color: #eafff4; }
+.excerpt{ color: var(--muted); font-size:1rem; line-height:1.6; }
+
+/* DEFAULT article wrapper */
+.article-wrap { padding: 32px 18px; }
+.article-card { background: transparent; border-radius: 10px; max-width: var(--max-width); margin: 0 auto; }
+.article-header { margin-bottom: 18px; }
+.article-body { color: var(--muted); line-height:1.8; }
+.article-body img { max-width: 100%; border-radius: 10px; display:block; margin: 18px auto; }
+
+/* article content blocks (matching old look) */
+.article-body h2, .article-body h3 { color: #eafff4; margin-top: 24px; margin-bottom: 12px; }
+.article-body p { margin-bottom: 16px; }
+.article-body ul { margin-left: 18px; margin-bottom: 18px; }
+
+/* footer */
+footer {
   text-align: center;
   color: #d9ffe6;
   padding: 40px 12px 60px;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.3);
   backdrop-filter: blur(4px);
-  font-size: 0.95rem;
-}
-
-/* ===============================================================
-   ARTICLE-SPECIFIC LAYOUT (keeps new pages matching old design)
-   These rules were merged to ensure generated /articles/*.html
-   look the same as manually created article pages.
-   =============================================================== */
-
-/* Article page root container (wrap the article for centered fixed width) */
-.container.article-page {
-  max-width: 1100px;
-  margin: 36px auto;
-  padding: 28px;
-  box-sizing: border-box;
-}
-
-/* Article wrapper & title */
-.article-wrap {
-  background: transparent;
-  color: var(--text);
-  margin-bottom: 18px;
-}
-
-.article-title {
-  font-size: 2.6rem;
-  font-weight: 700;
-  margin: 8px 0 18px;
-  line-height: 1.08;
-  color: var(--text);
-}
-
-/* published meta on article */
-.article-wrap .meta {
-  color: #9fcfb4;
-  margin-bottom: 18px;
   font-size: .95rem;
+  margin-top: 28px;
 }
 
-/* article body text */
-.article-body {
-  font-size: 1.05rem;
-  line-height: 1.9;
-  color: #dfeee0;
-  margin-bottom: 36px;
-}
+/* Buttons */
+.btn { display:inline-flex; align-items:center; padding:10px 16px; background:rgba(0,0,0,0.25); color:#eafff4; border:1px solid rgba(255,255,255,0.12); border-radius:999px; text-decoration:none; }
+.btn:hover { transform: translateY(-2px); }
 
-/* images inside article body: consistent sizing and presentation */
-.article-body img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  margin: 20px auto;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.45);
-}
-
-/* ensure code blocks, preformatted and lists inside article are readable */
-.article-body pre, .article-body code {
-  background: rgba(255,255,255,0.03);
-  color: var(--muted);
-  padding: 12px;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-
-.article-body ul, .article-body ol {
-  margin-left: 1.15rem;
-  margin-bottom: 16px;
-}
-
-/* keep the 'tiles' on articles.html consistent */
-.grid a.card .thumb img { object-fit: cover; width:100%; height:190px; }
-
-/* small "all articles" button style if present */
-.btn--ghost {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
-  color: var(--text);
-}
-
-/* ===============================================================
-   RESPONSIVE LAYER
-   =============================================================== */
-
-/* === Font scaling === */
-html {
-  font-size: clamp(14px, 1.4vw, 17px);
-}
-
-/* === Tablet and below (<= 1024px) === */
+/* RESPONSIVE */
 @media (max-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  }
+  .grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .thumb { height: 180px; }
 }
-
-/* === Tablet Portrait (<= 768px) === */
 @media (max-width: 768px) {
-  body { padding: 0; }
-  h1 { font-size: 1.9rem; }
-  h2 { font-size: 1.4rem; }
-  p  { font-size: 1rem; }
-
+  html { font-size: 15px; }
   .container { padding: 24px 14px; }
-
-  .grid, .cards, .section-grid {
-    grid-template-columns: 1fr !important;
-    gap: 18px;
-  }
-
-  img, iframe, video {
-    max-width: 100%;
-    height: auto;
-  }
-
-  /* Navbar - collapsible behavior (prepare for hamburger) */
-  .navbar .menu {
-    flex-direction: column;
-    background: rgba(0, 0, 0, 0.85);
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    padding: 16px;
-    display: none;
-  }
-
-  .navbar.active .menu {
-    display: flex;
-  }
-
-  .navbar-toggle {
-    display: block;
-    cursor: pointer;
-  }
-
-  .card { padding: 14px; }
+  .grid { gap: 18px; }
+  .thumb { height: 160px; }
+  .brand img { width:72px; }
 }
-
-/* === Phones and small screens (<= 480px) === */
 @media (max-width: 480px) {
   h1 { font-size: 1.6rem; }
-  h2 { font-size: 1.2rem; }
-  p  { font-size: 0.95rem; }
-
-  .btn {
-    width: 100%;
-    padding: 12px;
-  }
-
-  .container {
-    padding: 20px 12px;
-  }
-
-  .card {
-    padding: 12px;
-    border-radius: 14px;
-  }
-
-  footer {
-    font-size: 0.9rem;
-    padding: 24px 12px 40px;
-  }
-
-  /* Tables or KPI blocks scroll horizontally */
-  .table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  table {
-    min-width: 480px;
-  }
-
-  /* small-screen article title scaling */
-  .article-title { font-size: 1.6rem; }
+  .thumb { height: 140px; }
+  .container { padding: 18px 12px; }
 }
 
-/* === Prevent any overflow (redundant safety) === */
-/* (already applied above, kept here to ensure no accidental overflow) */
-* {
-  max-width: 100%;
-  overflow-wrap: break-word;
-}
-
-/* === Optional floating WhatsApp button for mobile === */
-@media (max-width: 600px) {
-  .whatsapp-float {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 100;
-    background: #25d366;
-    color: white;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
-    text-decoration: none;
-    font-size: 24px;
-  }
-}
-
-/* === Utility classes used in a few article templates --- */
-.kicker { font-size: .9rem; color: var(--muted); display:block; margin-bottom:6px; }
-.lead { color: var(--muted); line-height:1.8; margin-bottom:18px; }
-.small-meta { font-size:.88rem; color:#9fcfb4; }
-
-/* End of file */
+/* small safety rules */
+img { max-width: 100%; height: auto; }
