@@ -34,26 +34,80 @@
 <footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
 
 <script>
-(function(){ const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
- const grid=document.getElementById('grid'), fallback=document.getElementById('fallback');
- fetch('/articles/articles.json?ts=' + Date.now(), {cache:'no-cache'}).then(r=>r.ok? r.json() : Promise.reject(r.status)).then(list=>{
-   if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
-   list.sort((a,b)=> new Date(b.date) - new Date(a.date));
-   const frag=document.createDocumentFragment();
-   list.forEach(item=>{
-     const a=document.createElement('a'); a.className='card'; a.href=item.url; a.setAttribute('aria-label', item.title);
-     const t=document.createElement('div'); t.className='thumb';
-     if(item.image){ const im=document.createElement('img'); im.src=item.image; im.alt=item.title; im.loading='lazy'; t.appendChild(im); }
-     a.appendChild(t);
-     const b=document.createElement('div'); b.className='body';
-     const m=document.createElement('div'); m.className='meta'; m.textContent=[item.category || '', (new Date(item.date)).toLocaleDateString()].filter(Boolean).join(' • ');
-     const ti=document.createElement('div'); ti.className='title'; ti.textContent=item.title;
-     const ex=document.createElement('div'); ex.className='excerpt'; ex.textContent=item.excerpt || '';
-     b.appendChild(m); b.appendChild(ti); b.appendChild(ex);
-     a.appendChild(b); frag.appendChild(a);
-   });
-   grid.innerHTML=''; grid.appendChild(frag);
- }).catch(()=>{ fallback.style.display='block'; });
+(function(){
+  // footer year
+  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+
+  const grid=document.getElementById('grid'), fallback=document.getElementById('fallback');
+
+  // Helper: ensure leading slash
+  function ensureRootPath(path){
+    if(!path) return '';
+    path = String(path).trim();
+    if(path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/')) return path;
+    return '/' + path.replace(/^\.\//,'');
+  }
+
+  // fetch root-level articles.json (robust to where JSON sits)
+  fetch('/articles.json?ts=' + Date.now(), {cache:'no-cache'})
+    .then(r => {
+      if(!r.ok) return Promise.reject(r.status);
+      return r.json();
+    })
+    .then(list => {
+      if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
+
+      // sort descending by date
+      list.sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+      const frag = document.createDocumentFragment();
+
+      list.forEach(item=>{
+        // normalize values
+        const url   = ensureRootPath(item.url || item.path || ('/articles/' + (item.id || item.slug || '').replace(/^\//,'')));
+        const img   = ensureRootPath(item.image || item.thumbnail || '');
+        const cat   = item.category || '';
+        const date  = item.date ? (new Date(item.date)).toLocaleDateString() : '';
+        const title = item.title || '';
+        const ex    = item.excerpt || item.subtitle || '';
+
+        const a = document.createElement('a');
+        a.className = 'card';
+        a.href = url;
+        a.setAttribute('aria-label', title);
+
+        // thumbnail wrapper
+        const t = document.createElement('div'); t.className='thumb';
+        if(img){
+          const im = document.createElement('img');
+          im.loading='lazy';
+          im.alt = title || 'Article image';
+          im.src = img;
+          im.onerror = ()=>{ t.remove(); };
+          t.appendChild(im);
+        }
+        a.appendChild(t);
+
+        // body
+        const b = document.createElement('div'); b.className='body';
+        const m = document.createElement('div'); m.className='meta';
+        m.textContent = [cat, date].filter(Boolean).join(' • ');
+        const ti = document.createElement('div'); ti.className='title'; ti.textContent=title;
+        const exd = document.createElement('div'); exd.className='excerpt'; exd.textContent=ex;
+
+        b.appendChild(m); b.appendChild(ti); b.appendChild(exd);
+        a.appendChild(b);
+
+        frag.appendChild(a);
+      });
+
+      grid.innerHTML='';
+      grid.appendChild(frag);
+    })
+    .catch(err=>{
+      console.warn('Failed to load /articles.json:', err);
+      fallback.style.display='block';
+    });
 })();
 </script>
 </body>
