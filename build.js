@@ -1,4 +1,4 @@
-// build.js — automatic converter + root merge (final, updated)
+// build.js — automatic converter + root merge (updated)
 const fs = require("fs");
 const path = require("path");
 const matter = require("gray-matter");
@@ -6,119 +6,81 @@ const MarkdownIt = require("markdown-it");
 const slugify = require("slugify");
 
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
-const articlesDir = path.join(__dirname, "articles");
-const rootJson = path.join(__dirname, "articles.json"); // root-level index
-const articleJson = path.join(articlesDir, "articles.json"); // /articles/articles.json
+const root = __dirname;
+const articlesDir = path.join(root, "articles");
+const rootJson = path.join(root, "articles.json");
+const articleJson = path.join(articlesDir, "articles.json");
 
 function readMdFiles() {
-  if (!fs.existsSync(articlesDir)) {
-    console.error("articles directory not found:", articlesDir);
-    process.exit(1);
-  }
+  if (!fs.existsSync(articlesDir)) return [];
   return fs
     .readdirSync(articlesDir)
     .filter((f) => f.endsWith(".md"))
     .map((f) => path.join(articlesDir, f));
 }
 
-// Normalize dashes for safe URLs and slugify
+// Normalize dashes for safe URLs and generate slugs cleanly
 function safeSlug(title, filename) {
   let base = title && title.length ? title : path.basename(filename, ".md");
   base = base.replace(/[—–−]/g, "-"); // normalize dash variants
-  base = base.replace(/[^a-zA-Z0-9\- ]+/g, ""); // remove odd chars
+  base = base.replace(/['"“”‘’]/g, ""); // remove quotes
   base = base.replace(/\s+/g, "-"); // spaces -> dash
   base = base.replace(/-+/g, "-"); // collapse repeats
   return slugify(base, { lower: true, strict: true });
 }
 
-// Ensure images referenced in frontmatter are absolute (start with '/')
-function normalizeImagePath(img) {
-  if (!img) return "";
-  // if data URL or absolute http(s) leave unchanged
-  if (/^https?:\/\//i.test(img) || /^data:/i.test(img)) return img;
-  if (img.startsWith("/")) return img;
-  // assume site root assets path
-  return "/" + img.replace(/^\/+/, "");
-}
-
-// The site wrapper includes the same navbar markup so every article page looks uniform.
-// If you later update navbar.html, also update this wrapper or use server includes.
+// Wrap each article into a full HTML page that matches site layout.
+// Important: it references /assets/style.css and includes navbar via fetch('/navbar.html')
+// so the navbar and logo are shared with root site and work from /articles/.
 function wrapHtml(title, contentHtml, meta = {}) {
-  const dateHtml = meta.date ? `<p class="meta">Published: ${meta.date}</p>` : "";
+  // meta.date should be an ISO date string if present
+  const dateDisplay = meta.date ? `<p class="meta">Published: ${new Date(meta.date).toUTCString()}</p>` : "";
   return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>${escapeHtml(title)} • Seechur Agro</title>
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(meta.excerpt || '')}" />
   <link rel="stylesheet" href="/assets/style.css"/>
 </head>
 <body>
-  <!-- NAVBAR (inlined so generated pages are identical) -->
-  <nav class="site-nav" id="siteNav">
-    <div class="nav-inner">
-      <a class="brand" href="/index.html" aria-label="Seechur Agro home">
-        <img src="/assets/logo.png" alt="Seechur Agro logo">
-      </a>
-      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open Menu">
-        ☰ Menu
-      </button>
-      <div class="menu" id="mobileMenu">
-        <a href="/index.html">Home</a>
-        <a href="/about.html">About</a>
-        <a href="/why-lakadong.html">Why Lakadong</a>
-        <a href="/portfolio.html">Portfolio</a>
-        <a href="/market.html">Market</a>
-        <a href="/financials.html">Financials</a>
-        <a href="/team.html">Team</a>
-        <a href="/faq.html">FAQ</a>
-        <a href="/advisors.html">Advisors</a>
-        <a href="/articles.html">Articles</a>
-        <a href="/contact.html">Contact</a>
-        <a href="/investor-pack.html">Investor Pack</a>
-      </div>
-    </div>
-  </nav>
+  <!-- shared navbar (loaded at runtime so one copy for whole site) -->
+  <div id="navbar-placeholder"></div>
+  <script>
+  (function loadNavbar(){
+    // load navbar from absolute path so works from /articles/ and root
+    fetch('/navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
+      const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
+      // run any scripts in navbar.html safely (same approach used site-wide)
+      host.querySelectorAll('script').forEach(s=>{
+        const n=document.createElement('script');
+        if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+        document.body.appendChild(n);
+      });
+    }).catch(()=>{/* ignore if no navbar.html found */});
+  })();
+  </script>
 
-  <main class="container article-wrap">
-    <article class="article-content">
+  <main class="container article-page">
+    <article class="article-wrap">
       <h1 class="article-title">${escapeHtml(title)}</h1>
-      ${dateHtml}
-      <section class="article-body">
+      ${dateDisplay}
+      <div class="article-body">
         ${contentHtml}
-      </section>
+      </div>
     </article>
   </main>
 
   <footer class="site-footer">
-    <p>© ${new Date().getFullYear()} Seechur Agro Pvt. Ltd. • Human by Chance, Farmer by Choice</p>
+    <p>© ${new Date().getFullYear()} Seechur Agro Private Limited • Human by Chance, Farmer by Choice</p>
   </footer>
-
-  <script>
-    // small nav script to allow mobile drawer (kept minimal)
-    (function(){
-      if (window.__SEECHUR_NAVBAR_INIT__) return;
-      window.__SEECHUR_NAVBAR_INIT__ = true;
-      const nav = document.getElementById('siteNav');
-      const toggle = document.getElementById('navToggle');
-      const overlay = document.getElementById('navOverlay');
-      function openMenu(){ nav.classList.add('open'); if(toggle) toggle.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden';}
-      function closeMenu(){ nav.classList.remove('open'); if(toggle) toggle.setAttribute('aria-expanded','false'); document.body.style.overflow='';}
-      if (toggle) toggle.addEventListener('click', ()=>{ nav.classList.contains('open') ? closeMenu() : openMenu(); });
-      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
-      // set active link
-      const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-      document.querySelectorAll('.menu a').forEach(a=>{ const href=(a.getAttribute('href')||'').toLowerCase(); if (href===current || (current==='' && href==='index.html')) a.classList.add('active'); });
-    })();
-  </script>
 </body>
 </html>`;
 }
 
-// basic escape for title insertion
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
-}
+// simple html escaper for title/meta strings
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 
 function buildArticles() {
   const mdFiles = readMdFiles();
@@ -127,18 +89,16 @@ function buildArticles() {
   mdFiles.forEach((filePath) => {
     const raw = fs.readFileSync(filePath, "utf8");
     const parsed = matter(raw);
-    const contentHtml = md.render(parsed.content || "");
+    const html = md.render(parsed.content);
+
     const title = parsed.data.title || path.basename(filePath, ".md");
-    const slug = safeSlug(parsed.data.title || parsed.data.title === "" ? parsed.data.title : path.basename(filePath));
+    const slug = safeSlug(parsed.data.title || title, path.basename(filePath));
     const date = parsed.data.date || new Date().toISOString();
     const url = `/articles/${slug}.html`;
 
-    // normalize image
-    const image = normalizeImagePath(parsed.data.image || "");
-
-    // produce article HTML and write to /articles/<slug>.html
+    // Write the HTML file into /articles/
     const outPath = path.join(articlesDir, `${slug}.html`);
-    const wrapped = wrapHtml(title, contentHtml, { date });
+    const wrapped = wrapHtml(title, html, { date, excerpt: parsed.data.excerpt || '' });
     fs.writeFileSync(outPath, wrapped, "utf8");
 
     summary.push({
@@ -146,20 +106,23 @@ function buildArticles() {
       title,
       date,
       category: parsed.data.category || "",
-      image,
+      image: parsed.data.image || "",
       url,
-      excerpt: parsed.data.excerpt || parsed.data.subtitle || ""
+      excerpt: parsed.data.excerpt || "",
+      author: parsed.data.author || { name: "Seechur Agro — Editorial Team" }
     });
 
-    console.log("✅ Converted", path.basename(filePath), "→", path.relative(__dirname, outPath));
+    console.log(`✅ Converted ${path.basename(filePath)} → ${path.relative(root, outPath)}`);
   });
 
   // sort by date desc
   summary.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // write /articles/articles.json
+  // ensure articles directory exists and write /articles/articles.json
+  if (!fs.existsSync(articlesDir)) fs.mkdirSync(articlesDir);
   fs.writeFileSync(articleJson, JSON.stringify(summary, null, 2), "utf8");
-  console.log(`📘 Wrote ${path.relative(__dirname, articleJson)} with ${summary.length} items`);
+  console.log(`📘 Wrote ${path.relative(root, articleJson)} with ${summary.length} items`);
+
   return summary;
 }
 
@@ -168,25 +131,25 @@ function mergeRootJson(newArticles) {
   if (fs.existsSync(rootJson)) {
     try {
       rootData = JSON.parse(fs.readFileSync(rootJson, "utf8"));
+      // backup existing root articles.json
       fs.writeFileSync(path.join(articlesDir, "articles.orig.json"), JSON.stringify(rootData, null, 2), "utf8");
-      console.log("💾 Backed up existing root articles.json -> /articles/articles.orig.json");
+      console.log("💾 Backed up existing root articles.json");
     } catch (err) {
-      console.warn("⚠️ Could not parse existing root articles.json, skipping backup/merge");
+      console.warn("⚠️ Could not parse existing root articles.json, skipping merge");
     }
   }
 
-  // merge unique by url (prefer newArticles order)
-  const combinedMap = new Map();
-  newArticles.forEach(a => combinedMap.set(a.url, a));
-  (rootData || []).forEach(a => { if(!combinedMap.has(a.url)) combinedMap.set(a.url, a); });
+  // combine, remove duplicates by url (newArticles first -> take latest)
+  const combined = [...newArticles, ...rootData].filter(
+    (a, i, arr) => arr.findIndex((b) => b.url === a.url) === i
+  );
 
-  const combined = Array.from(combinedMap.values());
-  combined.sort((a,b)=> new Date(b.date) - new Date(a.date));
-
+  combined.sort((a, b) => new Date(b.date) - new Date(a.date));
   fs.writeFileSync(rootJson, JSON.stringify(combined, null, 2), "utf8");
-  console.log(`✅ Updated root ${path.relative(__dirname, rootJson)} (${combined.length} total items)`);
+  console.log(`✅ Updated root articles.json (${combined.length} total items)`);
 }
 
+// MAIN
 function main() {
   console.log("🚀 Starting article build process...");
   const newArticles = buildArticles();
