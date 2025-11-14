@@ -36,7 +36,7 @@
     content:""; position:fixed; inset:0; z-index:-1;
     background:
       linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
-      url('hydroponic-bg.jpg?v=32') center/cover no-repeat;
+      url('/assets/hydroponic-bg.jpg?v=32') center/cover no-repeat;
     filter:saturate(1.05) brightness(.97);
   }
 
@@ -92,24 +92,41 @@
 </head>
 <body>
 
-<!-- ✅ Shared navbar include -->
+<!-- ✅ Shared navbar include (absolute path so it works from / and /articles/slug.html) -->
 <div id="navbar-placeholder"></div>
 <script>
 (function loadNavbar(){
-  fetch('navbar.html',{cache:'no-cache'}).then(r=>r.text()).then(html=>{
+  // use absolute path so fetching works from any subpath
+  fetch('/navbar.html',{cache:'no-cache'}).then(r=>{
+    if(!r.ok) throw new Error('navbar fetch failed');
+    return r.text();
+  }).then(html=>{
     const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
-    // execute any scripts embedded in navbar.html
+
+    // run any inline scripts found inside navbar.html (preserve previous behavior)
     host.querySelectorAll('script').forEach(s=>{
       const n=document.createElement('script');
-      if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+      if(s.src){
+        n.src = s.src;
+        // make absolute if relative
+        if(!/^(https?:|\/)/.test(n.src)){
+          // prepend origin to relative src
+          n.src = window.location.origin + '/' + s.src.replace(/^\.\//,'');
+        }
+      } else {
+        n.textContent = s.textContent;
+      }
       document.body.appendChild(n);
     });
-    // highlight Articles in nav
+
+    // highlight Articles in nav robustly (handle href like '/articles.html' or 'articles.html')
     document.querySelectorAll('.menu a').forEach(a=>{
       const href=(a.getAttribute('href')||'').toLowerCase();
-      if(href==='articles.html') a.classList.add('active');
+      if(href.endsWith('articles.html') || href.endsWith('/articles') || href.endsWith('/articles.html')) {
+        a.classList.add('active');
+      }
     });
-  });
+  }).catch(()=>{/* silent: if navbar missing, page still shows */});
 })();
 </script>
 
@@ -130,7 +147,8 @@
   const grid = document.getElementById('grid');
   const fallback = document.getElementById('fallback');
 
-  fetch('articles.json?ver=3', {cache:'no-cache'})
+  // use absolute path to articles.json so it resolves whether page is / or /articles/slug.html
+  fetch('/articles.json?ver=3', {cache:'no-cache'})
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(list => {
       if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; return; }
@@ -148,7 +166,8 @@
 
         const a = document.createElement('a');
         a.className = 'card';
-        a.href = url;
+        // ensure urls are absolute-rooted if not already
+        a.href = (url && url.startsWith('/')) ? url : ('/' + url.replace(/^\//,''));
         a.setAttribute('aria-label', title);
 
         // thumbnail
@@ -158,7 +177,7 @@
           const im = document.createElement('img');
           im.loading='lazy';
           im.alt = title || 'Article image';
-          im.src = img;
+          im.src = (img.startsWith('/')) ? img : ('/' + img.replace(/^\//,''));
           im.onerror = ()=>{ t.remove(); }; // remove thumb if 404 to avoid odd color bars
           t.appendChild(im);
         }
