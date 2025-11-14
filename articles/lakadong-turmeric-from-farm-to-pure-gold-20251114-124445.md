@@ -45,7 +45,7 @@ Immediately after harvest, the rhizomes are washed in clean water to remove soil
 • Triple-stage washing—soaking, brushing, and rinsing.  
 • Excess water is drained to prevent microbial growth before boiling.
 
-Image1.jpg
+/images/uploads/lakadong-rhizome.jpg
 
 ### 3️⃣ Boiling for Curing
 Boiling enhances color, aroma, and shelf life.
@@ -53,7 +53,7 @@ Boiling enhances color, aroma, and shelf life.
 • Temperature: Maintained at 90–95 °C.  
 • Outcome: Color deepens, aroma intensifies.
 
-Image2.jpg
+/images/uploads/turmeric-boiling.jpg
 
 ### 4️⃣ Drying Under Controlled Conditions
 Proper drying locks in curcumin and prevents mold.
