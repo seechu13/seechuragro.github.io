@@ -1,15 +1,23 @@
 ---
+layout: "article"
 title: "Lakadong Turmeric — From Farm to Pure Gold"
 date: 2025-11-14
 category: "Lakadong"
-author: "Seechur Agro Editororial Team"
+tags: ["lakadong","turmeric","processing"]
 slug: "lakadong-turmeric-from-farm-to-pure-gold-20251114-124445"
-excerpt: "Lakadong turmeric from Meghalaya is prized for its high curcumin content and purity. At Seechur Agro, we cultivate and process it under controlled, traceable conditions to preserve its natural potency.
-"
-cover_image: "/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/coverimage - Srivatsan Renga.jpg"
-images: ["/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/image1 - Srivatsan Renga.jpg", "/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/image2 - Srivatsan Renga.jpg"]
+excerpt: "Lakadong turmeric from Meghalaya is prized for its high curcumin content and purity. At Seechur Agro, we cultivate and process it under controlled, traceable conditions to preserve its natural potency."
+cover_image: "/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/coverimage%20-%20Srivatsan%20Renga.jpg"
+images:
+  - "/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/image1%20-%20Srivatsan%20Renga.jpg"
+  - "/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/image2%20-%20Srivatsan%20Renga.jpg"
 reading_time: 1
+author:
+  name: "Seechur Agro Editorial Team"
+  org: "Seechur Agro"
+  role: "Editorial"
+  url: ""
 ---
+
 
 ![Cover](/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/coverimage - Srivatsan Renga.jpg)
 
