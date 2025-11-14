@@ -1,8 +1,8 @@
 <!-- navbar.html -->
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
-    <a class="brand" href="index.html" aria-label="Seechur Agro home">
-      <img src="logo.png?v=27" alt="Seechur Agro logo">
+    <a class="brand" href="/" aria-label="Seechur Agro home">
+      <img src="/logo.png?v=27" alt="Seechur Agro logo">
     </a>
 
     <!-- Mobile hamburger -->
@@ -12,18 +12,18 @@
 
     <!-- Menu (drawer on mobile) -->
     <div class="menu" id="mobileMenu">
-      <a href="index.html">Home</a>
-      <a href="about.html">About</a>
-      <a href="why-lakadong.html">Why Lakadong</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="market.html">Market</a>
-      <a href="financials.html">Financials</a>
-      <a href="team.html">Team</a>
-      <a href="faq.html">FAQ</a>
-      <a href="advisors.html">Advisors</a>
-      <a href="articles.html">Articles</a>
-      <a href="contact.html">Contact</a>
-      <a href="investor-pack.html">Investor Pack</a>
+      <a href="/index.html">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/why-lakadong.html">Why Lakadong</a>
+      <a href="/portfolio.html">Portfolio</a>
+      <a href="/market.html">Market</a>
+      <a href="/financials.html">Financials</a>
+      <a href="/team.html">Team</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/advisors.html">Advisors</a>
+      <a href="/articles.html">Articles</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/investor-pack.html">Investor Pack</a>
     </div>
   </div>
 </nav>
@@ -88,7 +88,7 @@
 
 <script>
 (function(){
-  // Guard against multiple initializations
+  // Guard against multiple initializations (if navbar.html is injected multiple times)
   if (window.__SEECHUR_NAVBAR_INIT__) return;
   window.__SEECHUR_NAVBAR_INIT__ = true;
 
@@ -116,12 +116,46 @@
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
   // Active link highlight
-  const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-  document.querySelectorAll('.menu a').forEach(a=>{
-    const href = (a.getAttribute('href')||'').toLowerCase();
-    if (href === current || (current==='' && href==='index.html')) {
-      a.classList.add('active');
-    }
-  });
+  // Use absolute path logic. If we're on a page under /articles/* -> highlight /articles.html
+  const path = (location.pathname || '/').toLowerCase();
+  // normalize: remove trailing slash
+  const normalized = path.endsWith('/') && path.length>1 ? path.slice(0,-1) : path;
+
+  // decide active target
+  let activeHref = '/index.html';
+  if (normalized === '/' || normalized === '/index.html') {
+    activeHref = '/index.html';
+  } else if (normalized.startsWith('/articles/')) {
+    // any article details page -> highlight articles listing
+    activeHref = '/articles.html';
+  } else {
+    // use last segment filename
+    const parts = normalized.split('/');
+    const last = parts[parts.length-1] || 'index.html';
+    activeHref = '/' + last;
+  }
+
+  // apply active class; be resilient if links are added later
+  // because navbar might be dynamically injected, use a small timeout to ensure DOM ready
+  function applyActive(){
+    document.querySelectorAll('.menu a').forEach(a=>{
+      const href = (a.getAttribute('href')||'').toLowerCase();
+      // normalize href to leading slash
+      const hrefNorm = href.startsWith('/') ? href : ('/' + href);
+      if (hrefNorm === activeHref) {
+        a.classList.add('active');
+      } else {
+        a.classList.remove('active');
+      }
+    });
+  }
+
+  // run immediately
+  applyActive();
+  // also observe for changes (in case CMS injects/updates links later)
+  if (window.MutationObserver) {
+    const mo = new MutationObserver(()=> applyActive());
+    mo.observe(document.querySelector('.menu') || document.body, { childList:true, subtree:true });
+  }
 })();
 </script>
