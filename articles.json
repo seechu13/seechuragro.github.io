@@ -5,8 +5,8 @@
     "subtitle": "",
     "date": "2025-11-14",
     "category": "Lakadong",
-    "image": "/images/uploads/lakadong-rhizome.jpg",
-    "url": "/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445.html",
+    "image": "assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/coverimage - Srivatsan Renga.jpg",
+    "url": "articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445.html",
     "excerpt": "Lakadong turmeric from Meghalaya is prized for its high curcumin content and purity.",
     "author": {
       "name": "Seechur Agro Editorial Team",
@@ -16,13 +16,29 @@
     }
   },
   {
+    "id": "microgreens-basics",
+    "title": "Microgreens 101: Fast Cycles, Big Flavor",
+    "subtitle": "A rapid-return crop with nutrition and market appeal.",
+    "date": "2025-11-06",
+    "category": "Microgreens",
+    "image": "images/articles/microgreens-basics/hero.jpg",
+    "url": "articles/microgreens-basics.html",
+    "excerpt": "Microgreens mature in under 14 days, offering steady cash flow and premium prices for restaurants and health-conscious consumers.",
+    "author": {
+      "name": "Editorial Team",
+      "org": "Seechur Agro",
+      "role": "Content",
+      "url": ""
+    }
+  },
+  {
     "id": "water-use-efficiency",
     "title": "Water Use Efficiency in Controlled Farming",
-    "subtitle": "Closed-loop fertigation can cut water use by ~80?90%.",
+    "subtitle": "Closed-loop fertigation can cut water use by ~80–90%.",
     "date": "2025-11-05",
     "category": "Hydroponics",
-    "image": "/images/articles/water-use-efficiency/hero.jpg",
-    "url": "/articles/water-use-efficiency.html",
+    "image": "images/articles/water-use-efficiency/hero.jpg",
+    "url": "articles/water-use-efficiency.html",
     "excerpt": "Protected cultivation with recirculation reduces evaporation and deep percolation losses while improving nutrient precision.",
     "author": {
       "name": "Dr. A. Technical",
@@ -37,25 +53,9 @@
     "subtitle": "How curcumin % links to pricing and applications.",
     "date": "2025-11-01",
     "category": "Lakadong",
-    "image": "/images/articles/lakadong-curcumin-basics/hero.jpg",
-    "url": "/articles/lakadong-curcumin-basics.html",
+    "image": "images/articles/lakadong-curcumin-basics/hero.jpg",
+    "url": "articles/lakadong-curcumin-basics.html",
     "excerpt": "Understanding curcumin ranges, testing norms, and what buyers look for in premium Lakadong lots.",
-    "author": {
-      "name": "Editorial Team",
-      "org": "Seechur Agro",
-      "role": "Content",
-      "url": ""
-    }
-  },
-  {
-    "id": "microgreens-basics",
-    "title": "Microgreens 101: Fast Cycles, Big Flavor",
-    "subtitle": "A rapid-return crop with nutrition and market appeal.",
-    "date": "2025-11-06",
-    "category": "Microgreens",
-    "image": "/images/articles/microgreens-basics/hero.jpg",
-    "url": "/articles/microgreens-basics.html",
-    "excerpt": "Microgreens mature in under 14 days, offering steady cash flow and premium prices for restaurants and health-conscious consumers.",
     "author": {
       "name": "Editorial Team",
       "org": "Seechur Agro",
