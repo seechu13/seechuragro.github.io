@@ -17,6 +17,17 @@ author:
   role: "Editorial"
   url: ""
 ---
+<!-- Force-insert navbar and ensure absolute assets -->
+<script>
+  (function(){
+    // insert navbar
+    fetch('/navbar.html',{cache:'no-cache'}).then(r=>r.ok?r.text():'').then(html=>{
+      if(html) document.body.insertAdjacentHTML('afterbegin', html);
+    }).catch(()=>{});
+    // small style hack if navbar present but CSS not loaded
+    document.documentElement.classList.add('article-page');
+  })();
+</script>
 
 
 ![Cover](/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/coverimage - Srivatsan Renga.jpg)
