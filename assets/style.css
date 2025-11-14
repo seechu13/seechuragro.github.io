@@ -128,3 +128,30 @@ footer {
 
 /* small safety rules */
 img { max-width: 100%; height:  auto;  }
+
+/* -------------------------------------------
+   Appended: article panel + typography fixes
+   (ensures boxed article UI consistent site-wide)
+   ------------------------------------------- */
+
+/* article panel + typography fixes for consistent look */
+.article-body, .post-body, .article-content, .post-content {
+  max-width: 980px;
+  margin: 20px auto;
+  padding: 26px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.18);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  color: #e8f7ee;
+  line-height:1.65;
+}
+
+.article-body h1, .article-body h2, .article-body h3,
+.post-body h1, .post-body h2, .post-body h3 {
+  color: #e8f7ee;
+}
+
+/* ensure articles listing / individual article use same background tone */
+main.container, .article-body, .post-body {
+  background: transparent;
+}
