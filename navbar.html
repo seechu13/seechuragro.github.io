@@ -2,14 +2,13 @@
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
     <a class="brand" href="/" aria-label="Seechur Agro home">
-      <img src="/logo.png?v=29" alt="Seechur Agro logo">
+      <img src="/logo.png?v=27" alt="Seechur Agro logo">
     </a>
 
     <!-- Mobile hamburger -->
-    <button class="nav-toggle" id="navToggle"
-            aria-expanded="false"
-            aria-controls="mobileMenu"
-            aria-label="Open Menu">☰ Menu</button>
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open Menu">
+      ☰ Menu
+    </button>
 
     <!-- Menu (drawer on mobile) -->
     <div class="menu" id="mobileMenu">
@@ -28,136 +27,70 @@
     </div>
   </div>
 </nav>
-
 <div class="nav-overlay" id="navOverlay" hidden></div>
 
-
-<!-- ================================================================
-     NAVBAR CSS — optimised to match global site style.css
-     ================================================================ -->
 <style>
-  :root {
-    --nav-bg: rgba(10, 25, 10, 0.88);  /* same as site-wide dark tone */
-    --nav-solid: #1b4332;             /* mobile drawer */
+  :root{
+    --nav-bg:rgba(10,25,10,0.7); /* desktop transparent */
+    --nav-solid:#1b4332;         /* mobile drawer solid */
   }
-
   .site-nav{
-    position:sticky;
-    top:0;
-    z-index:1000;
-    height:86px;
-    background:var(--nav-bg);
-    backdrop-filter:blur(6px);
-    border-bottom:1px solid rgba(255,255,255,.10);
-    display:flex;
-    align-items:center;
+    position:sticky; top:0; z-index:1000;
+    background:var(--nav-bg); backdrop-filter:blur(6px);
+    border-bottom:1px solid rgba(255,255,255,.12);
+    font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
   }
-
   .nav-inner{
-    max-width:1100px;
-    margin:0 auto;
-    padding:10px 18px;
-    width:100%;
-    display:flex;
-    align-items:center;
-    gap:14px;
+    max-width:1100px; margin:0 auto;
+    padding:10px 18px; display:flex; align-items:center; gap:14px;
   }
-
+  .brand{display:flex; align-items:center; text-decoration:none}
   .brand img{
-    width:86px;                    /* 👈 EXACT size now consistent */
-    height:auto;
-    display:block;
-    object-fit:contain;
-    border-radius:8px;
-    padding:6px;
-    background:rgba(255,255,255,.03);
+    width:110px; height:auto; object-fit:contain; display:block;
     filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));
   }
-
-  .menu{
-    margin-left:auto;
-    display:flex;
-    gap:18px;
-    align-items:center;
-    flex-wrap:wrap;
-  }
-
+  .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
   .menu a{
-    color:#ffffff;
-    text-decoration:none;
-    padding:8px 12px;
-    font-weight:600;
-    font-size:0.98rem;       /* 👈 unified with style.css */
-    border-radius:999px;
-    opacity:0.95;
-    transition:background .18s, transform .15s;
+    color:#ffffff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;
+    font-size:1rem;
   }
+  .menu a:hover,.menu a.active{ background:rgba(255,255,255,0.18); }
 
-  .menu a:hover,
-  .menu a.active{
-    background:rgba(255,255,255,0.08);
-    transform:translateY(-1px);
-  }
-
-  /* MOBILE NAV */
   .nav-toggle{
-    display:none;
-    margin-left:auto;
-    border:1px solid rgba(255,255,255,.22);
-    background:rgba(0,0,0,.25);
-    color:#eafff5;
-    padding:8px 12px;
-    border-radius:10px;
-    cursor:pointer;
+    display:none; margin-left:auto;
+    border:1px solid rgba(255,255,255,.28);
+    background:rgba(0,0,0,.25); color:#eafff5;
+    padding:8px 12px; border-radius:10px; cursor:pointer;
   }
+  .nav-overlay{ display:none; }
 
-  @media(max-width:768px){
-    .nav-toggle{ display:inline-block; }
-
+  @media (max-width:768px){
+    .brand img{width:84px;}
+    .nav-toggle{display:inline-block;}
     .menu{
-      position:fixed;
-      top:0;
-      right:-80%;
-      width:80%;
-      height:100vh;
-      background:var(--nav-solid);
-      border-left:1px solid rgba(255,255,255,.18);
+      position:fixed; top:0; right:-80%;
+      width:80%; height:100vh; margin:0;
+      display:flex; flex-direction:column; gap:8px;
       padding:18px;
-      flex-direction:column;
-      gap:10px;
+      background:var(--nav-solid); /* solid drawer */
+      border-left:1px solid rgba(255,255,255,.18);
       box-shadow:-10px 0 24px rgba(0,0,0,.45);
       transition:right .28s ease-in-out;
     }
-
-    .menu a{
-      padding:12px 16px;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.06);
-    }
-
+    .menu a{padding:12px 14px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06);}
     .site-nav.open .menu{ right:0; }
 
     .nav-overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.55);
-      backdrop-filter:blur(2px);
-      z-index:999;
+      position:fixed; inset:0; z-index:999;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
     }
-
-    .site-nav.open + .nav-overlay{
-      display:block;
-    }
+    .site-nav.open + .nav-overlay{ display:block; }
   }
 </style>
 
-
-
-<!-- ================================================================
-     NAVBAR JS — simplified + stable + article-page aware
-     ================================================================ -->
 <script>
 (function(){
+  // Guard against multiple initializations (if navbar.html is injected multiple times)
   if (window.__SEECHUR_NAVBAR_INIT__) return;
   window.__SEECHUR_NAVBAR_INIT__ = true;
 
@@ -167,53 +100,52 @@
 
   function openMenu(){
     nav.classList.add('open');
-    toggle.setAttribute('aria-expanded','true');
-    overlay.removeAttribute('hidden');
+    if (toggle) toggle.setAttribute('aria-expanded','true');
+    if (overlay){ overlay.removeAttribute('hidden'); }
     document.body.style.overflow='hidden';
   }
-
   function closeMenu(){
     nav.classList.remove('open');
-    toggle.setAttribute('aria-expanded','false');
-    overlay.setAttribute('hidden','');
+    if (toggle) toggle.setAttribute('aria-expanded','false');
+    if (overlay){ overlay.setAttribute('hidden',''); }
     document.body.style.overflow='';
   }
 
-  toggle.addEventListener('click', ()=>{
-    nav.classList.contains('open') ? closeMenu() : openMenu();
-  });
+  if (toggle) toggle.addEventListener('click', ()=>{ nav.classList.contains('open') ? closeMenu() : openMenu(); });
+  if (overlay) overlay.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
-  overlay.addEventListener('click', closeMenu);
+  // Active link highlight
+  // Use absolute path logic. If we're on a page under /articles/ -> highlight /articles.html
+  const path = (location.pathname || '/').toLowerCase();
+  const normalized = path.endsWith('/') && path.length>1 ? path.slice(0,-1) : path;
 
-  document.addEventListener('keydown', e=>{
-    if(e.key==='Escape') closeMenu();
-  });
-
-  /* ----------------------------
-     ACTIVE LINK HIGHLIGHT LOGIC
-     ---------------------------- */
-  const path = location.pathname.toLowerCase();
-
-  let active = '/index.html';
-
-  if (path === '/' || path === '/index.html') {
-    active = '/index.html';
-  }
-  else if (path.startsWith('/articles/')) {
-    active = '/articles.html';
-  }
-  else {
-    active = '/' + path.split('/').pop();
+  let activeHref = '/index.html';
+  if (normalized === '/' || normalized === '/index.html') {
+    activeHref = '/index.html';
+  } else if (normalized.startsWith('/articles/')) {
+    activeHref = '/articles.html';
+  } else {
+    const parts = normalized.split('/');
+    const last = parts[parts.length-1] || 'index.html';
+    activeHref = '/' + last;
   }
 
+  // apply active class; if navbar injected dynamically, run applyActive after a brief time
   function applyActive(){
     document.querySelectorAll('.menu a').forEach(a=>{
-      const href = a.getAttribute('href').toLowerCase();
-      if (href === active) a.classList.add('active');
-      else a.classList.remove('active');
+      const hrefRaw = (a.getAttribute('href')||'').toLowerCase();
+      const hrefNorm = hrefRaw.startsWith('/') ? hrefRaw : ('/' + hrefRaw);
+      if (hrefNorm === activeHref) { a.classList.add('active'); } else { a.classList.remove('active'); }
     });
   }
 
+  // run immediately and also observe for late injections
   applyActive();
+  if (window.MutationObserver) {
+    const menuNode = document.querySelector('.menu') || document.body;
+    const mo = new MutationObserver(()=> applyActive());
+    mo.observe(menuNode, { childList:true, subtree:true });
+  }
 })();
 </script>
