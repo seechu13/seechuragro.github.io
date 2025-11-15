@@ -2,7 +2,7 @@
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
     <a class="brand" href="/" aria-label="Seechur Agro home">
-      <img src="/logo.png?v=27" alt="Seechur Agro logo">
+      <img src="/logo.png?v=27" alt="Seechur Agro logo" />
     </a>
 
     <!-- Mobile hamburger -->
@@ -11,7 +11,7 @@
     </button>
 
     <!-- Menu (drawer on mobile) -->
-    <div class="menu" id="mobileMenu" role="navigation" aria-label="Main menu">
+    <div class="menu" id="mobileMenu" role="navigation" aria-label="Primary">
       <a href="/index.html">Home</a>
       <a href="/about.html">About</a>
       <a href="/why-lakadong.html">Why Lakadong</a>
@@ -27,118 +27,137 @@
     </div>
   </div>
 </nav>
+
 <div class="nav-overlay" id="navOverlay" hidden></div>
 
 <style>
+  /* NAVBAR: desktop and mobile drawer */
   :root{
-    --nav-bg: rgba(10,25,10,0.72);
+    --nav-bg: rgba(10,25,10,0.78);
     --nav-solid: #1b4332;
-    --nav-height: auto;
+    --nav-height: 74px;
   }
 
   .site-nav{
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 1100;
     background: var(--nav-bg);
     backdrop-filter: blur(6px);
-    border-bottom: 1px solid rgba(255,255,255,.10);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
 
   .nav-inner{
     max-width: 1100px;
     margin: 0 auto;
     padding: 10px 18px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    min-height: var(--nav-height);
   }
 
+  /* brand (logo) - consistent size everywhere */
   .brand { display:flex; align-items:center; text-decoration:none; }
-  .brand img{
-    width: 110px;
-    height: auto;
-    object-fit: contain;
-    display: block;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  .brand img {
+    width:110px;
+    height:auto;
+    object-fit:contain;
+    display:block;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.45));
   }
 
+  /* desktop menu */
   .menu {
     margin-left: auto;
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    align-items: center;
+    display:flex;
+    gap:18px;
+    align-items:center;
+    flex-wrap:wrap;
   }
-
-  .menu a{
-    color: #ffffff;
-    text-decoration: none;
-    padding: 6px 10px;
-    border-radius: 999px;
-    transition: background .18s, transform .12s;
-    font-weight: 600;
+  .menu a {
+    color:#ffffff;
+    text-decoration:none;
+    padding:8px 12px;
+    border-radius:999px;
+    transition: background .18s ease, transform .12s ease;
+    font-weight:600;
   }
+  .menu a:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+  .menu a.active { background: rgba(255,255,255,0.12); }
 
-  .menu a:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
-  .menu a.active { background: rgba(255,255,255,0.18); box-shadow: 0 6px 18px rgba(0,0,0,.28); }
-
-  .nav-toggle {
-    display: none;
-    margin-left: auto;
-    border: 1px solid rgba(255,255,255,.28);
-    background: rgba(0,0,0,.22);
+  /* hamburger toggle (hidden on desktop) */
+  .nav-toggle{
+    display:none;
+    margin-left:auto;
+    border:1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.25);
     color: #eafff5;
-    padding: 8px 12px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: 700;
+    padding:8px 12px;
+    border-radius:10px;
+    cursor:pointer;
   }
 
-  .nav-overlay { display:none; }
+  .nav-overlay{ display:none; }
 
-  /* Mobile / drawer */
-  @media (max-width: 768px) {
-    .brand img { width: 84px; }
-    .nav-toggle { display: inline-block; }
+  /* mobile drawer */
+  @media (max-width: 768px){
+    .brand img { width: 84px; } /* slightly smaller on mobile */
+    .nav-toggle{ display:inline-block; }
 
+    /* hide the desktop inline menu; drawer handles mobile links */
     .menu {
       position: fixed;
       top: 0;
-      right: -80%;
-      width: 80%;
+      right: -84%;
+      width: 84%;
       height: 100vh;
       margin: 0;
-      display: flex;
+      display:flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 18px;
+      gap: 14px;
+      padding: 28px 18px;
       background: var(--nav-solid);
-      border-left: 1px solid rgba(255,255,255,.10);
-      box-shadow: -10px 0 24px rgba(0,0,0,.45);
-      transition: right .28s ease-in-out;
-      z-index: 1100;
-      padding-top: 48px;
+      border-left: 1px solid rgba(255,255,255,0.06);
+      box-shadow: -10px 0 28px rgba(0,0,0,0.45);
+      transition: right .26s cubic-bezier(.2,.9,.2,1);
+      overflow-y:auto;
     }
 
-    .menu a { padding: 12px 14px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.04); }
+    /* pill-like large buttons in drawer (touch friendly) */
+    .menu a{
+      padding:14px 18px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+      color: #eafff5;
+      font-size:1.05rem;
+      text-align:center;
+    }
+    .menu a:hover { background: rgba(255,255,255,0.08); }
+
+    /* when nav open, show drawer */
     .site-nav.open .menu { right: 0; }
 
-    .nav-overlay {
+    .nav-overlay{
       position: fixed;
       inset: 0;
-      z-index: 1090;
-      background: rgba(0,0,0,.55);
+      z-index: 1050;
+      background: rgba(0,0,0,0.52);
       backdrop-filter: blur(2px);
-      display: none;
     }
-    .site-nav.open + .nav-overlay { display: block; }
+    .site-nav.open + .nav-overlay{ display:block; }
+  }
+
+  /* small screens tweak */
+  @media (max-width: 420px){
+    .menu a { font-size: 1rem; padding:12px 14px; }
   }
 </style>
 
 <script>
 (function(){
-  // Prevent double init if navbar inserted multiple times
+  // guard: don't run twice if navbar injected multiple times
   if (window.__SEECHUR_NAVBAR_INIT__) return;
   window.__SEECHUR_NAVBAR_INIT__ = true;
 
@@ -148,85 +167,63 @@
 
   function openMenu(){
     nav.classList.add('open');
-    if(toggle) toggle.setAttribute('aria-expanded','true');
-    if(overlay) overlay.removeAttribute('hidden');
+    if (toggle) toggle.setAttribute('aria-expanded','true');
+    if (overlay) overlay.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
   }
   function closeMenu(){
     nav.classList.remove('open');
-    if(toggle) toggle.setAttribute('aria-expanded','false');
-    if(overlay) overlay.setAttribute('hidden','');
+    if (toggle) toggle.setAttribute('aria-expanded','false');
+    if (overlay) overlay.setAttribute('hidden','');
     document.body.style.overflow = '';
   }
 
-  if (toggle) {
-    toggle.addEventListener('click', function(e){
-      e.stopPropagation();
-      nav.classList.contains('open') ? closeMenu() : openMenu();
-    });
-  }
-  if (overlay) overlay.addEventListener('click', closeMenu);
-  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMenu(); });
-
-  // ACTIVE LINK LOGIC (robust):
-  // - normalize current path
-  // - mark Articles active for any /articles/slug.html or /articles.html
-  function normalizePath(p){
-    if(!p) return '/';
-    try { p = decodeURIComponent(p); } catch(e){}
-    // remove query + hash
-    p = p.split('?')[0].split('#')[0];
-    // remove trailing slash (but keep root '/')
-    if(p.length > 1 && p.endsWith('/')) p = p.slice(0,-1);
-    return p.toLowerCase();
-  }
-
-  const current = normalizePath(location.pathname || '/');
-
-  // decide which nav href to treat as active
-  let activeHref = '/index.html';
-  if (current === '/' || current === '/index.html') {
-    activeHref = '/index.html';
-  } else if (current.startsWith('/articles/')) {
-    activeHref = '/articles.html';
-  } else if (current === '/articles' || current === '/articles.html') {
-    activeHref = '/articles.html';
-  } else {
-    // last segment fallback: /about.html -> /about.html
-    const parts = current.split('/');
-    const last = parts[parts.length-1] || 'index.html';
-    activeHref = (last.startsWith('/')) ? last : ('/' + last);
-  }
-
-  // apply active class — tolerant of href formats (with and without leading slash)
-  function applyActive(){
-    const links = document.querySelectorAll('.menu a');
-    links.forEach(a => {
-      const raw = (a.getAttribute('href')||'').toLowerCase();
-      const href = raw.startsWith('/') ? raw : ('/' + raw.replace(/^\//,''));
-      if (href === activeHref) {
-        a.classList.add('active');
-      } else {
-        a.classList.remove('active');
-      }
-    });
-  }
-
-  // run immediately and again after a brief delay (for injected navs)
-  applyActive();
-  setTimeout(applyActive, 150);
-
-  // observe changes in menu (helpful if CMS modifies links later)
-  if (window.MutationObserver) {
-    const menuNode = document.querySelector('.menu') || document.body;
-    const mo = new MutationObserver(() => applyActive());
-    mo.observe(menuNode, { childList: true, subtree: true });
-  }
-
-  // Accessibility tweak: close menu if user clicks any menu link (mobile)
-  document.addEventListener('click', function(e){
-    const el = e.target.closest && e.target.closest('.menu a');
-    if(el && nav.classList.contains('open')) { closeMenu(); }
+  if (toggle) toggle.addEventListener('click', ()=> {
+    nav.classList.contains('open') ? closeMenu() : openMenu();
   });
+  if (overlay) overlay.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', (e)=> { if (e.key === 'Escape') closeMenu(); });
+
+  // Active link logic: robust to article detail pages under /articles/
+  (function highlightActive(){
+    const path = (location.pathname || '/').toLowerCase();
+    const normalized = path.endsWith('/') && path.length>1 ? path.slice(0,-1) : path;
+
+    // default map: exact filenames -> href used in menu
+    let activeHref = '/index.html';
+    if (normalized === '/' || normalized === '/index.html') {
+      activeHref = '/index.html';
+    } else if (normalized.startsWith('/articles/') || normalized === '/articles' || normalized.endsWith('/articles.html')) {
+      activeHref = '/articles.html';
+    } else {
+      // take last segment
+      const parts = normalized.split('/');
+      const last = parts[parts.length-1] || 'index.html';
+      activeHref = '/' + last;
+    }
+
+    // apply active class to matching menu link(s)
+    // use a short timeout in case the navbar is injected dynamically after scripts run
+    function apply(){
+      document.querySelectorAll('.menu a').forEach(a=>{
+        const href = (a.getAttribute('href')||'').toLowerCase();
+        const hrefNorm = href.startsWith('/') ? href : ('/' + href.replace(/^\.\//,''));
+        if (hrefNorm === activeHref || (activeHref === '/index.html' && (hrefNorm === '/' || hrefNorm === '/index.html'))){
+          a.classList.add('active');
+        } else {
+          a.classList.remove('active');
+        }
+      });
+    }
+
+    // run now & observe
+    apply();
+    if (window.MutationObserver){
+      const menu = document.querySelector('.menu') || document.body;
+      const mo = new MutationObserver(()=> apply());
+      mo.observe(menu, { childList:true, subtree:true });
+    }
+  })();
+
 })();
 </script>
