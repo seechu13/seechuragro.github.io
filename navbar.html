@@ -38,7 +38,6 @@
     position:sticky; top:0; z-index:1000;
     background:var(--nav-bg); backdrop-filter:blur(6px);
     border-bottom:1px solid rgba(255,255,255,.12);
-    font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
   }
   .nav-inner{
     max-width:1100px; margin:0 auto;
@@ -52,7 +51,6 @@
   .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
   .menu a{
     color:#ffffff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;
-    font-size:1rem;
   }
   .menu a:hover,.menu a.active{ background:rgba(255,255,255,0.18); }
 
@@ -111,7 +109,9 @@
     document.body.style.overflow='';
   }
 
-  if (toggle) toggle.addEventListener('click', ()=>{ nav.classList.contains('open') ? closeMenu() : openMenu(); });
+  if (toggle) toggle.addEventListener('click', ()=>{
+    nav.classList.contains('open') ? closeMenu() : openMenu();
+  });
   if (overlay) overlay.addEventListener('click', closeMenu);
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
@@ -131,21 +131,22 @@
     activeHref = '/' + last;
   }
 
-  // apply active class; if navbar injected dynamically, run applyActive after a brief time
   function applyActive(){
     document.querySelectorAll('.menu a').forEach(a=>{
-      const hrefRaw = (a.getAttribute('href')||'').toLowerCase();
-      const hrefNorm = hrefRaw.startsWith('/') ? hrefRaw : ('/' + hrefRaw);
-      if (hrefNorm === activeHref) { a.classList.add('active'); } else { a.classList.remove('active'); }
+      const href = (a.getAttribute('href')||'').toLowerCase();
+      const hrefNorm = href.startsWith('/') ? href : ('/' + href);
+      if (hrefNorm === activeHref) {
+        a.classList.add('active');
+      } else {
+        a.classList.remove('active');
+      }
     });
   }
 
-  // run immediately and also observe for late injections
   applyActive();
   if (window.MutationObserver) {
-    const menuNode = document.querySelector('.menu') || document.body;
     const mo = new MutationObserver(()=> applyActive());
-    mo.observe(menuNode, { childList:true, subtree:true });
+    mo.observe(document.querySelector('.menu') || document.body, { childList:true, subtree:true });
   }
 })();
 </script>
