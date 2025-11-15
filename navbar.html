@@ -1,8 +1,9 @@
-<!-- navbar.html (mobile fixes applied) -->
+<!-- navbar.html -->
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
     <a class="brand" href="/" aria-label="Seechur Agro home">
-      <img src="/logo.png?v=27" alt="Seechur Agro logo" />
+      <!-- absolute path to ensure it resolves from any page -->
+      <img src="/logo.png?v=27" alt="Seechur Agro logo">
     </a>
 
     <!-- Mobile hamburger -->
@@ -28,19 +29,21 @@
   </div>
 </nav>
 
+<!-- overlay -->
 <div class="nav-overlay" id="navOverlay" hidden></div>
 
 <style>
   :root{
-    --nav-bg: rgba(10,25,10,0.78);
-    --nav-solid: #1b4332;
-    --nav-height: 74px;
+    --nav-bg: rgba(10,25,10,0.75);
+    --nav-solid: #16382d;
+    --nav-height: 84px;
   }
 
+  /* navbar container */
   .site-nav{
     position: sticky;
     top: 0;
-    z-index: 1120;
+    z-index: 1100;
     background: var(--nav-bg);
     backdrop-filter: blur(6px);
     border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -52,185 +55,182 @@
     padding: 10px 18px;
     display:flex;
     align-items:center;
-    gap:16px;
+    gap:14px;
     min-height: var(--nav-height);
   }
 
-  .brand { display:flex; align-items:center; text-decoration:none; }
-  .brand img {
-    width:110px;
-    height:auto;
-    object-fit:contain;
+  /* brand */
+  .brand{ display:flex; align-items:center; text-decoration:none; }
+  .brand img{
+    width: 110px;
+    height: auto;
+    object-fit: contain;
     display:block;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.45));
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,.45));
   }
 
-  .menu {
-    margin-left: auto;
+  /* desktop menu */
+  .menu{
+    margin-left:auto;
     display:flex;
     gap:18px;
-    align-items:center;
     flex-wrap:wrap;
+    align-items:center;
   }
-  .menu a {
+  .menu a{
     color:#ffffff;
     text-decoration:none;
     padding:8px 12px;
     border-radius:999px;
-    transition: background .18s ease, transform .12s ease;
+    transition: background .18s ease, transform .12s;
     font-weight:600;
+    display:inline-block;
   }
-  .menu a:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
-  .menu a.active { background: rgba(255,255,255,0.12); }
+  .menu a:hover{ background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+  .menu a.active{ background: rgba(255,255,255,0.14); }
 
+  /* hamburger toggle (hidden desktop) */
   .nav-toggle{
     display:none;
     margin-left:auto;
-    border:1px solid rgba(255,255,255,0.18);
-    background: rgba(0,0,0,0.25);
-    color: #eafff5;
+    border:1px solid rgba(255,255,255,.18);
+    background: rgba(0,0,0,.25);
+    color:#eafff5;
     padding:8px 12px;
     border-radius:10px;
     cursor:pointer;
+    font-weight:700;
   }
 
   .nav-overlay{ display:none; }
 
+  /* --------------------
+     MOBILE / SMALL SCREENS
+     -------------------- */
   @media (max-width: 768px){
-    .brand img { width: 84px; }
-    .nav-toggle{ display:inline-block; }
+    .brand img{ width: 84px; } /* smaller on mobile */
 
-    /* Drawer off-screen and layered above overlay */
-    .menu {
+    .nav-toggle{ display:inline-block; z-index: 1202; }
+
+    /* drawer menu: slide from right, pill buttons stacked */
+    .menu{
       position: fixed;
       top: 0;
-      right: -100%;              /* fully off-screen when closed */
-      width: 84%;
+      right: -100%;
+      width: min(84%, 360px);
       height: 100vh;
       margin: 0;
-      display:flex;
+      display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 28px 18px;
+      gap: 12px;
+      padding: 26px 18px;
+      align-items: center;
       background: var(--nav-solid);
-      border-left: 1px solid rgba(255,255,255,0.06);
-      box-shadow: -10px 0 28px rgba(0,0,0,0.45);
-      transition: right .28s cubic-bezier(.2,.9,.2,1);
-      overflow-y:auto;
-      z-index: 1130;             /* above overlay + page */
+      border-left: 1px solid rgba(255,255,255,.06);
+      box-shadow: -8px 0 30px rgba(0,0,0,.45);
+      transition: right .28s cubic-bezier(.2,.9,.3,1);
+      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
+    /* pill style full */
     .menu a{
-      padding:14px 18px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,0.06);
-      background: rgba(255,255,255,0.03);
-      color: #eafff5;
-      font-size:1.05rem;
-      text-align:center;
+      width: 86%;
+      text-align: center;
+      padding: 14px 12px;
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.03);
+      border-radius: 999px;
+      color: #eaf7ef;
+      font-size: 1.05rem;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.01);
     }
-    .menu a:hover { background: rgba(255,255,255,0.08); }
+    .menu a:hover{ background: rgba(255,255,255,.06); transform:none; }
 
-    .site-nav.open .menu { right: 0; } /* slide in */
+    /* show drawer when .open */
+    .site-nav.open .menu{ right: 0; }
 
+    /* overlay */
     .nav-overlay{
       position: fixed;
       inset: 0;
-      z-index: 1125;             /* below the drawer but above page */
-      background: rgba(0,0,0,0.52);
+      z-index: 1200;
+      background: rgba(0,0,0,.55);
       backdrop-filter: blur(2px);
-      transition: opacity .16s ease;
+      display: none;
     }
-    .site-nav.open + .nav-overlay{ display:block; }
-
-    /* ensure toggle is easy to tap (left side) */
-    .nav-toggle { z-index: 1140; position: relative; }
+    .site-nav.open + .nav-overlay{ display: block; }
   }
 
-  @media (max-width: 420px){
-    .menu a { font-size: 1rem; padding:12px 14px; }
+  /* small tweak for very small screens */
+  @media (max-width:420px){
+    .menu a{ width:90%; padding:12px 10px; font-size:1rem; }
   }
 </style>
 
 <script>
 (function(){
+  // Prevent double-init if included multiple times
   if (window.__SEECHUR_NAVBAR_INIT__) return;
   window.__SEECHUR_NAVBAR_INIT__ = true;
 
   const nav = document.getElementById('siteNav');
   const toggle = document.getElementById('navToggle');
   const overlay = document.getElementById('navOverlay');
-  const menu = document.getElementById('mobileMenu');
 
   function openMenu(){
     nav.classList.add('open');
     if (toggle) toggle.setAttribute('aria-expanded','true');
     if (overlay) overlay.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
-    // For iOS - ensure body doesn't jump
-    document.documentElement.style.touchAction = 'none';
   }
   function closeMenu(){
     nav.classList.remove('open');
     if (toggle) toggle.setAttribute('aria-expanded','false');
     if (overlay) overlay.setAttribute('hidden','');
     document.body.style.overflow = '';
-    document.documentElement.style.touchAction = '';
   }
 
-  if (toggle) toggle.addEventListener('click', ()=> {
+  if (toggle) toggle.addEventListener('click', ()=>{
     nav.classList.contains('open') ? closeMenu() : openMenu();
   });
   if (overlay) overlay.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeMenu(); });
 
-  document.addEventListener('keydown', (e)=> { if (e.key === 'Escape') closeMenu(); });
+  // Active-link logic: resilient for both site root and /articles/* pages
+  const path = (location.pathname || '/').toLowerCase();
+  const normalized = (path.endsWith('/') && path.length>1) ? path.slice(0,-1) : path;
 
-  // Close drawer on navigation (tap a link) - helps mobile UX
-  if (menu){
-    menu.addEventListener('click', (ev) => {
-      const a = ev.target.closest && ev.target.closest('a');
-      if (a && a.getAttribute('href')) {
-        // small timeout so navigation can start
-        setTimeout(()=> closeMenu(), 120);
-      }
-    }, {passive:true});
+  let activeHref = '/index.html';
+  if (normalized === '/' || normalized === '/index.html') {
+    activeHref = '/index.html';
+  } else if (normalized.startsWith('/articles/')) {
+    // any article detail -> highlight articles listing
+    activeHref = '/articles.html';
+  } else {
+    const parts = normalized.split('/');
+    const last = parts[parts.length-1] || 'index.html';
+    // ensure it starts with slash
+    activeHref = '/' + last;
   }
 
-  // Active link logic
-  (function highlightActive(){
-    const path = (location.pathname || '/').toLowerCase();
-    const normalized = path.endsWith('/') && path.length>1 ? path.slice(0,-1) : path;
+  function applyActive(){
+    const links = document.querySelectorAll('.menu a');
+    links.forEach(a=>{
+      const href = (a.getAttribute('href')||'').toLowerCase();
+      const norm = href.startsWith('/') ? href : ('/' + href);
+      a.classList.toggle('active', norm === activeHref);
+    });
+  }
 
-    let activeHref = '/index.html';
-    if (normalized === '/' || normalized === '/index.html') {
-      activeHref = '/index.html';
-    } else if (normalized.startsWith('/articles/') || normalized === '/articles' || normalized.endsWith('/articles.html')) {
-      activeHref = '/articles.html';
-    } else {
-      const parts = normalized.split('/');
-      const last = parts[parts.length-1] || 'index.html';
-      activeHref = '/' + last;
-    }
+  // Run after a short microtask so if content is injected it still works
+  setTimeout(applyActive, 10);
 
-    function apply(){
-      document.querySelectorAll('.menu a').forEach(a=>{
-        const href = (a.getAttribute('href')||'').toLowerCase();
-        const hrefNorm = href.startsWith('/') ? href : ('/' + href.replace(/^\.\//,''));
-        if (hrefNorm === activeHref || (activeHref === '/index.html' && (hrefNorm === '/' || hrefNorm === '/index.html'))){
-          a.classList.add('active');
-        } else {
-          a.classList.remove('active');
-        }
-      });
-    }
-
-    apply();
-    if (window.MutationObserver){
-      const mo = new MutationObserver(()=> apply());
-      mo.observe(document.querySelector('.menu') || document.body, { childList:true, subtree:true });
-    }
-  })();
-
+  // Observe menu in case CMS rewrites links later
+  if (window.MutationObserver){
+    const target = document.querySelector('.menu') || document.body;
+    const mo = new MutationObserver(applyActive);
+    mo.observe(target, { childList:true, subtree:true });
+  }
 })();
 </script>
