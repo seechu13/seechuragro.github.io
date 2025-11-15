@@ -1,4 +1,4 @@
-<!-- navbar.html -->
+<!-- navbar.html (mobile fixes applied) -->
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
     <a class="brand" href="/" aria-label="Seechur Agro home">
@@ -31,7 +31,6 @@
 <div class="nav-overlay" id="navOverlay" hidden></div>
 
 <style>
-  /* NAVBAR: desktop and mobile drawer */
   :root{
     --nav-bg: rgba(10,25,10,0.78);
     --nav-solid: #1b4332;
@@ -41,7 +40,7 @@
   .site-nav{
     position: sticky;
     top: 0;
-    z-index: 1100;
+    z-index: 1120;
     background: var(--nav-bg);
     backdrop-filter: blur(6px);
     border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -57,7 +56,6 @@
     min-height: var(--nav-height);
   }
 
-  /* brand (logo) - consistent size everywhere */
   .brand { display:flex; align-items:center; text-decoration:none; }
   .brand img {
     width:110px;
@@ -67,7 +65,6 @@
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.45));
   }
 
-  /* desktop menu */
   .menu {
     margin-left: auto;
     display:flex;
@@ -86,7 +83,6 @@
   .menu a:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
   .menu a.active { background: rgba(255,255,255,0.12); }
 
-  /* hamburger toggle (hidden on desktop) */
   .nav-toggle{
     display:none;
     margin-left:auto;
@@ -100,16 +96,15 @@
 
   .nav-overlay{ display:none; }
 
-  /* mobile drawer */
   @media (max-width: 768px){
-    .brand img { width: 84px; } /* slightly smaller on mobile */
+    .brand img { width: 84px; }
     .nav-toggle{ display:inline-block; }
 
-    /* hide the desktop inline menu; drawer handles mobile links */
+    /* Drawer off-screen and layered above overlay */
     .menu {
       position: fixed;
       top: 0;
-      right: -84%;
+      right: -100%;              /* fully off-screen when closed */
       width: 84%;
       height: 100vh;
       margin: 0;
@@ -120,11 +115,12 @@
       background: var(--nav-solid);
       border-left: 1px solid rgba(255,255,255,0.06);
       box-shadow: -10px 0 28px rgba(0,0,0,0.45);
-      transition: right .26s cubic-bezier(.2,.9,.2,1);
+      transition: right .28s cubic-bezier(.2,.9,.2,1);
       overflow-y:auto;
+      z-index: 1130;             /* above overlay + page */
+      -webkit-overflow-scrolling: touch;
     }
 
-    /* pill-like large buttons in drawer (touch friendly) */
     .menu a{
       padding:14px 18px;
       border-radius:999px;
@@ -136,20 +132,22 @@
     }
     .menu a:hover { background: rgba(255,255,255,0.08); }
 
-    /* when nav open, show drawer */
-    .site-nav.open .menu { right: 0; }
+    .site-nav.open .menu { right: 0; } /* slide in */
 
     .nav-overlay{
       position: fixed;
       inset: 0;
-      z-index: 1050;
+      z-index: 1125;             /* below the drawer but above page */
       background: rgba(0,0,0,0.52);
       backdrop-filter: blur(2px);
+      transition: opacity .16s ease;
     }
     .site-nav.open + .nav-overlay{ display:block; }
+
+    /* ensure toggle is easy to tap (left side) */
+    .nav-toggle { z-index: 1140; position: relative; }
   }
 
-  /* small screens tweak */
   @media (max-width: 420px){
     .menu a { font-size: 1rem; padding:12px 14px; }
   }
@@ -157,53 +155,64 @@
 
 <script>
 (function(){
-  // guard: don't run twice if navbar injected multiple times
   if (window.__SEECHUR_NAVBAR_INIT__) return;
   window.__SEECHUR_NAVBAR_INIT__ = true;
 
   const nav = document.getElementById('siteNav');
   const toggle = document.getElementById('navToggle');
   const overlay = document.getElementById('navOverlay');
+  const menu = document.getElementById('mobileMenu');
 
   function openMenu(){
     nav.classList.add('open');
     if (toggle) toggle.setAttribute('aria-expanded','true');
     if (overlay) overlay.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
+    // For iOS - ensure body doesn't jump
+    document.documentElement.style.touchAction = 'none';
   }
   function closeMenu(){
     nav.classList.remove('open');
     if (toggle) toggle.setAttribute('aria-expanded','false');
     if (overlay) overlay.setAttribute('hidden','');
     document.body.style.overflow = '';
+    document.documentElement.style.touchAction = '';
   }
 
   if (toggle) toggle.addEventListener('click', ()=> {
     nav.classList.contains('open') ? closeMenu() : openMenu();
   });
   if (overlay) overlay.addEventListener('click', closeMenu);
+
   document.addEventListener('keydown', (e)=> { if (e.key === 'Escape') closeMenu(); });
 
-  // Active link logic: robust to article detail pages under /articles/
+  // Close drawer on navigation (tap a link) - helps mobile UX
+  if (menu){
+    menu.addEventListener('click', (ev) => {
+      const a = ev.target.closest && ev.target.closest('a');
+      if (a && a.getAttribute('href')) {
+        // small timeout so navigation can start
+        setTimeout(()=> closeMenu(), 120);
+      }
+    }, {passive:true});
+  }
+
+  // Active link logic
   (function highlightActive(){
     const path = (location.pathname || '/').toLowerCase();
     const normalized = path.endsWith('/') && path.length>1 ? path.slice(0,-1) : path;
 
-    // default map: exact filenames -> href used in menu
     let activeHref = '/index.html';
     if (normalized === '/' || normalized === '/index.html') {
       activeHref = '/index.html';
     } else if (normalized.startsWith('/articles/') || normalized === '/articles' || normalized.endsWith('/articles.html')) {
       activeHref = '/articles.html';
     } else {
-      // take last segment
       const parts = normalized.split('/');
       const last = parts[parts.length-1] || 'index.html';
       activeHref = '/' + last;
     }
 
-    // apply active class to matching menu link(s)
-    // use a short timeout in case the navbar is injected dynamically after scripts run
     function apply(){
       document.querySelectorAll('.menu a').forEach(a=>{
         const href = (a.getAttribute('href')||'').toLowerCase();
@@ -216,12 +225,10 @@
       });
     }
 
-    // run now & observe
     apply();
     if (window.MutationObserver){
-      const menu = document.querySelector('.menu') || document.body;
       const mo = new MutationObserver(()=> apply());
-      mo.observe(menu, { childList:true, subtree:true });
+      mo.observe(document.querySelector('.menu') || document.body, { childList:true, subtree:true });
     }
   })();
 
