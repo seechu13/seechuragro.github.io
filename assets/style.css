@@ -14,12 +14,8 @@
   --max-width: 1100px;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* Reset / base */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
 
 body {
@@ -31,13 +27,7 @@ body {
 }
 
 /* container */
-.container {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 32px 18px;
-  /* make container neutral (prevents individual pages from forcing a light block) */
-  background: transparent;
-}
+.container { max-width: var(--max-width); margin: 0 auto; padding: 32px 18px; }
 
 /* Headlines */
 h1, h2, h3 { text-shadow: 0 2px 6px rgba(0,0,0,.45); font-weight:600; }
@@ -45,11 +35,8 @@ h1 { font-size: 2.4rem; margin-bottom: 12px; color: #e9fff2; }
 h2 { font-size: 1.6rem; margin: 18px 0 10px; color: #e9fff2; }
 p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
 
-/* NAVBAR brand image consistent across site */
-.site-nav .brand img { width:110px; height:auto; }
-
-/* NAVBAR small screens */
-.brand img { width:84px; height:auto; }
+/* NAVBAR brand image (consistent size everywhere) */
+.brand img { width: 110px; height: auto; }
 
 /* Cards grid */
 .grid {
@@ -75,9 +62,7 @@ a.card, .card {
 a.card:hover, .card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,.5); }
 
 /* thumb area: consistent height */
-.thumb{
-  height:200px; background:#14261f; display:block; overflow:hidden;
-}
+.thumb{ height:200px; background:#14261f; display:block; overflow:hidden; }
 .thumb img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease; }
 a.card:hover .thumb img{ transform:scale(1.04); }
 
@@ -113,14 +98,6 @@ footer {
 .btn { display:inline-flex; align-items:center; padding:10px 16px; background:rgba(0,0,0,0.25); color:#eafff4; border:1px solid rgba(255,255,255,0.12); border-radius:999px; text-decoration:none; }
 .btn:hover { transform: translateY(-2px); }
 
-/* NAVBAR & MENU tweaks for consistent sizing/typography */
-.site-nav { font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Arial; }
-.site-nav .nav-inner { padding: 12px 18px; }
-.site-nav .menu a { font-size: 1rem; padding: 8px 12px; }
-
-/* ensure .active pill size similar across pages */
-.site-nav .menu a.active { padding:8px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.28); }
-
 /* RESPONSIVE */
 @media (max-width: 1024px) {
   .grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
@@ -131,8 +108,7 @@ footer {
   .container { padding: 24px 14px; }
   .grid { gap: 18px; }
   .thumb { height: 160px; }
-  .brand img { width:72px; }
-  .site-nav .brand img { width:84px; } /* ensure nav logo on medium screens remains readable */
+  .brand img { width:84px; } /* mobile logo size */
 }
 @media (max-width: 480px) {
   h1 { font-size: 1.6rem; }
@@ -141,7 +117,7 @@ footer {
 }
 
 /* small safety rules */
-img { max-width: 100%; height:  auto;  }
+img { max-width: 100%; height: auto; }
 
 /* -------------------------------------------
    Appended: article panel + typography fixes
@@ -154,25 +130,39 @@ img { max-width: 100%; height:  auto;  }
   margin: 20px auto;
   padding: 26px;
   border-radius: 14px;
-  background: rgba(0,0,0,0.18); /* dark panel across all articles */
+  background: rgba(0,0,0,0.18);
   box-shadow: 0 12px 30px rgba(0,0,0,0.35);
   color: #e8f7ee;
   line-height:1.65;
 }
 
-/* keep headings stronger and consistent */
 .article-body h1, .article-body h2, .article-body h3,
 .post-body h1, .post-body h2, .post-body h3 {
   color: #e8f7ee;
 }
 
 /* ensure articles listing / individual article use same background tone */
-main.container, .article-body, .post-body {
+main.container, .article-body, .post-body, .article-content, .post-content {
   background: transparent;
 }
 
-/* small tweak to reading badge on article pages */
-.reading-badge { background: rgba(0,0,0,0.25); padding:8px 12px; border-radius:20px; font-weight:700; }
+/* Strong overrides to fix inconsistencies coming from inline page CSS */
+.brand img { width: 110px !important; } /* ensure consistent logo everywhere */
+.article-content, .article-body, .post-body, .post-content {
+  background: rgba(0,0,0,0.18) !important;
+  color: #e8f7ee !important;
+}
 
-/* ensure inline figure captions are muted and readable */
-figure figcaption { color: #6f8a7b; font-size: .95rem; margin-top:6px; text-align:center; }
+/* Make sure article listing headers don't show a light panel */
+main.container[role="main"], main.container { background: transparent !important; }
+
+/* Small refinement for article meta area (keeps parity with other article pages) */
+.article-meta, .article-header { max-width: var(--max-width); margin: 12px auto 22px; padding: 0 18px; }
+
+/* ensure nav logo dimension parity (pages that previously got smaller logo) */
+.site-nav .brand img { width: 110px !important; height: auto; }
+
+/* ensure article navigation buttons look consistent */
+.nav-link-btn { display:inline-block; padding:12px 18px; border-radius:999px; border:1px solid rgba(255,255,255,.06); background:rgba(0,0,0,.2); color:inherit; text-decoration:none; }
+
+/* end */
