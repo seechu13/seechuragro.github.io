@@ -2,7 +2,7 @@
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
     <a class="brand" href="/" aria-label="Seechur Agro home">
-      <img src="/logo.png?v=27" alt="Seechur Agro logo" id="navLogo">
+      <img src="/logo.png?v=27" alt="Seechur Agro logo">
     </a>
 
     <!-- Mobile hamburger -->
@@ -11,7 +11,7 @@
     </button>
 
     <!-- Menu (drawer on mobile) -->
-    <div class="menu" id="mobileMenu">
+    <div class="menu" id="mobileMenu" role="navigation" aria-label="Main menu">
       <a href="/index.html">Home</a>
       <a href="/about.html">About</a>
       <a href="/why-lakadong.html">Why Lakadong</a>
@@ -33,17 +33,16 @@
   :root{
     --nav-bg: rgba(10,25,10,0.72);
     --nav-solid: #1b4332;
-    --nav-height: 72px;
+    --nav-height: auto;
   }
 
-  /* Core nav */
   .site-nav{
     position: sticky;
     top: 0;
     z-index: 1000;
     background: var(--nav-bg);
     backdrop-filter: blur(6px);
-    border-bottom: 1px solid rgba(255,255,255,.08);
+    border-bottom: 1px solid rgba(255,255,255,.10);
   }
 
   .nav-inner{
@@ -53,57 +52,60 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    min-height: var(--nav-height);
   }
 
-  .brand{ display:flex; align-items:center; text-decoration:none; }
-  /* Force consistent logo size everywhere */
-  #navLogo {
+  .brand { display:flex; align-items:center; text-decoration:none; }
+  .brand img{
     width: 110px;
     height: auto;
     object-fit: contain;
     display: block;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,.45));
-    border-radius: 6px;
-    background: rgba(255,255,255,0.03);
-    padding: 8px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,.45));
   }
 
-  .menu { margin-left:auto; display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
+  .menu {
+    margin-left: auto;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
   .menu a{
-    color:#ffffff;
-    text-decoration:none;
-    padding:8px 10px;
-    border-radius:999px;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 999px;
     transition: background .18s, transform .12s;
-    font-weight:600;
-  }
-  .menu a:hover { background: rgba(255,255,255,0.10); transform:translateY(-1px); }
-  .menu a.active { background: rgba(255,255,255,0.12); box-shadow: 0 6px 14px rgba(0,0,0,.20); }
-
-  .nav-toggle{
-    display:none;
-    margin-left:auto;
-    border:1px solid rgba(255,255,255,.22);
-    background: rgba(0,0,0,.24);
-    color:#eafff5;
-    padding:8px 12px;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:700;
+    font-weight: 600;
   }
 
-  .nav-overlay{ display:none; }
+  .menu a:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+  .menu a.active { background: rgba(255,255,255,0.18); box-shadow: 0 6px 18px rgba(0,0,0,.28); }
 
-  /* Mobile drawer */
-  @media (max-width: 768px){
-    .nav-inner { padding: 10px 14px; }
-    #navLogo { width: 84px; padding:6px; }
-    .nav-toggle{ display:inline-block; }
-    .menu{
+  .nav-toggle {
+    display: none;
+    margin-left: auto;
+    border: 1px solid rgba(255,255,255,.28);
+    background: rgba(0,0,0,.22);
+    color: #eafff5;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .nav-overlay { display:none; }
+
+  /* Mobile / drawer */
+  @media (max-width: 768px) {
+    .brand img { width: 84px; }
+    .nav-toggle { display: inline-block; }
+
+    .menu {
       position: fixed;
       top: 0;
-      right: -100%;
+      right: -80%;
       width: 80%;
       height: 100vh;
       margin: 0;
@@ -112,25 +114,31 @@
       gap: 8px;
       padding: 18px;
       background: var(--nav-solid);
-      border-left: 1px solid rgba(255,255,255,.08);
-      box-shadow: -10px 0 30px rgba(0,0,0,.45);
+      border-left: 1px solid rgba(255,255,255,.10);
+      box-shadow: -10px 0 24px rgba(0,0,0,.45);
       transition: right .28s ease-in-out;
-      align-items: flex-start;
-      overflow-y: auto;
+      z-index: 1100;
+      padding-top: 48px;
     }
-    .menu a { width:100%; padding:12px 14px; border-radius:10px; background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.04); }
-    .site-nav.open .menu{ right: 0; }
-    .nav-overlay{
-      position: fixed; inset: 0; z-index: 999;
-      background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
+
+    .menu a { padding: 12px 14px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.04); }
+    .site-nav.open .menu { right: 0; }
+
+    .nav-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1090;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(2px);
+      display: none;
     }
-    .site-nav.open + .nav-overlay{ display:block; }
+    .site-nav.open + .nav-overlay { display: block; }
   }
 </style>
 
 <script>
 (function(){
-  // Prevent double-init if navbar injected multiple times
+  // Prevent double init if navbar inserted multiple times
   if (window.__SEECHUR_NAVBAR_INIT__) return;
   window.__SEECHUR_NAVBAR_INIT__ = true;
 
@@ -140,56 +148,63 @@
 
   function openMenu(){
     nav.classList.add('open');
-    if (toggle) toggle.setAttribute('aria-expanded','true');
-    if (overlay) overlay.removeAttribute('hidden');
+    if(toggle) toggle.setAttribute('aria-expanded','true');
+    if(overlay) overlay.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
   }
   function closeMenu(){
     nav.classList.remove('open');
-    if (toggle) toggle.setAttribute('aria-expanded','false');
-    if (overlay) overlay.setAttribute('hidden', '');
+    if(toggle) toggle.setAttribute('aria-expanded','false');
+    if(overlay) overlay.setAttribute('hidden','');
     document.body.style.overflow = '';
   }
 
-  if (toggle) toggle.addEventListener('click', ()=> nav.classList.contains('open') ? closeMenu() : openMenu());
+  if (toggle) {
+    toggle.addEventListener('click', function(e){
+      e.stopPropagation();
+      nav.classList.contains('open') ? closeMenu() : openMenu();
+    });
+  }
   if (overlay) overlay.addEventListener('click', closeMenu);
-  document.addEventListener('keydown', (e)=> { if (e.key === 'Escape') closeMenu(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMenu(); });
 
-  // Robust active-link detection:
-  // - Treat any URL under /articles/ as Articles listing
-  // - Normalize hrefs with or without leading slash
-  function normalizeHref(h){
-    if(!h) return '';
-    h = h.trim().toLowerCase();
-    // if the href is just a hash or javascript, return as-is
-    if (h.startsWith('http') || h.startsWith('/')) return h;
-    return '/' + h;
+  // ACTIVE LINK LOGIC (robust):
+  // - normalize current path
+  // - mark Articles active for any /articles/slug.html or /articles.html
+  function normalizePath(p){
+    if(!p) return '/';
+    try { p = decodeURIComponent(p); } catch(e){}
+    // remove query + hash
+    p = p.split('?')[0].split('#')[0];
+    // remove trailing slash (but keep root '/')
+    if(p.length > 1 && p.endsWith('/')) p = p.slice(0,-1);
+    return p.toLowerCase();
   }
 
-  function getActivePath(){
-    const path = (location.pathname || '/').toLowerCase();
-    // remove trailing slash except root
-    const normalized = (path.length > 1 && path.endsWith('/')) ? path.slice(0,-1) : path;
+  const current = normalizePath(location.pathname || '/');
 
-    // If we're on any article detail page under /articles/, highlight /articles.html
-    if (normalized.startsWith('/articles/')) return '/articles.html';
-
-    // For root or index
-    if (normalized === '/' || normalized === '/index.html') return '/index.html';
-
-    // Otherwise use last segment filename
-    const parts = normalized.split('/');
+  // decide which nav href to treat as active
+  let activeHref = '/index.html';
+  if (current === '/' || current === '/index.html') {
+    activeHref = '/index.html';
+  } else if (current.startsWith('/articles/')) {
+    activeHref = '/articles.html';
+  } else if (current === '/articles' || current === '/articles.html') {
+    activeHref = '/articles.html';
+  } else {
+    // last segment fallback: /about.html -> /about.html
+    const parts = current.split('/');
     const last = parts[parts.length-1] || 'index.html';
-    return '/' + last;
+    activeHref = (last.startsWith('/')) ? last : ('/' + last);
   }
 
+  // apply active class — tolerant of href formats (with and without leading slash)
   function applyActive(){
-    const active = getActivePath();
-    document.querySelectorAll('.menu a').forEach(a=>{
-      const href = normalizeHref(a.getAttribute('href') || '');
-      // If href is relative like '/about.html' or '/articles.html'
-      // compare by ending (handles /index.html and /)
-      if (href === active) {
+    const links = document.querySelectorAll('.menu a');
+    links.forEach(a => {
+      const raw = (a.getAttribute('href')||'').toLowerCase();
+      const href = raw.startsWith('/') ? raw : ('/' + raw.replace(/^\//,''));
+      if (href === activeHref) {
         a.classList.add('active');
       } else {
         a.classList.remove('active');
@@ -197,23 +212,21 @@
     });
   }
 
-  // run once navbar DOM is ready
-  // if menu is injected dynamically after this script runs, we observe and re-run
-  function initActiveWhenReady(){
-    applyActive();
-    if (window.MutationObserver){
-      const target = document.querySelector('.menu') || document.body;
-      const mo = new MutationObserver(()=> applyActive());
-      mo.observe(target, { childList:true, subtree:true });
-    }
+  // run immediately and again after a brief delay (for injected navs)
+  applyActive();
+  setTimeout(applyActive, 150);
+
+  // observe changes in menu (helpful if CMS modifies links later)
+  if (window.MutationObserver) {
+    const menuNode = document.querySelector('.menu') || document.body;
+    const mo = new MutationObserver(() => applyActive());
+    mo.observe(menuNode, { childList: true, subtree: true });
   }
 
-  // ensure DOM available
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', initActiveWhenReady);
-  } else {
-    initActiveWhenReady();
-  }
-
+  // Accessibility tweak: close menu if user clicks any menu link (mobile)
+  document.addEventListener('click', function(e){
+    const el = e.target.closest && e.target.closest('.menu a');
+    if(el && nav.classList.contains('open')) { closeMenu(); }
+  });
 })();
 </script>
