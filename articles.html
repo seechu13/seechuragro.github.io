@@ -11,40 +11,46 @@
 
 <style>
   :root{
-    --text:#f3fff6; --muted:#cfe9d8;
-    --nav-bg:rgba(10,25,10,0.7); --nav-solid:#1b4332;
-    --glass:rgba(255,255,255,.12); --max:1100px;
-    --accent:#2dbb7f; --hover:#33d18f;
+    --text:#e8f7ee;
+    --muted:#cfe9d8;
+    --nav-bg:rgba(10,25,10,0.7);
+    --nav-solid:#1b4332;
+    --glass:rgba(255,255,255,.06);
+    --max:1100px;
+    --accent:#2dbb7f;
+    --hover:#33d18f;
 
-    /* Light card palette for readability */
-    --card-bg:#ffffff; 
-    --card-text:#1d2a21;
-    --card-sub:#495a50;
-    --card-meta:#0f7a52;
-    --card-border:rgba(5,26,15,.12);
-    --shadow:0 12px 24px rgba(0,0,0,.18);
-    --shadow-hover:0 18px 36px rgba(0,0,0,.26);
+    /* Dark card palette to match article detail pages */
+    --card-bg: rgba(0,0,0,0.18);
+    --card-text: #eafff4;
+    --card-sub: #b9d8c8;
+    --card-meta: #8fbfa6;
+    --card-border: rgba(255,255,255,0.04);
+    --shadow: 0 12px 24px rgba(0,0,0,.45);
+    --shadow-hover: 0 18px 36px rgba(0,0,0,.6);
   }
 
   *{box-sizing:border-box;margin:0;padding:0}
   body{
     font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
     color:var(--text); min-height:100vh;
+    background:var(--dark);
   }
-  /* match site background */
+
+  /* background image overlay (keeps same hero look) */
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
     background:
-      linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.40)),
+      linear-gradient(180deg, rgba(0,0,0,.40), rgba(0,0,0,.55)),
       url('/assets/hydroponic-bg.jpg?v=32') center/cover no-repeat;
-    filter:saturate(1.05) brightness(.97);
+    filter:saturate(1.03) brightness(.92);
   }
 
   .container{max-width:var(--max); margin:0 auto; padding:28px 18px 40px;}
-  h1{font-size:2.3rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  h1{font-size:2.3rem; font-weight:700; margin-bottom:8px; color:var(--text); text-shadow:0 2px 8px rgba(0,0,0,.55)}
   p.lead{line-height:1.8; color:var(--muted); margin-bottom:18px;}
 
-  /* Grid of article cards */
+  /* Grid of article cards (dark card style) */
   .grid{
     display:grid; gap:22px;
     grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
@@ -59,7 +65,7 @@
   a.card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-hover); filter:brightness(1.02); }
 
   .thumb{
-    height:190px; background:#f3f7f4;
+    height:190px; background:linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.12));
     display:block; overflow:hidden;
   }
   .thumb img{
@@ -75,12 +81,12 @@
 
   .empty{
     padding:14px; border-radius:12px;
-    background:rgba(255,255,255,.10);
-    border:1px dashed rgba(255,255,255,.25);
-    color:#defbea; text-align:center;
+    background:rgba(255,255,255,.03);
+    border:1px dashed rgba(255,255,255,.06);
+    color:var(--muted); text-align:center;
   }
 
-  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:30px}
+  footer{text-align:center; color:#cfe9d8; padding:40px 12px 60px; background:rgba(0,0,0,.3); backdrop-filter:blur(4px); margin-top:30px}
 
   /* tighten small screens */
   @media (max-width:420px){
@@ -88,7 +94,17 @@
     .title{font-size:1.08rem}
     .excerpt{font-size:.96rem}
   }
+
+  /* Ensure the listing page uses same boxed article panel look if needed */
+  main.container, .grid, .card, .article-panel {
+    background: transparent;
+  }
+
+  /* strong override to avoid any per-page inline CSS showing a light card */
+  .card, .thumb { background-clip: padding-box; }
+
 </style>
+
 </head>
 <body>
 
@@ -204,3 +220,4 @@
 </script>
 </body>
 </html>
+
