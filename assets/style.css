@@ -35,6 +35,8 @@ body {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 32px 18px;
+  /* make container neutral (prevents individual pages from forcing a light block) */
+  background: transparent;
 }
 
 /* Headlines */
@@ -43,7 +45,10 @@ h1 { font-size: 2.4rem; margin-bottom: 12px; color: #e9fff2; }
 h2 { font-size: 1.6rem; margin: 18px 0 10px; color: #e9fff2; }
 p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
 
-/* NAVBAR brand image small */
+/* NAVBAR brand image consistent across site */
+.site-nav .brand img { width:110px; height:auto; }
+
+/* NAVBAR small screens */
 .brand img { width:84px; height:auto; }
 
 /* Cards grid */
@@ -108,6 +113,14 @@ footer {
 .btn { display:inline-flex; align-items:center; padding:10px 16px; background:rgba(0,0,0,0.25); color:#eafff4; border:1px solid rgba(255,255,255,0.12); border-radius:999px; text-decoration:none; }
 .btn:hover { transform: translateY(-2px); }
 
+/* NAVBAR & MENU tweaks for consistent sizing/typography */
+.site-nav { font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Arial; }
+.site-nav .nav-inner { padding: 12px 18px; }
+.site-nav .menu a { font-size: 1rem; padding: 8px 12px; }
+
+/* ensure .active pill size similar across pages */
+.site-nav .menu a.active { padding:8px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.28); }
+
 /* RESPONSIVE */
 @media (max-width: 1024px) {
   .grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
@@ -119,6 +132,7 @@ footer {
   .grid { gap: 18px; }
   .thumb { height: 160px; }
   .brand img { width:72px; }
+  .site-nav .brand img { width:84px; } /* ensure nav logo on medium screens remains readable */
 }
 @media (max-width: 480px) {
   h1 { font-size: 1.6rem; }
@@ -128,3 +142,37 @@ footer {
 
 /* small safety rules */
 img { max-width: 100%; height:  auto;  }
+
+/* -------------------------------------------
+   Appended: article panel + typography fixes
+   (ensures boxed article UI consistent site-wide)
+   ------------------------------------------- */
+
+/* article panel + typography fixes for consistent look */
+.article-body, .post-body, .article-content, .post-content {
+  max-width: 980px;
+  margin: 20px auto;
+  padding: 26px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.18); /* dark panel across all articles */
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  color: #e8f7ee;
+  line-height:1.65;
+}
+
+/* keep headings stronger and consistent */
+.article-body h1, .article-body h2, .article-body h3,
+.post-body h1, .post-body h2, .post-body h3 {
+  color: #e8f7ee;
+}
+
+/* ensure articles listing / individual article use same background tone */
+main.container, .article-body, .post-body {
+  background: transparent;
+}
+
+/* small tweak to reading badge on article pages */
+.reading-badge { background: rgba(0,0,0,0.25); padding:8px 12px; border-radius:20px; font-weight:700; }
+
+/* ensure inline figure captions are muted and readable */
+figure figcaption { color: #6f8a7b; font-size: .95rem; margin-top:6px; text-align:center; }
