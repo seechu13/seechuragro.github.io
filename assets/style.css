@@ -12,14 +12,16 @@
   --card-bg: rgba(20, 30, 26, 0.8);
   --card-border: rgba(255,255,255,0.06);
   --max-width: 1100px;
+
+  /* Home-page tile palette */
+  --card-white-bg: #ffffff;
+  --card-title: #1d2a21;
+  --card-meta: #0f7a52;
+  --card-sub: #495a50;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* Reset / base */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
 
 body {
@@ -35,8 +37,6 @@ body {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 32px 18px;
-  /* make container neutral (prevents individual pages from forcing a light block) */
-  background: transparent;
 }
 
 /* Headlines */
@@ -45,11 +45,12 @@ h1 { font-size: 2.4rem; margin-bottom: 12px; color: #e9fff2; }
 h2 { font-size: 1.6rem; margin: 18px 0 10px; color: #e9fff2; }
 p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
 
-/* NAVBAR brand image consistent across site */
-.site-nav .brand img { width:110px; height:auto; }
-
-/* NAVBAR small screens */
-.brand img { width:84px; height:auto; }
+/* UNIVERSAL NAVBAR LOGO SIZE FIX */
+.brand img,
+.site-nav .brand img {
+  width: 110px !important;
+  height: auto;
+}
 
 /* Cards grid */
 .grid {
@@ -62,29 +63,50 @@ p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
 a.card, .card {
   display:block;
   text-decoration:none;
-  color:var(--text);
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04)), var(--card-bg);
-  border:1px solid var(--card-border);
+  background: var(--card-white-bg);
+  color: var(--card-title);
+  border:1px solid rgba(0,0,0,0.08);
   border-radius:18px;
   overflow:hidden;
-  box-shadow:0 12px 24px rgba(0,0,0,.45);
+  box-shadow:0 12px 24px rgba(0,0,0,.20);
   transition: transform .18s ease, box-shadow .18s ease;
 }
 
 /* card hover */
-a.card:hover, .card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,.5); }
+a.card:hover, .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 36px rgba(0,0,0,.28);
+}
 
-/* thumb area: consistent height */
-.thumb{
+.thumb {
   height:200px; background:#14261f; display:block; overflow:hidden;
 }
-.thumb img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease; }
-a.card:hover .thumb img{ transform:scale(1.04); }
+.thumb img {
+  width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease;
+}
+a.card:hover .thumb img { transform:scale(1.04); }
 
-.body{ padding:18px; }
-.meta{ font-size:.9rem; color:var(--accent); opacity:.95; margin-bottom:8px; }
-.title{ font-weight:700; font-size:1.22rem; line-height:1.3; margin:2px 0 10px; color: #eafff4; }
-.excerpt{ color: var(--muted); font-size:1rem; line-height:1.6; }
+.body { padding:18px; }
+
+.meta {
+  font-size:.9rem;
+  color: var(--card-meta);
+  margin-bottom:8px;
+}
+
+.title {
+  font-weight:700;
+  font-size:1.22rem;
+  line-height:1.3;
+  margin:2px 0 10px;
+  color: var(--card-title);
+}
+
+.excerpt {
+  color: var(--card-sub);
+  font-size:1rem;
+  line-height:1.6;
+}
 
 /* DEFAULT article wrapper */
 .article-wrap { padding: 32px 18px; }
@@ -93,7 +115,6 @@ a.card:hover .thumb img{ transform:scale(1.04); }
 .article-body { color: var(--muted); line-height:1.8; }
 .article-body img { max-width: 100%; border-radius: 10px; display:block; margin: 18px auto; }
 
-/* article content blocks (matching old look) */
 .article-body h2, .article-body h3 { color: #eafff4; margin-top: 24px; margin-bottom: 12px; }
 .article-body p { margin-bottom: 16px; }
 .article-body ul { margin-left: 18px; margin-bottom: 18px; }
@@ -109,70 +130,71 @@ footer {
   margin-top: 28px;
 }
 
-/* Buttons */
-.btn { display:inline-flex; align-items:center; padding:10px 16px; background:rgba(0,0,0,0.25); color:#eafff4; border:1px solid rgba(255,255,255,0.12); border-radius:999px; text-decoration:none; }
+.btn {
+  display:inline-flex;
+  align-items:center;
+  padding:10px 16px;
+  background:rgba(0,0,0,0.25);
+  color:#eafff4;
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:999px;
+  text-decoration:none;
+}
 .btn:hover { transform: translateY(-2px); }
 
-/* NAVBAR & MENU tweaks for consistent sizing/typography */
-.site-nav { font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Arial; }
-.site-nav .nav-inner { padding: 12px 18px; }
-.site-nav .menu a { font-size: 1rem; padding: 8px 12px; }
-
-/* ensure .active pill size similar across pages */
-.site-nav .menu a.active { padding:8px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.28); }
-
 /* RESPONSIVE */
-@media (max-width: 1024px) {
-  .grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-  .thumb { height: 180px; }
-}
 @media (max-width: 768px) {
   html { font-size: 15px; }
   .container { padding: 24px 14px; }
   .grid { gap: 18px; }
   .thumb { height: 160px; }
-  .brand img { width:72px; }
-  .site-nav .brand img { width:84px; } /* ensure nav logo on medium screens remains readable */
+  .brand img { width:84px !important; } /* smaller on mobile */
 }
-@media (max-width: 480px) {
-  h1 { font-size: 1.6rem; }
-  .thumb { height: 140px; }
-  .container { padding: 18px 12px; }
-}
-
-/* small safety rules */
-img { max-width: 100%; height:  auto;  }
 
 /* -------------------------------------------
-   Appended: article panel + typography fixes
-   (ensures boxed article UI consistent site-wide)
+   PAGE CONSISTENCY FIXES
    ------------------------------------------- */
-
-/* article panel + typography fixes for consistent look */
 .article-body, .post-body, .article-content, .post-content {
   max-width: 980px;
   margin: 20px auto;
   padding: 26px;
   border-radius: 14px;
-  background: rgba(0,0,0,0.18); /* dark panel across all articles */
+  background: rgba(0,0,0,0.18);
   box-shadow: 0 12px 30px rgba(0,0,0,0.35);
   color: #e8f7ee;
-  line-height:1.65;
 }
 
-/* keep headings stronger and consistent */
-.article-body h1, .article-body h2, .article-body h3,
-.post-body h1, .post-body h2, .post-body h3 {
-  color: #e8f7ee;
+/* Force article listing headers to remain transparent */
+main.container[role="main"], main.container {
+  background: transparent !important;
 }
 
-/* ensure articles listing / individual article use same background tone */
-main.container, .article-body, .post-body {
-  background: transparent;
+/* Fix article meta consistency */
+.article-meta, .article-header {
+  max-width: var(--max-width);
+  margin: 12px auto 22px;
+  padding: 0 18px;
 }
 
-/* small tweak to reading badge on article pages */
-.reading-badge { background: rgba(0,0,0,0.25); padding:8px 12px; border-radius:20px; font-weight:700; }
+/* ============================================================
+   THE IMPORTANT FIX:
+   ARTICLES PAGE TILE FONT COLORS (MATCH HOME PAGE)
+   ============================================================ */
 
-/* ensure inline figure captions are muted and readable */
-figure figcaption { color: #6f8a7b; font-size: .95rem; margin-top:6px; text-align:center; }
+#grid .card .title,
+.articles-list .card .title {
+  color: var(--card-title) !important;
+}
+
+#grid .card .excerpt,
+.articles-list .card .excerpt {
+  color: var(--card-sub) !important;
+}
+
+#grid .card .meta,
+.articles-list .card .meta {
+  color: var(--card-meta) !important;
+  opacity: 1 !important;
+}
+
+/* END OF FILE */
