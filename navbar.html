@@ -44,10 +44,22 @@
     padding:10px 18px; display:flex; align-items:center; gap:14px;
   }
   .brand{display:flex; align-items:center; text-decoration:none}
+
+  /* ==== FORCED UNIFORM LOGO SIZE (applies on every page) ==== */
+  /* use !important because other pages have different overrides */
   .brand img{
-    width:110px; height:auto; object-fit:contain; display:block;
+    width:110px !important;
+    height:auto !important;
+    object-fit:contain;
+    display:block;
     filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));
   }
+  /* slightly smaller on narrow screens */
+  @media (max-width:768px){
+    .brand img{ width:84px !important; }
+  }
+  /* =========================================================== */
+
   .menu{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
   .menu a{
     color:#ffffff; text-decoration:none; padding:6px 10px; border-radius:999px; transition:.25s;
@@ -63,7 +75,6 @@
   .nav-overlay{ display:none; }
 
   @media (max-width:768px){
-    .brand img{width:84px;}
     .nav-toggle{display:inline-block;}
     .menu{
       position:fixed; top:0; right:-80%;
@@ -109,23 +120,18 @@
     document.body.style.overflow='';
   }
 
-  if (toggle) toggle.addEventListener('click', ()=>{
-    nav.classList.contains('open') ? closeMenu() : openMenu();
-  });
+  if (toggle) toggle.addEventListener('click', ()=>{ nav.classList.contains('open') ? closeMenu() : openMenu(); });
   if (overlay) overlay.addEventListener('click', closeMenu);
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
-  // Active link highlight
-  // Use absolute path logic. If we're on a page under /articles/ -> highlight /articles.html
+  // Active link highlight (robust)
   const path = (location.pathname || '/').toLowerCase();
   const normalized = path.endsWith('/') && path.length>1 ? path.slice(0,-1) : path;
 
   let activeHref = '/index.html';
-  if (normalized === '/' || normalized === '/index.html') {
-    activeHref = '/index.html';
-  } else if (normalized.startsWith('/articles/')) {
-    activeHref = '/articles.html';
-  } else {
+  if (normalized === '/' || normalized === '/index.html') activeHref = '/index.html';
+  else if (normalized.startsWith('/articles/')) activeHref = '/articles.html';
+  else {
     const parts = normalized.split('/');
     const last = parts[parts.length-1] || 'index.html';
     activeHref = '/' + last;
@@ -135,11 +141,7 @@
     document.querySelectorAll('.menu a').forEach(a=>{
       const href = (a.getAttribute('href')||'').toLowerCase();
       const hrefNorm = href.startsWith('/') ? href : ('/' + href);
-      if (hrefNorm === activeHref) {
-        a.classList.add('active');
-      } else {
-        a.classList.remove('active');
-      }
+      if (hrefNorm === activeHref) a.classList.add('active'); else a.classList.remove('active');
     });
   }
 
