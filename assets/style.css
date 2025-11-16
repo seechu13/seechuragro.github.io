@@ -21,37 +21,6 @@
 }
 
 /* Reset / base */
-/* ============================================================
-   FINAL MOBILE FIX — ensures drawer is above overlay
-   (does NOT affect desktop because wrapped in media query)
-   ============================================================ */
-@media (max-width: 768px) {
-
-  /* Menu drawer must be above overlay */
-  .menu {
-    position: fixed !important;
-    z-index: 99999 !important;
-  }
-
-  /* Overlay must be below drawer but above page */
-  .nav-overlay {
-    position: fixed !important;
-    z-index: 9999 !important;
-    display: block;
-  }
-
-  /* Toggle button stays on top */
-  .nav-toggle {
-    z-index: 100000 !important;
-    position: relative !important;
-  }
-
-  /* Ensure nav bar stays below toggle but above overlay */
-  .site-nav {
-    z-index: 9000 !important;
-  }
-}
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
 
@@ -76,7 +45,7 @@ h1 { font-size: 2.4rem; margin-bottom: 12px; color: #e9fff2; }
 h2 { font-size: 1.6rem; margin: 18px 0 10px; color: #e9fff2; }
 p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
 
-/* UNIVERSAL NAVBAR LOGO FIX */
+/* UNIVERSAL NAVBAR LOGO SIZE FIX */
 .brand img,
 .site-nav .brand img {
   width: 110px !important;
@@ -173,13 +142,13 @@ footer {
 }
 .btn:hover { transform: translateY(-2px); }
 
-/* RESPONSIVE (BASE) */
+/* RESPONSIVE */
 @media (max-width: 768px) {
   html { font-size: 15px; }
   .container { padding: 24px 14px; }
   .grid { gap: 18px; }
   .thumb { height: 160px; }
-  .brand img { width:84px !important; }
+  .brand img { width:84px !important; } /* smaller on mobile */
 }
 
 /* -------------------------------------------
@@ -195,10 +164,12 @@ footer {
   color: #e8f7ee;
 }
 
+/* Force article listing headers to remain transparent */
 main.container[role="main"], main.container {
   background: transparent !important;
 }
 
+/* Fix article meta consistency */
 .article-meta, .article-header {
   max-width: var(--max-width);
   margin: 12px auto 22px;
@@ -206,7 +177,8 @@ main.container[role="main"], main.container {
 }
 
 /* ============================================================
-   ARTICLES PAGE TILE FONT COLORS
+   THE IMPORTANT FIX:
+   ARTICLES PAGE TILE FONT COLORS (MATCH HOME PAGE)
    ============================================================ */
 
 #grid .card .title,
@@ -226,71 +198,47 @@ main.container[role="main"], main.container {
 }
 
 /* ============================================================
-   FINAL MOBILE HAMBURGER FIX (FULLY TESTED)
+   MOBILE NAV: stacking + compact pills (permanent)
+   - Mobile-only rules appended here. Desktop unchanged.
    ============================================================ */
 
 @media (max-width: 768px) {
+  .site-nav { z-index: 9000 !important; position: sticky !important; }
 
-  /* drawer menu — highest priority on mobile */
-  #mobileMenu, .menu {
+  .menu, #mobileMenu {
     position: fixed !important;
+    right: -100% !important;
     top: 0 !important;
-    right: 0 !important;
-    width: min(84%, 360px) !important;
     height: 100vh !important;
-    background: var(--nav-solid) !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding-top: 24px !important;
-    transform: translateX(100%) !important;
-    transition: transform .28s cubic-bezier(.2,.9,.3,1) !important;
-    z-index: 99999 !important; /* ALWAYS above overlay */
+    width: min(84%, 360px) !important;
+    z-index: 100001 !important; /* drawer above overlay */
+    transition: right .28s cubic-bezier(.2,.9,.3,1) !important;
+    will-change: right, transform;
+    gap: 10px !important;
+    padding: 12px 12px !important;
   }
 
-  .site-nav.open #mobileMenu,
-  .site-nav.open .menu {
-    transform: translateX(0) !important;
-  }
+  .site-nav.open .menu,
+  .site-nav.open #mobileMenu { right: 0 !important; }
 
-  /* overlay — slightly under drawer */
-  #navOverlay, .nav-overlay {
+  .nav-overlay, #navOverlay {
     position: fixed !important;
     inset: 0 !important;
-    background: rgba(0,0,0,0.42) !important;
-    z-index: 99990 !important;
+    z-index: 100000 !important; /* overlay below drawer */
+    background: rgba(0,0,0,0.33) !important;
     backdrop-filter: none !important;
-    display: none !important;
   }
 
-  #navOverlay:not([hidden]),
-  .nav-overlay:not([hidden]) {
-    display: block !important;
-  }
+  .nav-toggle, #navToggle { z-index: 100002 !important; position: relative !important; }
 
-  /* hamburger button stays on top */
-  #navToggle, .nav-toggle {
-    position: relative !important;
-    z-index: 100000 !important;
-  }
-
-  /* mobile pill styling */
-  #mobileMenu a, .menu a {
-    width: 90% !important;
-    margin: 10px auto !important;
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,255,255,0.10) !important;
-    padding: 14px 12px !important;
-    color: #eaf7ef !important;
+  /* slightly smaller pill style so more items fit vertically on small phones */
+  .menu a, #mobileMenu a {
+    padding: 10px 12px !important;
+    font-size: 0.95rem !important;
+    line-height: 1.08 !important;
+    width: 88% !important;
     border-radius: 999px !important;
-    font-size: 1.05rem !important;
-    display: block !important;
-    visibility: visible !important;
-  }
-
-  .menu a.active,
-  #mobileMenu a.active {
-    background: var(--accent) !important;
-    color: #fff !important;
+    box-shadow: none !important;
   }
 }
 
