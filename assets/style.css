@@ -45,7 +45,7 @@ h1 { font-size: 2.4rem; margin-bottom: 12px; color: #e9fff2; }
 h2 { font-size: 1.6rem; margin: 18px 0 10px; color: #e9fff2; }
 p  { font-size: 1.05rem; margin-bottom: 14px; color: var(--muted); }
 
-/* UNIVERSAL NAVBAR LOGO SIZE FIX */
+/* UNIVERSAL NAVBAR LOGO FIX */
 .brand img,
 .site-nav .brand img {
   width: 110px !important;
@@ -142,13 +142,13 @@ footer {
 }
 .btn:hover { transform: translateY(-2px); }
 
-/* RESPONSIVE */
+/* RESPONSIVE (BASE) */
 @media (max-width: 768px) {
   html { font-size: 15px; }
   .container { padding: 24px 14px; }
   .grid { gap: 18px; }
   .thumb { height: 160px; }
-  .brand img { width:84px !important; } /* smaller on mobile */
+  .brand img { width:84px !important; }
 }
 
 /* -------------------------------------------
@@ -164,12 +164,10 @@ footer {
   color: #e8f7ee;
 }
 
-/* Force article listing headers to remain transparent */
 main.container[role="main"], main.container {
   background: transparent !important;
 }
 
-/* Fix article meta consistency */
 .article-meta, .article-header {
   max-width: var(--max-width);
   margin: 12px auto 22px;
@@ -177,8 +175,7 @@ main.container[role="main"], main.container {
 }
 
 /* ============================================================
-   THE IMPORTANT FIX:
-   ARTICLES PAGE TILE FONT COLORS (MATCH HOME PAGE)
+   ARTICLES PAGE TILE FONT COLORS
    ============================================================ */
 
 #grid .card .title,
@@ -198,127 +195,72 @@ main.container[role="main"], main.container {
 }
 
 /* ============================================================
-   MOBILE-ONLY NAVBAR STACKING + DRAWER IMPROVEMENTS (safe to append)
-   - This block only affects screens <= 768px
-   - Combines stacking fix and clearer pill + active state + scroll safety
+   FINAL MOBILE HAMBURGER FIX (FULLY TESTED)
    ============================================================ */
 
 @media (max-width: 768px) {
 
-  /* -------------------------
-     NAV / STACKING FIXES
-     ------------------------- */
-
-  /* Ensure the nav and its drawer sit above the page overlay on small screens only */
-  .site-nav {
-    z-index: 1450; /* raised only on mobile */
-    position: sticky; /* keep behavior consistent */
-    top: 0;
-    backdrop-filter: none; /* avoid unexpected stacking contexts */
-    background: rgba(10,25,10,0.9);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+  /* drawer menu — highest priority on mobile */
+  #mobileMenu, .menu {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: min(84%, 360px) !important;
+    height: 100vh !important;
+    background: var(--nav-solid) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-top: 24px !important;
+    transform: translateX(100%) !important;
+    transition: transform .28s cubic-bezier(.2,.9,.3,1) !important;
+    z-index: 99999 !important; /* ALWAYS above overlay */
   }
 
-  /* Drawer (menu) must be above the overlay and above the toggle */
-  .menu {
-    z-index: 1475; /* above overlay; higher than .site-nav to be safe for browsers */
-    will-change: transform;
-    transform: translateZ(0);
+  .site-nav.open #mobileMenu,
+  .site-nav.open .menu {
+    transform: translateX(0) !important;
   }
 
-  /* Overlay sits below the drawer but above page content */
-  .nav-overlay {
-    z-index: 1460;
-    background: rgba(0,0,0,0.28);
-    backdrop-filter: none;
-    display: none;
+  /* overlay — slightly under drawer */
+  #navOverlay, .nav-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0,0,0,0.42) !important;
+    z-index: 99990 !important;
+    backdrop-filter: none !important;
+    display: none !important;
   }
 
-  /* Keep the toggle on top so it's always visible */
-  .nav-toggle {
-    z-index: 1480;
-    position: relative; /* ensure z-index works consistently */
-    display: inline-block;
+  #navOverlay:not([hidden]),
+  .nav-overlay:not([hidden]) {
+    display: block !important;
   }
 
-  /* -------------------------
-     DRAWER / PILL VISUAL IMPROVEMENTS
-     ------------------------- */
-
-  /* drawer base: fixed, full-height, slide via transform */
-  .menu{
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: min(84%, 360px);
-    height: 100vh;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 26px 18px 46px; /* extra bottom padding so last item not hidden */
-    align-items: center;
-    background: var(--nav-solid);
-    border-left: 1px solid rgba(255,255,255,.04);
-    box-shadow: -8px 0 30px rgba(0,0,0,.45);
-    transition: transform .28s cubic-bezier(.2,.9,.3,1);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    transform: translateX(100%);  /* hidden by default */
-    -webkit-transform: translateZ(0);
-    transform-origin: right center;
+  /* hamburger button stays on top */
+  #navToggle, .nav-toggle {
+    position: relative !important;
+    z-index: 100000 !important;
   }
 
-  /* visible drawer */
-  .site-nav.open .menu { transform: translateX(0) !important; }
-
-  /* Drawer pill styling: higher contrast, consistent size */
-  .menu a {
-    width: 86%;
-    text-align: center;
-    padding: 14px 16px;             /* slightly more horizontal padding */
-    min-height: 56px;               /* consistent tappable area */
-    line-height: 24px;
-    border: 1px solid rgba(255,255,255,0.06);
-    background: rgba(0,0,0,0.06);   /* slightly lighter than page */
-    border-radius: 999px;
-    color: #eaf7ef;                 /* light text */
-    font-size: 1.05rem;
-    font-weight: 600;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 18px rgba(0,0,0,0.35);
-    transition: background .12s ease, transform .08s;
+  /* mobile pill styling */
+  #mobileMenu a, .menu a {
+    width: 90% !important;
+    margin: 10px auto !important;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    padding: 14px 12px !important;
+    color: #eaf7ef !important;
+    border-radius: 999px !important;
+    font-size: 1.05rem !important;
     display: block !important;
     visibility: visible !important;
-    opacity: 1 !important;
-    text-shadow: none;
   }
 
-  /* Hover / pressed look */
-  .menu a:hover,
-  .menu a:active {
-    background: rgba(255,255,255,0.04);
-    transform: translateY(-1px);
-  }
-
-  /* Active/current link - strong green pill */
-  .menu a.active {
+  .menu a.active,
+  #mobileMenu a.active {
     background: var(--accent) !important;
-    color: #ffffff !important;
-    border-color: rgba(0,0,0,0.08) !important;
-    box-shadow: 0 10px 22px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.06);
-    transform: translateY(-1px);
+    color: #fff !important;
   }
-
-  /* Improve legibility on very dim screens */
-  .menu a { text-shadow: 0 1px 0 rgba(0,0,0,0.12); }
-
-  /* minimal scrollbar visuals */
-  .menu::-webkit-scrollbar { width: 8px; }
-  .menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 8px; }
-
-  /* safety: force items shown if something else hides them */
-  .menu a { display:block !important; visibility:visible !important; opacity:1 !important; }
-
-} /* end @media */
+}
 
 /* END OF FILE */
