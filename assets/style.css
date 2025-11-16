@@ -243,3 +243,39 @@ main.container[role="main"], main.container {
 }
 
 /* END OF FILE */
+/* --- SAFE MOBILE NAV FIX (permanent) --- */
+@media (max-width: 768px) {
+
+  /* Remove blur & restore solid background */
+  #mobileMenu, .menu {
+    background: #0f2b24 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Fix z-index so menu is above overlay */
+  #mobileMenu, .menu {
+    z-index: 20000 !important;
+    pointer-events: auto !important;
+    position: fixed !important;
+  }
+
+  /* Fix overlay placement */
+  #navOverlay, .nav-overlay {
+    z-index: 15000 !important;
+    pointer-events: auto !important;
+    background: rgba(0,0,0,0.35) !important;
+  }
+
+  /* Resize pills so full text fits */
+  #mobileMenu a, .menu a {
+    font-size: 0.95rem !important;
+    padding: 12px !important;
+  }
+
+  /* Ensure body scroll locks only when menu open */
+  body.nav-open {
+    overflow: hidden !important;
+  }
+}
+
