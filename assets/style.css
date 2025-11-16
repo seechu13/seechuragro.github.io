@@ -198,29 +198,36 @@ main.container[role="main"], main.container {
 }
 
 /* ============================================================
-   MOBILE-ONLY NAVBAR STACKING / DRAWER FIX (safe to append)
+   MOBILE-ONLY NAVBAR STACKING + DRAWER IMPROVEMENTS (safe to append)
    - This block only affects screens <= 768px
-   - It raises the nav/drawer above the overlay so the menu is visible & clickable
+   - Combines stacking fix and clearer pill + active state + scroll safety
    ============================================================ */
 
 @media (max-width: 768px) {
 
+  /* -------------------------
+     NAV / STACKING FIXES
+     ------------------------- */
+
   /* Ensure the nav and its drawer sit above the page overlay on small screens only */
   .site-nav {
     z-index: 1300; /* raised only on mobile */
-    /* preserve visual background but avoid creating an unwanted stacking context elsewhere */
-    /* do not change backdrop-filter here so desktop remains untouched */
   }
 
   /* Drawer (menu) must be above the overlay and above the toggle */
   .menu {
     z-index: 1302; /* above overlay; higher than .site-nav to be safe for some browsers */
     will-change: transform;
+    /* ensure drawer uses translate animation (if present) without layout shift */
+    transform: translateZ(0);
   }
 
   /* Overlay sits below the drawer but above page content */
   .nav-overlay {
     z-index: 1298;
+    /* slightly lighter overlay so drawer contrast improves */
+    background: rgba(0,0,0,0.35); /* was darker; better contrast with drawer */
+    backdrop-filter: none;        /* avoid extra blur that hides detail */
   }
 
   /* Keep the toggle on top so it's always visible */
@@ -229,8 +236,58 @@ main.container[role="main"], main.container {
     position: relative; /* ensure z-index works consistently */
   }
 
-  /* if the original code used transform/translate-based animation, keep it performant */
-  .menu, .nav-toggle, .nav-overlay { -webkit-transform: translateZ(0); transform: translateZ(0); }
+  /* -------------------------
+     DRAWER / PILL VISUAL IMPROVEMENTS
+     ------------------------- */
+
+  /* Drawer pill styling: higher contrast, consistent size */
+  .menu a {
+    width: 86%;
+    text-align: center;
+    padding: 14px 16px;             /* slightly more horizontal padding */
+    min-height: 56px;               /* consistent tappable area */
+    line-height: 24px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.06);   /* slightly lighter than page */
+    border-radius: 999px;
+    color: #eaf7ef;                 /* keep light text */
+    font-size: 1.05rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 18px rgba(0,0,0,0.35);
+    transition: background .12s ease, transform .08s;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Hover / pressed look */
+  .menu a:hover,
+  .menu a:active {
+    background: rgba(255,255,255,0.04);
+    transform: translateY(-1px);
+  }
+
+  /* Active (current) link - restore green pill */
+  .menu a.active {
+    background: var(--accent);   /* uses your site green */
+    color: #ffffff !important;   /* ensure white text on green */
+    border-color: rgba(0,0,0,0.08);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+    transform: translateY(-1px);
+  }
+
+  /* Ensure Investor Pack is visible + at end of scrollable area */
+  .menu {
+    padding: 26px 18px 36px;     /* extra bottom padding so last item not hidden */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Improve legibility on very dim screens */
+  .menu a { text-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+
+  /* show a compact scrollbar for clarity (optional) */
+  .menu::-webkit-scrollbar { width: 8px; }
+  .menu::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.35); border-radius: 8px; }
+
 }
 
 /* END OF FILE */
