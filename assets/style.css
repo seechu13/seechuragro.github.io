@@ -197,4 +197,40 @@ main.container[role="main"], main.container {
   opacity: 1 !important;
 }
 
+/* ============================================================
+   MOBILE-ONLY NAVBAR STACKING / DRAWER FIX (safe to append)
+   - This block only affects screens <= 768px
+   - It raises the nav/drawer above the overlay so the menu is visible & clickable
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+  /* Ensure the nav and its drawer sit above the page overlay on small screens only */
+  .site-nav {
+    z-index: 1300; /* raised only on mobile */
+    /* preserve visual background but avoid creating an unwanted stacking context elsewhere */
+    /* do not change backdrop-filter here so desktop remains untouched */
+  }
+
+  /* Drawer (menu) must be above the overlay and above the toggle */
+  .menu {
+    z-index: 1302; /* above overlay; higher than .site-nav to be safe for some browsers */
+    will-change: transform;
+  }
+
+  /* Overlay sits below the drawer but above page content */
+  .nav-overlay {
+    z-index: 1298;
+  }
+
+  /* Keep the toggle on top so it's always visible */
+  .nav-toggle {
+    z-index: 1304;
+    position: relative; /* ensure z-index works consistently */
+  }
+
+  /* if the original code used transform/translate-based animation, keep it performant */
+  .menu, .nav-toggle, .nav-overlay { -webkit-transform: translateZ(0); transform: translateZ(0); }
+}
+
 /* END OF FILE */
