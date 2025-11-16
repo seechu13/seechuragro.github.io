@@ -1,4 +1,4 @@
-<!-- navbar.html (patched) -->
+<!-- navbar.html -->
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
     <a class="brand" href="/" aria-label="Seechur Agro home">
@@ -233,88 +233,4 @@
 })();
 </script>
 
-<!-- ======= Defensive mobile guard (safe, mobile-only) =======
-     - Ensures overlay exists / placed after nav
-     - Ensures menu uses transform-based show/hide if needed
-     - Keeps desktop unchanged
-     ======================================================== -->
-<script>
-(function(){
-  try {
-    if (window.__SEECHUR_NAV_GUARD__) return;
-    window.__SEECHUR_NAV_GUARD__ = true;
-
-    const nav = document.getElementById('siteNav');
-    if (!nav) return;
-
-    // ensure overlay exists & is sibling after nav
-    let overlay = document.getElementById('navOverlay') || document.querySelector('.nav-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'navOverlay';
-      overlay.className = 'nav-overlay';
-      overlay.setAttribute('hidden','');
-      nav.insertAdjacentElement('afterend', overlay);
-      overlay.style.display = 'none';
-    } else if (nav.nextElementSibling !== overlay) {
-      nav.insertAdjacentElement('afterend', overlay);
-    }
-
-    // menu fallback
-    const menu = document.getElementById('mobileMenu') || document.querySelector('.menu');
-    if (menu) {
-      // ensure transform-driven behavior (safe on mobile)
-      if (!menu.style.transform) menu.style.transform = 'translateX(100%)';
-      if (!menu.style.transition) menu.style.transition = 'transform .28s cubic-bezier(.2,.9,.3,1)';
-      // ensure starting off-screen if not already hidden
-      if (!nav.classList.contains('open')) menu.style.transform = 'translateX(100%)';
-    }
-
-    // sync overlay/menu visibility with .open on nav
-    function sync() {
-      const open = nav.classList.contains('open');
-      if (open) {
-        overlay.removeAttribute('hidden');
-        overlay.style.display = 'block';
-        if (menu) menu.style.transform = 'translateX(0)';
-        document.body.style.overflow = 'hidden';
-      } else {
-        overlay.setAttribute('hidden','');
-        overlay.style.display = 'none';
-        if (menu) menu.style.transform = 'translateX(100%)';
-        document.body.style.overflow = '';
-      }
-      // ensure stacking order on mobile
-      if (menu) menu.style.zIndex = '99999';
-      overlay.style.zIndex = '99990';
-    }
-
-    // initial sync
-    sync();
-
-    // observe nav class changes
-    const mo = new MutationObserver(sync);
-    mo.observe(nav, { attributes: true, attributeFilter: ['class'] });
-
-    // overlay click closes
-    overlay.addEventListener('click', ()=>{
-      nav.classList.remove('open');
-      sync();
-    });
-
-    // reinforce toggle if needed
-    const toggle = document.getElementById('navToggle') || document.querySelector('.nav-toggle');
-    if (toggle && !toggle.__seechur_patch__) {
-      toggle.__seechur_patch__ = true;
-      toggle.addEventListener('click', ()=>{
-        nav.classList.toggle('open');
-        sync();
-      }, { passive: true });
-    }
-
-  } catch (err) {
-    // do not break page; just log
-    console.warn('seechur nav guard error', err);
-  }
-})();
-</script>
+ 
