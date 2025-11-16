@@ -21,6 +21,37 @@
 }
 
 /* Reset / base */
+/* ============================================================
+   FINAL MOBILE FIX — ensures drawer is above overlay
+   (does NOT affect desktop because wrapped in media query)
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* Menu drawer must be above overlay */
+  .menu {
+    position: fixed !important;
+    z-index: 99999 !important;
+  }
+
+  /* Overlay must be below drawer but above page */
+  .nav-overlay {
+    position: fixed !important;
+    z-index: 9999 !important;
+    display: block;
+  }
+
+  /* Toggle button stays on top */
+  .nav-toggle {
+    z-index: 100000 !important;
+    position: relative !important;
+  }
+
+  /* Ensure nav bar stays below toggle but above overlay */
+  .site-nav {
+    z-index: 9000 !important;
+  }
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
 
