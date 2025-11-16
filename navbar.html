@@ -191,7 +191,9 @@
     document.body.style.overflow = '';
   }
 
-  if (toggle) toggle.addEventListener('click', ()=>{ nav.classList.contains('open') ? closeMenu() : openMenu(); });
+  if (toggle) toggle.addEventListener('click', ()=>{
+    nav.classList.contains('open') ? closeMenu() : openMenu();
+  });
   if (overlay) overlay.addEventListener('click', closeMenu);
   document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeMenu(); });
 
@@ -231,6 +233,67 @@
     mo.observe(target, { childList:true, subtree:true });
   }
 })();
-</script>
 
- 
+/* =================================================
+   PERMANENT NAV PATCH (mobile-only)
+   - clones anchors and attaches robust handlers so:
+     * clicks always navigate on mobile
+     * drawer closes and active state updates
+   - safe: runs only when navbar/menu present
+   ================================================= */
+(function(){
+  if (window.__SEECHUR_NAV_PERM_PATCHED__) return;
+  window.__SEECHUR_NAV_PERM_PATCHED__ = true;
+
+  function patchLinks(){
+    const menu = document.getElementById('mobileMenu') || document.querySelector('.menu');
+    if(!menu) return;
+    const anchors = Array.from(menu.querySelectorAll('a'));
+    anchors.forEach(orig=>{
+      if(orig.__seechurPermPatched) return;
+      orig.__seechurPermPatched = true;
+
+      // clone to remove external listeners that may prevent navigation
+      const clone = orig.cloneNode(true);
+      clone.removeAttribute('onclick');
+
+      clone.addEventListener('click', function(ev){
+        // allow Ctrl/Cmd or middle-click to open new tab
+        if(ev.metaKey || ev.ctrlKey || ev.button === 1) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        // hide overlay & close drawer
+        const overlay = document.getElementById('navOverlay') || document.querySelector('.nav-overlay');
+        if(overlay){ overlay.setAttribute('hidden',''); overlay.style.display='none'; overlay.style.pointerEvents='none'; }
+        document.getElementById('siteNav')?.classList.remove('open');
+
+        // update active class immediately
+        try{
+          document.querySelectorAll('.menu a, #mobileMenu a').forEach(x=> x.classList.remove('active'));
+          clone.classList.add('active');
+        }catch(e){}
+
+        const href = clone.getAttribute('href') || clone.href || '';
+        setTimeout(()=> {
+          if(!href) return;
+          if(href.startsWith('#')) { location.hash = href.slice(1); return; }
+          try { window.location.assign(new URL(href, location.href).href); } catch(e) { location.href = href; }
+        }, 90);
+      }, {passive:false});
+
+      clone.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); clone.click(); } });
+
+      orig.replaceWith(clone);
+    });
+  }
+
+  // run now and observe for DOM mutations (CMS may rewrite links)
+  patchLinks();
+  if(window.MutationObserver){
+    const target = document.querySelector('.menu') || document.body;
+    const mo = new MutationObserver(()=>patchLinks());
+    mo.observe(target, { childList:true, subtree:true });
+  }
+})();
+</script>
