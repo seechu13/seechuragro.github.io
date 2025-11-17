@@ -180,170 +180,147 @@
 
 <script>
 (function(){
-  if (window.__SEECHUR_NAVBAR_FORCE_INIT__) return;
-  window.__SEECHUR_NAVBAR_FORCE_INIT__ = true;
+  if (window.__SEECHUR_NAVBAR_FINAL_FIX__) return;
+  window.__SEECHUR_NAVBAR_FINAL_FIX__ = true;
 
   // mobile-only guard
-  const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-  if (!isMobile()) return;
+  if (!(window.matchMedia && window.matchMedia('(max-width:768px)').matches)) return;
 
-  // utility lists (live)
-  const allNavs = ()=> Array.from(document.querySelectorAll('.site-nav'));
-  const allMenus = ()=> Array.from(document.querySelectorAll('.menu, #mobileMenu'));
-  const allToggles = ()=> Array.from(document.querySelectorAll('.nav-toggle, #navToggle'));
-  const allOverlays = ()=> Array.from(document.querySelectorAll('.nav-overlay, #navOverlay'));
+  // element lists
+  const navs = () => Array.from(document.querySelectorAll('.site-nav'));
+  const menus = () => Array.from(document.querySelectorAll('.menu, #mobileMenu'));
+  const toggles = () => Array.from(document.querySelectorAll('.nav-toggle, #navToggle'));
+  const overlays = () => Array.from(document.querySelectorAll('.nav-overlay, #navOverlay'));
 
-  // debug log counts (visible in console)
-  try {
-    console.log('SEECHUR NAV DEBUG', {
-      siteNavs: allNavs().length,
-      menus: allMenus().length,
-      overlays: allOverlays().length
+  // set ordering so menu is always above overlay and not blurred
+  function enforceZAndVisuals(){
+    menus().forEach(menu=>{
+      menu.style.position = 'fixed';
+      menu.style.top = '0';
+      menu.style.right = menu.classList.contains('open') || document.querySelector('.site-nav.open') ? '0' : '-100%';
+      menu.style.height = '100vh';
+      menu.style.zIndex = '20010';        // menu MUST be higher than overlay
+      menu.style.pointerEvents = 'auto';
+      // ensure menu itself is not blurred by a parent overlay
+      try { menu.style.backdropFilter = 'none'; menu.style.webkitBackdropFilter = 'none'; } catch(e){}
     });
-  } catch(e){}
 
-  // force-style helpers to ensure menu is on top and clickable
-  function forceMenuStyle(menu){
-    if(!menu) return;
-    menu.style.transition = 'right .18s cubic-bezier(.2,.9,.3,1)';
-    menu.style.willChange = 'right';
-    menu.style.position = 'fixed';
-    menu.style.top = '0';
-    menu.style.height = '100vh';
-    menu.style.right = '0';
-    menu.style.zIndex = '99999';
-    menu.style.pointerEvents = 'auto';
-  }
-  function resetMenuStyle(menu){
-    if(!menu) return;
-    menu.style.right = '-100%';
-    // leave zIndex so other fixes still work; pointer-events none for hidden menus
-    menu.style.pointerEvents = 'none';
-  }
-  function showOverlay(ov){
-    if(!ov) return;
-    ov.style.display = 'block';
-    ov.style.pointerEvents = 'auto';
-    ov.style.opacity = '1';
-    ov.style.zIndex = '90000';
-    ov.classList.remove('hidden');
-    ov.removeAttribute('hidden');
-    ov.setAttribute('aria-hidden','false');
-  }
-  function hideOverlay(ov){
-    if(!ov) return;
-    ov.style.display = 'none';
-    ov.style.pointerEvents = 'none';
-    ov.style.opacity = '0';
-    ov.setAttribute('hidden','');
-    ov.classList.add('hidden');
-    ov.setAttribute('aria-hidden','true');
+    overlays().forEach(ov=>{
+      ov.style.position = 'fixed';
+      ov.style.inset = '0';
+      ov.style.zIndex = '20000';          // lower than menu? (make lower than 20010)
+      // remove any backdrop filter that would blur menu — we'll simulate simple dark overlay
+      try { ov.style.backdropFilter = 'none'; ov.style.webkitBackdropFilter = 'none'; } catch(e){}
+      // keep background dark but non-blurring
+      ov.style.background = 'rgba(0,0,0,0.35)';
+      // hidden state defaults
+      if (!ov.classList.contains('hidden') && !ov.hasAttribute('hidden')) {
+        // visible overlay remains pointer-events:auto; hidden is blocked below via hideOverlay
+      }
+    });
   }
 
-  function lockScroll(enable){
-    document.body.classList.toggle('nav-open', !!enable);
-  }
+  // show/hide helpers (force inline style so external CSS cant mis-order)
+  function showOverlay(ov){ if(!ov) return; ov.classList.remove('hidden'); ov.removeAttribute('hidden'); ov.style.display='block'; ov.style.pointerEvents='auto'; ov.setAttribute('aria-hidden','false'); }
+  function hideOverlay(ov){ if(!ov) return; ov.classList.add('hidden'); try{ ov.setAttribute('hidden',''); }catch(e){} ov.style.display='none'; ov.style.pointerEvents='none'; ov.setAttribute('aria-hidden','true'); }
 
   function openAll(){
-    allNavs().forEach(n => n.classList.add('open'));
-    allMenus().forEach(m => forceMenuStyle(m));
-    allOverlays().forEach(o => showOverlay(o));
-    allToggles().forEach(t => t.setAttribute('aria-expanded','true'));
-    lockScroll(true);
-    // focus first clickable link inside first open menu
-    setTimeout(()=> {
-      const firstLink = document.querySelector('.site-nav.open .menu a, .site-nav.open #mobileMenu a');
-      try { firstLink && firstLink.focus(); } catch(e){}
-    }, 70);
+    navs().forEach(n=> n.classList.add('open'));
+    menus().forEach(menu=> { menu.style.right = '0'; });
+    overlays().forEach(showOverlay);
+    toggles().forEach(t=> t.setAttribute('aria-expanded','true'));
+    document.body.classList.add('nav-open');
+    enforceZAndVisuals();
   }
 
   function closeAll(){
-    allNavs().forEach(n => n.classList.remove('open'));
-    allMenus().forEach(m => resetMenuStyle(m));
-    allOverlays().forEach(o => hideOverlay(o));
-    allToggles().forEach(t => t.setAttribute('aria-expanded','false'));
-    lockScroll(false);
-    // return focus to first toggle if present
+    navs().forEach(n=> n.classList.remove('open'));
+    menus().forEach(menu=> { menu.style.right = '-100%'; });
+    overlays().forEach(hideOverlay);
+    toggles().forEach(t=> t.setAttribute('aria-expanded','false'));
+    document.body.classList.remove('nav-open');
+    enforceZAndVisuals();
+    // return focus to first toggle for accessibility
     try { (document.querySelector('.nav-toggle, #navToggle')||{}).focus(); } catch(e){}
   }
 
-  // attach toggles (safe guard to avoid double attach)
-  allToggles().forEach(toggle=>{
-    if(toggle.__seechurToggleForceInit) return;
-    toggle.__seechurToggleForceInit = true;
-    toggle.addEventListener('click', function(ev){
+  // attach toggles safely
+  toggles().forEach(toggle => {
+    if (toggle.__seechur_final_toggle) return;
+    toggle.__seechur_final_toggle = true;
+    toggle.addEventListener('click', (ev) => {
       ev.preventDefault(); ev.stopPropagation();
-      const anyOpen = allNavs().some(n=> n.classList.contains('open'));
+      const anyOpen = navs().some(n => n.classList.contains('open'));
       anyOpen ? closeAll() : openAll();
     }, {passive:false});
   });
 
-  // ensure overlay click closes everything
-  allOverlays().forEach(ov=>{
-    if(ov.__seechurOverlayForceInit) return;
-    ov.__seechurOverlayForceInit = true;
+  // overlay click closes everything (only when clicking overlay element itself)
+  overlays().forEach(ov=>{
+    if (ov.__seechur_final_overlay) return;
+    ov.__seechur_final_overlay = true;
     ov.addEventListener('click', function(e){
-      if(e.target === ov){ e.preventDefault(); e.stopPropagation(); closeAll(); }
+      if (e.target === ov) { e.preventDefault(); e.stopPropagation(); closeAll(); }
     }, {passive:false});
   });
 
-  // ESC key closes
+  // ESC closes
   document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape') closeAll();
+    if (e.key === 'Escape') closeAll();
   });
 
-  // Patch all menu links aggressively to ensure they navigate and close overlays
-  function patchLinksNow(){
-    allMenus().forEach(menu=>{
+  // VERY IMPORTANT: intercept clicks on menu links in capture phase so we run BEFORE any other listeners
+  function patchLinksCapture(){
+    menus().forEach(menu=>{
       const anchors = Array.from(menu.querySelectorAll('a'));
       anchors.forEach(a=>{
-        if(a.__seechurLinkForcePatched) return;
-        a.__seechurLinkForcePatched = true;
+        if (a.__seechur_final_patched) return;
+        a.__seechur_final_patched = true;
 
-        // remove inline onclick if present
-        try { a.removeAttribute('onclick'); } catch(e){}
-
+        // capture-phase handler
         a.addEventListener('click', function(ev){
-          // allow Ctrl/Cmd middle-click behaviour
-          if(ev.metaKey || ev.ctrlKey || ev.button === 1) return;
-          ev.preventDefault(); ev.stopPropagation();
-
-          // immediate close visuals
+          // allow modifier-click to open new tab
+          if (ev.metaKey || ev.ctrlKey || ev.button === 1) return;
+          try { ev.preventDefault(); ev.stopImmediatePropagation && ev.stopImmediatePropagation(); ev.stopPropagation(); } catch(e){}
+          // hide overlays & close everything
           closeAll();
 
-          // set a tiny timeout to allow close animation then navigate (reliable)
-          const href = (a.getAttribute('href')||a.href||'').trim();
-          setTimeout(()=> {
-            if(!href) return;
-            if(href.startsWith('#')) { location.hash = href.slice(1); return; }
-            try { location.href = new URL(href, location.href).href; } catch(e){ location.href = href; }
-          }, 60);
-        }, {passive:false});
+          const href = (a.getAttribute('href') || a.href || '').trim();
+          // immediate navigate (tiny timeout to allow UI to update)
+          setTimeout(()=>{
+            if (!href) return;
+            if (href.startsWith('#')) { location.hash = href.slice(1); return; }
+            try { location.href = new URL(href, location.href).href; } catch(e) { location.href = href; }
+          }, 40);
+        }, {capture:true, passive:false});
       });
     });
   }
-  patchLinksNow();
 
-  // If the CMS rewrites DOM, keep patching (debounced)
-  if(window.MutationObserver){
-    const mo = new MutationObserver(()=> setTimeout(patchLinksNow, 60));
+  patchLinksCapture();
+
+  // Observe DOM changes (CMS may rewrite items) and reapply
+  if (window.MutationObserver){
+    const mo = new MutationObserver(()=> {
+      enforceZAndVisuals();
+      patchLinksCapture();
+    });
     mo.observe(document.body, { childList:true, subtree:true });
   }
 
-  // Safety: after load ensure overlays are hidden if no nav is open
-  setTimeout(()=> {
-    if(!allNavs().some(n=> n.classList.contains('open'))) {
-      allOverlays().forEach(o => hideOverlay(o));
-      allMenus().forEach(m => resetMenuStyle(m));
-    }
-  }, 280);
+  // initial enforcement
+  enforceZAndVisuals();
 
-  // expose simple debug function for you to run in console if needed
-  window.__seechur_nav_debug = () => ({
-    siteNavs: allNavs().length,
-    menus: allMenus().length,
-    overlays: allOverlays().length
-  });
+  // safety: ensure overlays hidden if no nav is open after short delay
+  setTimeout(() => {
+    if (!navs().some(n => n.classList.contains('open'))) {
+      overlays().forEach(hideOverlay);
+      menus().forEach(m => m.style.right = '-100%');
+    }
+  }, 300);
+
+  // debug helper
+  window.__seechur_nav_final_debug = () => ({ siteNavs: navs().length, menus: menus().length, overlays: overlays().length });
 
 })();
 </script>
