@@ -279,3 +279,33 @@ main.container[role="main"], main.container {
   }
 }
 
+/* === small safe overrides for consistent overlay/menu display === */
+@media (max-width: 768px) {
+  /* ensure overlay visibility control via .hidden class and [hidden] attr */
+  .nav-overlay.hidden,
+  #navOverlay.hidden {
+    display: none !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
+
+  .nav-overlay,
+  #navOverlay {
+    display: block; /* default block, actual hide controlled by .hidden or [hidden] */
+    opacity: 1;
+    transition: opacity .18s ease;
+  }
+
+  /* ensure that when site-nav has .open the overlay is above page and below drawer */
+  .site-nav.open + .nav-overlay,
+  .site-nav.open + #navOverlay {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  /* body lock class (used by JS) */
+  body.nav-open {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+}
