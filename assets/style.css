@@ -309,3 +309,19 @@ main.container[role="main"], main.container {
     touch-action: none !important;
   }
 }
+@media (max-width: 768px) {
+  .nav-overlay.hidden,
+  #navOverlay.hidden {
+    display: none !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
+  .nav-overlay,
+  #navOverlay {
+    display: block;
+    opacity: 1;
+    transition: opacity .18s ease;
+  }
+  body.nav-open { overflow: hidden !important; touch-action: none !important; }
+}
+
