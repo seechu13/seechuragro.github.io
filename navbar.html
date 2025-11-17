@@ -1,5 +1,5 @@
 <!-- navbar.html -->
-<nav class="site-nav" id="siteNav">
+<nav class="site-nav" id="siteNav" role="navigation" aria-label="Main">
   <div class="nav-inner">
     <a class="brand" href="/" aria-label="Seechur Agro home">
       <!-- absolute path to ensure it resolves from any page -->
@@ -30,7 +30,7 @@
 </nav>
 
 <!-- overlay -->
-<div class="nav-overlay" id="navOverlay" hidden></div>
+<div class="nav-overlay" id="navOverlay" hidden aria-hidden="true"></div>
 
 <style>
   :root{
@@ -85,6 +85,7 @@
     transition: background .18s ease, transform .12s;
     font-weight:600;
     display:inline-block;
+    cursor:pointer;
   }
   .menu a:hover{ background: rgba(255,255,255,0.12); transform: translateY(-2px); }
   .menu a.active{ background: rgba(255,255,255,0.14); }
@@ -100,6 +101,7 @@
     border-radius:10px;
     cursor:pointer;
     font-weight:700;
+    position: relative;
   }
 
   .nav-overlay{ display:none; }
@@ -110,7 +112,7 @@
   @media (max-width: 768px){
     .brand img{ width: 84px; } /* smaller on mobile */
 
-    .nav-toggle{ display:inline-block; z-index: 1202; }
+    .nav-toggle{ display:inline-block; z-index: 1304; }
 
     /* drawer menu: slide from right, pill buttons stacked */
     .menu{
@@ -131,19 +133,22 @@
       transition: right .28s cubic-bezier(.2,.9,.3,1);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      z-index: 1302; /* mobile drawer sits above overlay and page */
+      pointer-events: auto;
     }
 
     /* pill style full */
     .menu a{
       width: 86%;
       text-align: center;
-      padding: 14px 12px;
+      padding: 12px 10px; /* slightly reduced padding to fit more items */
       border: 1px solid rgba(255,255,255,.06);
       background: rgba(255,255,255,.03);
       border-radius: 999px;
       color: #eaf7ef;
-      font-size: 1.05rem;
+      font-size: 1.0rem; /* slightly smaller for better fit */
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.01);
+      line-height:1.2;
     }
     .menu a:hover{ background: rgba(255,255,255,.06); transform:none; }
 
@@ -154,17 +159,22 @@
     .nav-overlay{
       position: fixed;
       inset: 0;
-      z-index: 1200;
+      z-index: 1300; /* sits below drawer but above page */
       background: rgba(0,0,0,.55);
       backdrop-filter: blur(2px);
       display: none;
+      pointer-events: auto;
     }
     .site-nav.open + .nav-overlay{ display: block; }
+
+    /* ensure brand & toggle remain visible above drawer */
+    .site-nav .brand,
+    .site-nav .nav-toggle { position: relative; z-index: 1305; }
   }
 
   /* small tweak for very small screens */
   @media (max-width:420px){
-    .menu a{ width:90%; padding:12px 10px; font-size:1rem; }
+    .menu a{ width:90%; padding:10px 8px; font-size:.95rem; }
   }
 </style>
 
@@ -181,20 +191,36 @@
   function openMenu(){
     nav.classList.add('open');
     if (toggle) toggle.setAttribute('aria-expanded','true');
-    if (overlay) overlay.removeAttribute('hidden');
+    if (overlay){
+      overlay.removeAttribute('hidden');
+      overlay.style.display = 'block';
+      overlay.setAttribute('aria-hidden','false');
+    }
+    // lock page scroll
     document.body.style.overflow = 'hidden';
   }
   function closeMenu(){
     nav.classList.remove('open');
     if (toggle) toggle.setAttribute('aria-expanded','false');
-    if (overlay) overlay.setAttribute('hidden','');
+    if (overlay){
+      overlay.setAttribute('hidden','');
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden','true');
+    }
     document.body.style.overflow = '';
   }
 
-  if (toggle) toggle.addEventListener('click', ()=>{
+  if (toggle) toggle.addEventListener('click', (e)=> {
+    e.preventDefault();
+    e.stopPropagation();
     nav.classList.contains('open') ? closeMenu() : openMenu();
   });
-  if (overlay) overlay.addEventListener('click', closeMenu);
+
+  if (overlay) overlay.addEventListener('click', (e)=> {
+    e.preventDefault();
+    closeMenu();
+  });
+
   document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeMenu(); });
 
   // Active-link logic: resilient for both site root and /articles/* pages
@@ -232,68 +258,74 @@
     const mo = new MutationObserver(applyActive);
     mo.observe(target, { childList:true, subtree:true });
   }
-})();
 
-/* =================================================
-   PERMANENT NAV PATCH (mobile-only)
-   - clones anchors and attaches robust handlers so:
-     * clicks always navigate on mobile
-     * drawer closes and active state updates
-   - safe: runs only when navbar/menu present
-   ================================================= */
-(function(){
-  if (window.__SEECHUR_NAV_PERM_PATCHED__) return;
-  window.__SEECHUR_NAV_PERM_PATCHED__ = true;
+  // ----------------------------
+  // PERMANENT MOBILE LINK PATCH
+  // Ensures mobile links actually navigate and close the drawer
+  // ----------------------------
+  (function mobileLinkPatch(){
+    if (window.__SEECHUR_NAV_PERM_PATCHED__) return;
+    window.__SEECHUR_NAV_PERM_PATCHED__ = true;
 
-  function patchLinks(){
-    const menu = document.getElementById('mobileMenu') || document.querySelector('.menu');
-    if(!menu) return;
-    const anchors = Array.from(menu.querySelectorAll('a'));
-    anchors.forEach(orig=>{
-      if(orig.__seechurPermPatched) return;
-      orig.__seechurPermPatched = true;
+    function patchLinks(){
+      const menu = document.getElementById('mobileMenu') || document.querySelector('.menu');
+      if(!menu) return;
+      const anchors = Array.from(menu.querySelectorAll('a'));
+      anchors.forEach(orig=>{
+        if(orig.__seechurPermPatched) return;
+        orig.__seechurPermPatched = true;
 
-      // clone to remove external listeners that may prevent navigation
-      const clone = orig.cloneNode(true);
-      clone.removeAttribute('onclick');
+        // clone to remove any interfering listeners
+        const clone = orig.cloneNode(true);
+        clone.removeAttribute('onclick');
 
-      clone.addEventListener('click', function(ev){
-        // allow Ctrl/Cmd or middle-click to open new tab
-        if(ev.metaKey || ev.ctrlKey || ev.button === 1) return;
-        ev.preventDefault();
-        ev.stopPropagation();
+        // robust click handler
+        clone.addEventListener('click', function(ev){
+          // allow modifier-click to open in new tab/window
+          if(ev.metaKey || ev.ctrlKey || ev.button === 1) return;
+          ev.preventDefault();
+          ev.stopPropagation();
 
-        // hide overlay & close drawer
-        const overlay = document.getElementById('navOverlay') || document.querySelector('.nav-overlay');
-        if(overlay){ overlay.setAttribute('hidden',''); overlay.style.display='none'; overlay.style.pointerEvents='none'; }
-        document.getElementById('siteNav')?.classList.remove('open');
+          // close overlay & drawer immediately
+          const overlayEl = document.getElementById('navOverlay') || document.querySelector('.nav-overlay');
+          if(overlayEl){
+            overlayEl.setAttribute('hidden','');
+            overlayEl.style.display = 'none';
+            overlayEl.setAttribute('aria-hidden','true');
+          }
+          document.getElementById('siteNav')?.classList.remove('open');
+          if (document.getElementById('navToggle')) document.getElementById('navToggle').setAttribute('aria-expanded','false');
 
-        // update active class immediately
-        try{
-          document.querySelectorAll('.menu a, #mobileMenu a').forEach(x=> x.classList.remove('active'));
-          clone.classList.add('active');
-        }catch(e){}
+          // update active state locally for instant feedback
+          try{
+            document.querySelectorAll('.menu a').forEach(x=> x.classList.remove('active'));
+            clone.classList.add('active');
+          }catch(e){}
 
-        const href = clone.getAttribute('href') || clone.href || '';
-        setTimeout(()=> {
-          if(!href) return;
-          if(href.startsWith('#')) { location.hash = href.slice(1); return; }
-          try { window.location.assign(new URL(href, location.href).href); } catch(e) { location.href = href; }
-        }, 90);
-      }, {passive:false});
+          // allow the UI to update then navigate
+          const href = clone.getAttribute('href') || clone.href || '';
+          setTimeout(()=> {
+            if(!href) return;
+            if(href.startsWith('#')) { location.hash = href.slice(1); return; }
+            try { window.location.assign(new URL(href, location.href).href); } catch(e) { location.href = href; }
+          }, 90);
+        }, {passive:false});
 
-      clone.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); clone.click(); } });
+        // keyboard accessibility
+        clone.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); clone.click(); } });
 
-      orig.replaceWith(clone);
-    });
-  }
+        orig.replaceWith(clone);
+      });
+    }
 
-  // run now and observe for DOM mutations (CMS may rewrite links)
-  patchLinks();
-  if(window.MutationObserver){
-    const target = document.querySelector('.menu') || document.body;
-    const mo = new MutationObserver(()=>patchLinks());
-    mo.observe(target, { childList:true, subtree:true });
-  }
+    // run now and watch for CMS rewriting links later
+    patchLinks();
+    if(window.MutationObserver){
+      const target = document.querySelector('.menu') || document.body;
+      const mo = new MutationObserver(()=>patchLinks());
+      mo.observe(target, { childList:true, subtree:true });
+    }
+  })();
+
 })();
 </script>
