@@ -180,167 +180,119 @@
 
 <script>
 (function(){
-  // Prevent double-init if included multiple times
   if (window.__SEECHUR_NAVBAR_INIT__) return;
   window.__SEECHUR_NAVBAR_INIT__ = true;
 
-  // ONLY run mobile nav logic when viewport is mobile-sized
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-  if (!isMobile()) {
-    // intentionally do nothing on desktop to avoid interference
-    return;
-  }
+  if (!isMobile()) return;
 
-  const nav = document.getElementById('siteNav');
-  const toggle = document.getElementById('navToggle');
-  const overlay = document.getElementById('navOverlay') || document.querySelector('.nav-overlay');
-  const menu = document.getElementById('mobileMenu') || document.querySelector('.menu');
+  // helpers to find *all* navs/menus/overlays
+  const allNavs = () => Array.from(document.querySelectorAll('.site-nav'));
+  const allMenus = () => Array.from(document.querySelectorAll('.menu, #mobileMenu'));
+  const allToggles = () => Array.from(document.querySelectorAll('.nav-toggle, #navToggle'));
+  const allOverlays = () => Array.from(document.querySelectorAll('.nav-overlay, #navOverlay'));
 
-  if (!nav || !toggle || !menu || !overlay) {
-    // DOM not ready or elements missing — no-op safely
-    return;
-  }
-
-  // Helper: set body nav-open class (safer than direct inline styles)
   function lockScroll(enable){
-    if (enable){
-      document.body.classList.add('nav-open');
-    } else {
-      document.body.classList.remove('nav-open');
-    }
+    if (enable) document.body.classList.add('nav-open');
+    else document.body.classList.remove('nav-open');
   }
 
-  function openMenu(){
-    nav.classList.add('open');
-    overlay.classList.remove('hidden');
-    overlay.removeAttribute('hidden');
-    overlay.setAttribute('aria-hidden','false');
-    if (toggle) toggle.setAttribute('aria-expanded','true');
-    lockScroll(true);
-
-    // focus the first link for accessibility after short delay
-    setTimeout(()=> {
-      const first = menu.querySelector('a, button, input');
-      if (first && typeof first.focus === 'function') first.focus();
-    }, 60);
-  }
-
-  function closeMenu(){
-    nav.classList.remove('open');
-    overlay.classList.add('hidden');
-    overlay.setAttribute('hidden','');
-    overlay.setAttribute('aria-hidden','true');
-    if (toggle) toggle.setAttribute('aria-expanded','false');
-    lockScroll(false);
-    // return focus to toggle
-    try { toggle.focus(); } catch(e){}
-  }
-
-  // toggle button behaviour
-  toggle.addEventListener('click', (e)=> {
-    e.preventDefault();
-    e.stopPropagation();
-    if (nav.classList.contains('open')) closeMenu(); else openMenu();
-  }, {passive:false});
-
-  // overlay click closes menu (only when clicking the overlay itself)
-  overlay.addEventListener('click', (e)=> {
-    if (e.target === overlay) {
-      e.preventDefault();
-      closeMenu();
-    }
-  });
-
-  // ESC closes
-  document.addEventListener('keydown', (e)=> {
-    if (e.key === 'Escape' && nav.classList.contains('open')) {
-      closeMenu();
-    }
-  });
-
-  // Active-link logic (robust)
-  (function applyActive(){
-    try {
-      const path = (location.pathname || '/').toLowerCase();
-      const normalized = (path.endsWith('/') && path.length>1) ? path.slice(0,-1) : path;
-
-      let activeHref = '/index.html';
-      if (normalized === '/' || normalized === '/index.html') {
-        activeHref = '/index.html';
-      } else if (normalized.startsWith('/articles/')) {
-        activeHref = '/articles.html';
-      } else {
-        const parts = normalized.split('/');
-        const last = parts[parts.length-1] || 'index.html';
-        activeHref = '/' + last;
-      }
-
-      const links = document.querySelectorAll('.menu a');
-      links.forEach(a=>{
-        const href = (a.getAttribute('href')||'').toLowerCase();
-        const norm = href.startsWith('/') ? href : ('/' + href);
-        a.classList.toggle('active', norm === activeHref);
-      });
-    } catch(e){}
-  })();
-
-  // Observe menu in case CMS rewrites links later (keeps active state)
-  if (window.MutationObserver){
-    const target = menu || document.body;
-    const mo = new MutationObserver(()=> {
-      // small debounce re-apply
-      setTimeout(()=> {
-        try {
-          const event = new Event('applyActive');
-          document.dispatchEvent(event);
-        } catch(e){}
-      }, 60);
+  function openAllMenus(sourceToggle){
+    allNavs().forEach(nav => nav.classList.add('open'));
+    allOverlays().forEach(o=>{
+      o.classList.remove('hidden');
+      o.removeAttribute('hidden');
+      o.setAttribute('aria-hidden','false');
+      o.style.display = 'block';
     });
-    mo.observe(target, { childList:true, subtree:true });
+    allToggles().forEach(t => t.setAttribute('aria-expanded','true'));
+    lockScroll(true);
+    // focus first visible menu link
+    setTimeout(()=>{
+      const first = document.querySelector('.site-nav.open .menu a, .site-nav.open #mobileMenu a');
+      try{ first && first.focus(); }catch(e){}
+    },60);
   }
 
-  // ----------------------------
-  // MOBILE LINK PATCH (only when mobile)
-  // Ensures mobile links navigate and close drawer.
-  // ----------------------------
-  (function mobileLinkPatch(){
-    if (window.__SEECHUR_NAV_PERM_PATCHED__) return;
-    window.__SEECHUR_NAV_PERM_PATCHED__ = true;
+  function closeAllMenus(){
+    allNavs().forEach(nav => nav.classList.remove('open'));
+    allOverlays().forEach(o=>{
+      o.classList.add('hidden');
+      try { o.setAttribute('hidden',''); } catch(e){}
+      o.setAttribute('aria-hidden','true');
+      o.style.display = 'none';
+    });
+    allToggles().forEach(t => t.setAttribute('aria-expanded','false'));
+    lockScroll(false);
+    // return focus to visible toggle if any
+    try { const t = document.querySelector('.nav-toggle, #navToggle'); t && t.focus(); } catch(e){}
+  }
 
-    // Only patch for mobile viewports (extra guard)
-    if (!isMobile()) return;
+  // attach toggle handlers for every toggle button present
+  allToggles().forEach(toggle=>{
+    // avoid double-attach
+    if (toggle.__seechurToggleInit) return;
+    toggle.__seechurToggleInit = true;
 
-    function patchLinks(){
+    toggle.addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      // If any nav is open, close all; else open all
+      const anyOpen = allNavs().some(n=> n.classList.contains('open'));
+      anyOpen ? closeAllMenus() : openAllMenus(toggle);
+    }, {passive:false});
+  });
+
+  // overlay click closes all overlays (but only when clicking overlay itself)
+  allOverlays().forEach(overlay=>{
+    if (overlay.__seechurOverlayInit) return;
+    overlay.__seechurOverlayInit = true;
+    overlay.addEventListener('click', (e)=>{
+      if (e.target === overlay) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllMenus();
+      }
+    }, {passive:false});
+  });
+
+  // ESC closes everything
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape') closeAllMenus();
+  });
+
+  // Patch links inside *all* menus so they close all overlays and then navigate.
+  function patchAllMenuLinks(){
+    allMenus().forEach(menu=>{
       const anchors = Array.from(menu.querySelectorAll('a'));
       anchors.forEach(orig=>{
-        if(orig.__seechurPermPatched) return;
+        if (orig.__seechurPermPatched) return;
         orig.__seechurPermPatched = true;
 
-        // clone to remove any existing listeners set by CMS or other scripts
         const clone = orig.cloneNode(true);
         clone.removeAttribute('onclick');
 
         clone.addEventListener('click', function(ev){
-          // allow modifier-click to open new tab
+          // allow modifier clicks to open in new tab
           if (ev.metaKey || ev.ctrlKey || ev.button === 1) return;
           ev.preventDefault();
           ev.stopPropagation();
 
-          // close overlay & drawer immediately for instant UI feedback
-          closeMenu();
+          // close overlays/drawers immediately for instant UI feedback
+          closeAllMenus();
 
-          // immediate visual active state update
+          // update active state visually
           try {
             document.querySelectorAll('.menu a').forEach(x=> x.classList.remove('active'));
             clone.classList.add('active');
           } catch(e){}
 
-          // then navigate (small delay gives animation time)
           const href = clone.getAttribute('href') || clone.href || '';
-          setTimeout(()=> {
+          // small delay to allow close animation; then navigate forcibly
+          setTimeout(()=>{
             if (!href) return;
             if (href.startsWith('#')) { location.hash = href.slice(1); return; }
-            try { window.location.assign(new URL(href, location.href).href); } catch(e) { location.href = href; }
+            try { location.href = new URL(href, location.href).href; } catch(e) { location.href = href; }
           }, 80);
         }, {passive:false});
 
@@ -348,15 +300,24 @@
 
         orig.replaceWith(clone);
       });
-    }
+    });
+  }
 
-    // run now and watch for CMS rewrites
-    patchLinks();
-    if (window.MutationObserver){
-      const mo2 = new MutationObserver(()=>patchLinks());
-      mo2.observe(menu, { childList:true, subtree:true });
-    }
-  })();
+  // initial patch and observe for CMS DOM rewrites
+  patchAllMenuLinks();
+  if (window.MutationObserver){
+    const mo = new MutationObserver(()=> {
+      // re-run patches (debounced mildly)
+      setTimeout(()=> patchAllMenuLinks(), 80);
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+  }
 
+  // One-time safety: ensure everything hidden if some overlay was accidentally left visible
+  setTimeout(()=> {
+    // if any overlay visible but none of navs open, hide overlays
+    const anyOpen = allNavs().some(n=> n.classList.contains('open'));
+    if (!anyOpen) closeAllMenus();
+  }, 300);
 })();
 </script>
