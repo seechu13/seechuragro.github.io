@@ -180,144 +180,170 @@
 
 <script>
 (function(){
-  if (window.__SEECHUR_NAVBAR_INIT__) return;
-  window.__SEECHUR_NAVBAR_INIT__ = true;
+  if (window.__SEECHUR_NAVBAR_FORCE_INIT__) return;
+  window.__SEECHUR_NAVBAR_FORCE_INIT__ = true;
 
+  // mobile-only guard
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
   if (!isMobile()) return;
 
-  // helpers to find *all* navs/menus/overlays
-  const allNavs = () => Array.from(document.querySelectorAll('.site-nav'));
-  const allMenus = () => Array.from(document.querySelectorAll('.menu, #mobileMenu'));
-  const allToggles = () => Array.from(document.querySelectorAll('.nav-toggle, #navToggle'));
-  const allOverlays = () => Array.from(document.querySelectorAll('.nav-overlay, #navOverlay'));
+  // utility lists (live)
+  const allNavs = ()=> Array.from(document.querySelectorAll('.site-nav'));
+  const allMenus = ()=> Array.from(document.querySelectorAll('.menu, #mobileMenu'));
+  const allToggles = ()=> Array.from(document.querySelectorAll('.nav-toggle, #navToggle'));
+  const allOverlays = ()=> Array.from(document.querySelectorAll('.nav-overlay, #navOverlay'));
+
+  // debug log counts (visible in console)
+  try {
+    console.log('SEECHUR NAV DEBUG', {
+      siteNavs: allNavs().length,
+      menus: allMenus().length,
+      overlays: allOverlays().length
+    });
+  } catch(e){}
+
+  // force-style helpers to ensure menu is on top and clickable
+  function forceMenuStyle(menu){
+    if(!menu) return;
+    menu.style.transition = 'right .18s cubic-bezier(.2,.9,.3,1)';
+    menu.style.willChange = 'right';
+    menu.style.position = 'fixed';
+    menu.style.top = '0';
+    menu.style.height = '100vh';
+    menu.style.right = '0';
+    menu.style.zIndex = '99999';
+    menu.style.pointerEvents = 'auto';
+  }
+  function resetMenuStyle(menu){
+    if(!menu) return;
+    menu.style.right = '-100%';
+    // leave zIndex so other fixes still work; pointer-events none for hidden menus
+    menu.style.pointerEvents = 'none';
+  }
+  function showOverlay(ov){
+    if(!ov) return;
+    ov.style.display = 'block';
+    ov.style.pointerEvents = 'auto';
+    ov.style.opacity = '1';
+    ov.style.zIndex = '90000';
+    ov.classList.remove('hidden');
+    ov.removeAttribute('hidden');
+    ov.setAttribute('aria-hidden','false');
+  }
+  function hideOverlay(ov){
+    if(!ov) return;
+    ov.style.display = 'none';
+    ov.style.pointerEvents = 'none';
+    ov.style.opacity = '0';
+    ov.setAttribute('hidden','');
+    ov.classList.add('hidden');
+    ov.setAttribute('aria-hidden','true');
+  }
 
   function lockScroll(enable){
-    if (enable) document.body.classList.add('nav-open');
-    else document.body.classList.remove('nav-open');
+    document.body.classList.toggle('nav-open', !!enable);
   }
 
-  function openAllMenus(sourceToggle){
-    allNavs().forEach(nav => nav.classList.add('open'));
-    allOverlays().forEach(o=>{
-      o.classList.remove('hidden');
-      o.removeAttribute('hidden');
-      o.setAttribute('aria-hidden','false');
-      o.style.display = 'block';
-    });
+  function openAll(){
+    allNavs().forEach(n => n.classList.add('open'));
+    allMenus().forEach(m => forceMenuStyle(m));
+    allOverlays().forEach(o => showOverlay(o));
     allToggles().forEach(t => t.setAttribute('aria-expanded','true'));
     lockScroll(true);
-    // focus first visible menu link
-    setTimeout(()=>{
-      const first = document.querySelector('.site-nav.open .menu a, .site-nav.open #mobileMenu a');
-      try{ first && first.focus(); }catch(e){}
-    },60);
+    // focus first clickable link inside first open menu
+    setTimeout(()=> {
+      const firstLink = document.querySelector('.site-nav.open .menu a, .site-nav.open #mobileMenu a');
+      try { firstLink && firstLink.focus(); } catch(e){}
+    }, 70);
   }
 
-  function closeAllMenus(){
-    allNavs().forEach(nav => nav.classList.remove('open'));
-    allOverlays().forEach(o=>{
-      o.classList.add('hidden');
-      try { o.setAttribute('hidden',''); } catch(e){}
-      o.setAttribute('aria-hidden','true');
-      o.style.display = 'none';
-    });
+  function closeAll(){
+    allNavs().forEach(n => n.classList.remove('open'));
+    allMenus().forEach(m => resetMenuStyle(m));
+    allOverlays().forEach(o => hideOverlay(o));
     allToggles().forEach(t => t.setAttribute('aria-expanded','false'));
     lockScroll(false);
-    // return focus to visible toggle if any
-    try { const t = document.querySelector('.nav-toggle, #navToggle'); t && t.focus(); } catch(e){}
+    // return focus to first toggle if present
+    try { (document.querySelector('.nav-toggle, #navToggle')||{}).focus(); } catch(e){}
   }
 
-  // attach toggle handlers for every toggle button present
+  // attach toggles (safe guard to avoid double attach)
   allToggles().forEach(toggle=>{
-    // avoid double-attach
-    if (toggle.__seechurToggleInit) return;
-    toggle.__seechurToggleInit = true;
-
-    toggle.addEventListener('click', (e)=>{
-      e.preventDefault();
-      e.stopPropagation();
-      // If any nav is open, close all; else open all
+    if(toggle.__seechurToggleForceInit) return;
+    toggle.__seechurToggleForceInit = true;
+    toggle.addEventListener('click', function(ev){
+      ev.preventDefault(); ev.stopPropagation();
       const anyOpen = allNavs().some(n=> n.classList.contains('open'));
-      anyOpen ? closeAllMenus() : openAllMenus(toggle);
+      anyOpen ? closeAll() : openAll();
     }, {passive:false});
   });
 
-  // overlay click closes all overlays (but only when clicking overlay itself)
-  allOverlays().forEach(overlay=>{
-    if (overlay.__seechurOverlayInit) return;
-    overlay.__seechurOverlayInit = true;
-    overlay.addEventListener('click', (e)=>{
-      if (e.target === overlay) {
-        e.preventDefault();
-        e.stopPropagation();
-        closeAllMenus();
-      }
+  // ensure overlay click closes everything
+  allOverlays().forEach(ov=>{
+    if(ov.__seechurOverlayForceInit) return;
+    ov.__seechurOverlayForceInit = true;
+    ov.addEventListener('click', function(e){
+      if(e.target === ov){ e.preventDefault(); e.stopPropagation(); closeAll(); }
     }, {passive:false});
   });
 
-  // ESC closes everything
-  document.addEventListener('keydown', (e)=>{
-    if (e.key === 'Escape') closeAllMenus();
+  // ESC key closes
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeAll();
   });
 
-  // Patch links inside *all* menus so they close all overlays and then navigate.
-  function patchAllMenuLinks(){
+  // Patch all menu links aggressively to ensure they navigate and close overlays
+  function patchLinksNow(){
     allMenus().forEach(menu=>{
       const anchors = Array.from(menu.querySelectorAll('a'));
-      anchors.forEach(orig=>{
-        if (orig.__seechurPermPatched) return;
-        orig.__seechurPermPatched = true;
+      anchors.forEach(a=>{
+        if(a.__seechurLinkForcePatched) return;
+        a.__seechurLinkForcePatched = true;
 
-        const clone = orig.cloneNode(true);
-        clone.removeAttribute('onclick');
+        // remove inline onclick if present
+        try { a.removeAttribute('onclick'); } catch(e){}
 
-        clone.addEventListener('click', function(ev){
-          // allow modifier clicks to open in new tab
-          if (ev.metaKey || ev.ctrlKey || ev.button === 1) return;
-          ev.preventDefault();
-          ev.stopPropagation();
+        a.addEventListener('click', function(ev){
+          // allow Ctrl/Cmd middle-click behaviour
+          if(ev.metaKey || ev.ctrlKey || ev.button === 1) return;
+          ev.preventDefault(); ev.stopPropagation();
 
-          // close overlays/drawers immediately for instant UI feedback
-          closeAllMenus();
+          // immediate close visuals
+          closeAll();
 
-          // update active state visually
-          try {
-            document.querySelectorAll('.menu a').forEach(x=> x.classList.remove('active'));
-            clone.classList.add('active');
-          } catch(e){}
-
-          const href = clone.getAttribute('href') || clone.href || '';
-          // small delay to allow close animation; then navigate forcibly
-          setTimeout(()=>{
-            if (!href) return;
-            if (href.startsWith('#')) { location.hash = href.slice(1); return; }
-            try { location.href = new URL(href, location.href).href; } catch(e) { location.href = href; }
-          }, 80);
+          // set a tiny timeout to allow close animation then navigate (reliable)
+          const href = (a.getAttribute('href')||a.href||'').trim();
+          setTimeout(()=> {
+            if(!href) return;
+            if(href.startsWith('#')) { location.hash = href.slice(1); return; }
+            try { location.href = new URL(href, location.href).href; } catch(e){ location.href = href; }
+          }, 60);
         }, {passive:false});
-
-        clone.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); clone.click(); } });
-
-        orig.replaceWith(clone);
       });
     });
   }
+  patchLinksNow();
 
-  // initial patch and observe for CMS DOM rewrites
-  patchAllMenuLinks();
-  if (window.MutationObserver){
-    const mo = new MutationObserver(()=> {
-      // re-run patches (debounced mildly)
-      setTimeout(()=> patchAllMenuLinks(), 80);
-    });
+  // If the CMS rewrites DOM, keep patching (debounced)
+  if(window.MutationObserver){
+    const mo = new MutationObserver(()=> setTimeout(patchLinksNow, 60));
     mo.observe(document.body, { childList:true, subtree:true });
   }
 
-  // One-time safety: ensure everything hidden if some overlay was accidentally left visible
+  // Safety: after load ensure overlays are hidden if no nav is open
   setTimeout(()=> {
-    // if any overlay visible but none of navs open, hide overlays
-    const anyOpen = allNavs().some(n=> n.classList.contains('open'));
-    if (!anyOpen) closeAllMenus();
-  }, 300);
+    if(!allNavs().some(n=> n.classList.contains('open'))) {
+      allOverlays().forEach(o => hideOverlay(o));
+      allMenus().forEach(m => resetMenuStyle(m));
+    }
+  }, 280);
+
+  // expose simple debug function for you to run in console if needed
+  window.__seechur_nav_debug = () => ({
+    siteNavs: allNavs().length,
+    menus: allMenus().length,
+    overlays: allOverlays().length
+  });
+
 })();
 </script>
