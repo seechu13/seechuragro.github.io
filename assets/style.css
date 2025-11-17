@@ -324,4 +324,22 @@ main.container[role="main"], main.container {
   }
   body.nav-open { overflow: hidden !important; touch-action: none !important; }
 }
+@media (max-width: 768px) {
+  /* ensure overlay/menu ordering and pointer behavior */
+  .menu, #mobileMenu {
+    z-index: 99999 !important; /* menu on top */
+    pointer-events: auto !important;
+  }
+  .nav-overlay, #navOverlay {
+    z-index: 90000 !important; /* overlay below menu but above page */
+    pointer-events: auto !important;
+  }
+  .nav-overlay.hidden, #navOverlay.hidden {
+    display: none !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
+  body.nav-open { overflow: hidden !important; }
+}
+
 
