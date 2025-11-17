@@ -184,146 +184,177 @@
   if (window.__SEECHUR_NAVBAR_INIT__) return;
   window.__SEECHUR_NAVBAR_INIT__ = true;
 
+  // ONLY run mobile nav logic when viewport is mobile-sized
+  const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+  if (!isMobile()) {
+    // intentionally do nothing on desktop to avoid interference
+    return;
+  }
+
   const nav = document.getElementById('siteNav');
   const toggle = document.getElementById('navToggle');
-  const overlay = document.getElementById('navOverlay');
+  const overlay = document.getElementById('navOverlay') || document.querySelector('.nav-overlay');
+  const menu = document.getElementById('mobileMenu') || document.querySelector('.menu');
+
+  if (!nav || !toggle || !menu || !overlay) {
+    // DOM not ready or elements missing — no-op safely
+    return;
+  }
+
+  // Helper: set body nav-open class (safer than direct inline styles)
+  function lockScroll(enable){
+    if (enable){
+      document.body.classList.add('nav-open');
+    } else {
+      document.body.classList.remove('nav-open');
+    }
+  }
 
   function openMenu(){
     nav.classList.add('open');
+    overlay.classList.remove('hidden');
+    overlay.removeAttribute('hidden');
+    overlay.setAttribute('aria-hidden','false');
     if (toggle) toggle.setAttribute('aria-expanded','true');
-    if (overlay){
-      overlay.removeAttribute('hidden');
-      overlay.style.display = 'block';
-      overlay.setAttribute('aria-hidden','false');
-    }
-    // lock page scroll
-    document.body.style.overflow = 'hidden';
+    lockScroll(true);
+
+    // focus the first link for accessibility after short delay
+    setTimeout(()=> {
+      const first = menu.querySelector('a, button, input');
+      if (first && typeof first.focus === 'function') first.focus();
+    }, 60);
   }
+
   function closeMenu(){
     nav.classList.remove('open');
+    overlay.classList.add('hidden');
+    overlay.setAttribute('hidden','');
+    overlay.setAttribute('aria-hidden','true');
     if (toggle) toggle.setAttribute('aria-expanded','false');
-    if (overlay){
-      overlay.setAttribute('hidden','');
-      overlay.style.display = 'none';
-      overlay.setAttribute('aria-hidden','true');
-    }
-    document.body.style.overflow = '';
+    lockScroll(false);
+    // return focus to toggle
+    try { toggle.focus(); } catch(e){}
   }
 
-  if (toggle) toggle.addEventListener('click', (e)=> {
+  // toggle button behaviour
+  toggle.addEventListener('click', (e)=> {
     e.preventDefault();
     e.stopPropagation();
-    nav.classList.contains('open') ? closeMenu() : openMenu();
+    if (nav.classList.contains('open')) closeMenu(); else openMenu();
+  }, {passive:false});
+
+  // overlay click closes menu (only when clicking the overlay itself)
+  overlay.addEventListener('click', (e)=> {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeMenu();
+    }
   });
 
-  if (overlay) overlay.addEventListener('click', (e)=> {
-    e.preventDefault();
-    closeMenu();
+  // ESC closes
+  document.addEventListener('keydown', (e)=> {
+    if (e.key === 'Escape' && nav.classList.contains('open')) {
+      closeMenu();
+    }
   });
 
-  document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeMenu(); });
+  // Active-link logic (robust)
+  (function applyActive(){
+    try {
+      const path = (location.pathname || '/').toLowerCase();
+      const normalized = (path.endsWith('/') && path.length>1) ? path.slice(0,-1) : path;
 
-  // Active-link logic: resilient for both site root and /articles/* pages
-  const path = (location.pathname || '/').toLowerCase();
-  const normalized = (path.endsWith('/') && path.length>1) ? path.slice(0,-1) : path;
+      let activeHref = '/index.html';
+      if (normalized === '/' || normalized === '/index.html') {
+        activeHref = '/index.html';
+      } else if (normalized.startsWith('/articles/')) {
+        activeHref = '/articles.html';
+      } else {
+        const parts = normalized.split('/');
+        const last = parts[parts.length-1] || 'index.html';
+        activeHref = '/' + last;
+      }
 
-  let activeHref = '/index.html';
-  if (normalized === '/' || normalized === '/index.html') {
-    activeHref = '/index.html';
-  } else if (normalized.startsWith('/articles/')) {
-    // any article detail -> highlight articles listing
-    activeHref = '/articles.html';
-  } else {
-    const parts = normalized.split('/');
-    const last = parts[parts.length-1] || 'index.html';
-    // ensure it starts with slash
-    activeHref = '/' + last;
-  }
+      const links = document.querySelectorAll('.menu a');
+      links.forEach(a=>{
+        const href = (a.getAttribute('href')||'').toLowerCase();
+        const norm = href.startsWith('/') ? href : ('/' + href);
+        a.classList.toggle('active', norm === activeHref);
+      });
+    } catch(e){}
+  })();
 
-  function applyActive(){
-    const links = document.querySelectorAll('.menu a');
-    links.forEach(a=>{
-      const href = (a.getAttribute('href')||'').toLowerCase();
-      const norm = href.startsWith('/') ? href : ('/' + href);
-      a.classList.toggle('active', norm === activeHref);
-    });
-  }
-
-  // Run after a short microtask so if content is injected it still works
-  setTimeout(applyActive, 10);
-
-  // Observe menu in case CMS rewrites links later
+  // Observe menu in case CMS rewrites links later (keeps active state)
   if (window.MutationObserver){
-    const target = document.querySelector('.menu') || document.body;
-    const mo = new MutationObserver(applyActive);
+    const target = menu || document.body;
+    const mo = new MutationObserver(()=> {
+      // small debounce re-apply
+      setTimeout(()=> {
+        try {
+          const event = new Event('applyActive');
+          document.dispatchEvent(event);
+        } catch(e){}
+      }, 60);
+    });
     mo.observe(target, { childList:true, subtree:true });
   }
 
   // ----------------------------
-  // PERMANENT MOBILE LINK PATCH
-  // Ensures mobile links actually navigate and close the drawer
+  // MOBILE LINK PATCH (only when mobile)
+  // Ensures mobile links navigate and close drawer.
   // ----------------------------
   (function mobileLinkPatch(){
     if (window.__SEECHUR_NAV_PERM_PATCHED__) return;
     window.__SEECHUR_NAV_PERM_PATCHED__ = true;
 
+    // Only patch for mobile viewports (extra guard)
+    if (!isMobile()) return;
+
     function patchLinks(){
-      const menu = document.getElementById('mobileMenu') || document.querySelector('.menu');
-      if(!menu) return;
       const anchors = Array.from(menu.querySelectorAll('a'));
       anchors.forEach(orig=>{
         if(orig.__seechurPermPatched) return;
         orig.__seechurPermPatched = true;
 
-        // clone to remove any interfering listeners
+        // clone to remove any existing listeners set by CMS or other scripts
         const clone = orig.cloneNode(true);
         clone.removeAttribute('onclick');
 
-        // robust click handler
         clone.addEventListener('click', function(ev){
-          // allow modifier-click to open in new tab/window
-          if(ev.metaKey || ev.ctrlKey || ev.button === 1) return;
+          // allow modifier-click to open new tab
+          if (ev.metaKey || ev.ctrlKey || ev.button === 1) return;
           ev.preventDefault();
           ev.stopPropagation();
 
-          // close overlay & drawer immediately
-          const overlayEl = document.getElementById('navOverlay') || document.querySelector('.nav-overlay');
-          if(overlayEl){
-            overlayEl.setAttribute('hidden','');
-            overlayEl.style.display = 'none';
-            overlayEl.setAttribute('aria-hidden','true');
-          }
-          document.getElementById('siteNav')?.classList.remove('open');
-          if (document.getElementById('navToggle')) document.getElementById('navToggle').setAttribute('aria-expanded','false');
+          // close overlay & drawer immediately for instant UI feedback
+          closeMenu();
 
-          // update active state locally for instant feedback
-          try{
+          // immediate visual active state update
+          try {
             document.querySelectorAll('.menu a').forEach(x=> x.classList.remove('active'));
             clone.classList.add('active');
-          }catch(e){}
+          } catch(e){}
 
-          // allow the UI to update then navigate
+          // then navigate (small delay gives animation time)
           const href = clone.getAttribute('href') || clone.href || '';
           setTimeout(()=> {
-            if(!href) return;
-            if(href.startsWith('#')) { location.hash = href.slice(1); return; }
+            if (!href) return;
+            if (href.startsWith('#')) { location.hash = href.slice(1); return; }
             try { window.location.assign(new URL(href, location.href).href); } catch(e) { location.href = href; }
-          }, 90);
+          }, 80);
         }, {passive:false});
 
-        // keyboard accessibility
         clone.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); clone.click(); } });
 
         orig.replaceWith(clone);
       });
     }
 
-    // run now and watch for CMS rewriting links later
+    // run now and watch for CMS rewrites
     patchLinks();
-    if(window.MutationObserver){
-      const target = document.querySelector('.menu') || document.body;
-      const mo = new MutationObserver(()=>patchLinks());
-      mo.observe(target, { childList:true, subtree:true });
+    if (window.MutationObserver){
+      const mo2 = new MutationObserver(()=>patchLinks());
+      mo2.observe(menu, { childList:true, subtree:true });
     }
   })();
 
