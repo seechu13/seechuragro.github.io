@@ -202,6 +202,7 @@ main.container[role="main"], main.container {
    - Mobile-only rules appended here. Desktop unchanged.
    ============================================================ */
 
+/* Original mobile nav rules retained (desktop untouched) */
 @media (max-width: 768px) {
   .site-nav { z-index: 9000 !important; position: sticky !important; }
 
@@ -242,18 +243,19 @@ main.container[role="main"], main.container {
   }
 }
 
-/* END OF FILE */
+/* END OF ORIGINAL FILE MOBILE RULES (kept for compatibility) */
+
 /* --- SAFE MOBILE NAV FIX (permanent) --- */
 @media (max-width: 768px) {
 
-  /* Remove blur & restore solid background */
+  /* Remove blur & restore solid background for the drawer */
   #mobileMenu, .menu {
     background: #0f2b24 !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
 
-  /* Fix z-index so menu is above overlay */
+  /* Fix z-index so menu is above overlay by default (these may be overridden by final block below) */
   #mobileMenu, .menu {
     z-index: 20000 !important;
     pointer-events: auto !important;
@@ -309,37 +311,65 @@ main.container[role="main"], main.container {
     touch-action: none !important;
   }
 }
+
+/* -------------------------
+   FINAL CONSOLIDATED MOBILE OVERRIDES
+   (This block enforces menu above overlay, removes blur, and ensures clicks pass through)
+   ------------------------- */
 @media (max-width: 768px) {
-  .nav-overlay.hidden,
-  #navOverlay.hidden {
-    display: none !important;
-    pointer-events: none !important;
-    opacity: 0 !important;
-  }
-  .nav-overlay,
-  #navOverlay {
-    display: block;
-    opacity: 1;
-    transition: opacity .18s ease;
-  }
-  body.nav-open { overflow: hidden !important; touch-action: none !important; }
-}
-@media (max-width: 768px) {
-  /* ensure overlay/menu ordering and pointer behavior */
+  /* Ensure the menu is above the overlay and clickable */
   .menu, #mobileMenu {
-    z-index: 99999 !important; /* menu on top */
+    z-index: 20010 !important;
     pointer-events: auto !important;
+    position: fixed !important;
+    right: -100% !important; /* default hidden state; JS will set right:0 when open */
+    top: 0 !important;
+    height: 100vh !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: #0f2b24 !important;
   }
+
+  /* Overlay should sit below the menu but above the page */
   .nav-overlay, #navOverlay {
-    z-index: 90000 !important; /* overlay below menu but above page */
+    z-index: 20000 !important;
     pointer-events: auto !important;
+    position: fixed !important;
+    inset: 0 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(0,0,0,0.35) !important;
   }
+
+  /* Hidden overlay state */
   .nav-overlay.hidden, #navOverlay.hidden {
     display: none !important;
     pointer-events: none !important;
     opacity: 0 !important;
   }
-  body.nav-open { overflow: hidden !important; }
+
+  /* When site-nav has .open, ensure overlay shows (but menu remains above) */
+  .site-nav.open + .nav-overlay,
+  .site-nav.open + #navOverlay {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  /* Ensure body lock class used by JS prevents scroll properly */
+  body.nav-open {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+
+  /* Make pill buttons consistent */
+  .menu a, #mobileMenu a {
+    width: 88% !important;
+    padding: 12px !important;
+    font-size: 0.95rem !important;
+    line-height: 1.08 !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+  }
 }
 
-
+/* End of file */
