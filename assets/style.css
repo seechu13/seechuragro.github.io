@@ -371,5 +371,31 @@ main.container[role="main"], main.container {
     box-shadow: none !important;
   }
 }
+/* === FINAL FIX: overlay must stay BELOW menu and non-clickable === */
+@media (max-width: 768px) {
+
+  /* FORCE overlay to never block menu links */
+  #navOverlay,
+  .nav-overlay {
+    z-index: 100 !important;          /* way below menu */
+    pointer-events: none !important;  /* cannot block clicks */
+  }
+
+  /* When menu is open, still show visually but not block clicks */
+  .site-nav.open + #navOverlay,
+  .site-nav.open + .nav-overlay {
+    opacity: 1 !important;
+    display: block !important;
+    pointer-events: none !important; /* key line */
+  }
+
+  /* Menu drawer stays ABOVE everything */
+  #mobileMenu,
+  .menu {
+    z-index: 20000 !important;
+    pointer-events: auto !important;
+    position: fixed !important;
+  }
+}
 
 /* End of file */
