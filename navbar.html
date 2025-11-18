@@ -324,3 +324,120 @@
 
 })();
 </script>
+
+<!-- Permanent mobile overlay forwarder & link robustness (install once) -->
+<script>
+(function(){
+  // Only run on mobile viewports — desktop untouched
+  if (!(window.matchMedia && window.matchMedia('(max-width:768px)').matches)) return;
+
+  // Idempotent guard
+  if (window.__seechur_forwarder_v2_installed_permanent) return;
+  window.__seechur_forwarder_v2_installed_permanent = true;
+
+  // Ensure overlay visually present but not blocking — CSS should cover, enforce inline as fallback
+  function ensureOverlayStyles(){
+    document.querySelectorAll('.nav-overlay, #navOverlay').forEach(ov=>{
+      if(!ov) return;
+      try { if(!ov.style.zIndex) ov.style.zIndex = '30000'; } catch(e){}
+      // intentionally keep pointerEvents none (so it won't block) — if some pages re-enable, forwarder will handle it
+      try { ov.style.pointerEvents = 'none'; } catch(e){}
+    });
+  }
+  ensureOverlayStyles();
+
+  // Bring menu and links forward as a defensive measure
+  function ensureMenuLinkZ(){
+    document.querySelectorAll('.menu, #mobileMenu').forEach(m=>{
+      if(!m) return;
+      if(!m.style.position) m.style.position = 'fixed';
+      if(!m.style.zIndex) m.style.zIndex = '40000';
+      m.style.pointerEvents = 'auto';
+    });
+    document.querySelectorAll('.menu a, #mobileMenu a').forEach(a=>{
+      if(!a) return;
+      if(!a.style.position) a.style.position = 'relative';
+      if(!a.style.zIndex) a.style.zIndex = '40001';
+      a.style.pointerEvents = 'auto';
+    });
+  }
+  ensureMenuLinkZ();
+
+  // Robust forwarder v2: hides overlay briefly, locates underlying link and navigates.
+  function installForwarder(ov){
+    if (!ov || ov.__seechurF2perm) return;
+    ov.__seechurF2perm = true;
+
+    const handler = function(ev){
+      try {
+        if (ev.metaKey || ev.ctrlKey || ev.button === 1) return;
+        // prevent double handling
+        if (ev.__seechurHandled) return;
+        ev.__seechurHandled = true;
+
+        const cx = ev.touches && ev.touches[0] ? ev.touches[0].clientX : ev.clientX;
+        const cy = ev.touches && ev.touches[0] ? ev.touches[0].clientY : ev.clientY;
+
+        // Temporarily hide overlay to hit-test
+        const prevDisplay = ov.style.display;
+        const prevPointer = ov.style.pointerEvents;
+        ov.style.display = 'none';
+        ov.style.pointerEvents = 'none';
+
+        const under = document.elementFromPoint(cx, cy);
+
+        // Restore overlay immediately
+        ov.style.display = prevDisplay === '' ? '' : prevDisplay;
+        ov.style.pointerEvents = prevPointer === '' ? prevPointer : prevPointer;
+
+        const anchor = under ? (under.closest ? under.closest('a') : (under.tagName === 'A' ? under : null)) : null;
+
+        if (anchor) {
+          try { ev.stopImmediatePropagation && ev.stopImmediatePropagation(); } catch(e){}
+          try { ev.preventDefault && ev.preventDefault(); } catch(e){}
+          // close UI
+          document.querySelectorAll('.site-nav').forEach(n=> n.classList.remove('open'));
+          document.querySelectorAll('.menu, #mobileMenu').forEach(m=> m.style.right = '-100%');
+          document.querySelectorAll('.nav-overlay, #navOverlay').forEach(o => { o.classList.add('hidden'); try{o.setAttribute('hidden','');}catch(e){} o.style.display='none'; o.style.pointerEvents='none'; });
+          document.body.classList.remove('nav-open');
+
+          const href = (anchor.getAttribute('href') || anchor.href || '').trim();
+          // small guaranteed delay then navigate
+          setTimeout(()=> {
+            if (!href) return;
+            if (href.startsWith('#')) { location.hash = href.slice(1); return; }
+            try { location.assign(new URL(href, location.href).href); } catch(err){ location.href = href; }
+          }, 35);
+          return;
+        }
+
+        // Not a link — close menu (outside click)
+        document.querySelectorAll('.site-nav').forEach(n=> n.classList.remove('open'));
+        document.querySelectorAll('.menu, #mobileMenu').forEach(m=> m.style.right = '-100%');
+        document.querySelectorAll('.nav-overlay, #navOverlay').forEach(o => { o.classList.add('hidden'); try{o.setAttribute('hidden','');}catch(e){} o.style.display='none'; o.style.pointerEvents='none'; });
+        document.body.classList.remove('nav-open');
+      } catch(ex) {
+        console.error('seechur forwarder perm error', ex);
+      }
+    };
+
+    ov.addEventListener('pointerdown', handler, {capture:true, passive:false});
+    ov.addEventListener('touchstart', handler, {capture:true, passive:false});
+    ov.addEventListener('click', handler, {capture:true, passive:false});
+  }
+
+  // Install forwarder on existing overlays and ensure menu/link z
+  document.querySelectorAll('.nav-overlay, #navOverlay').forEach(installForwarder);
+  ensureMenuLinkZ();
+
+  // Watch for DOM changes (CMS may rewrite overlays) and re-install/ensure styles
+  if (window.MutationObserver) {
+    const mo = new MutationObserver(()=> {
+      ensureOverlayStyles();
+      ensureMenuLinkZ();
+      document.querySelectorAll('.nav-overlay, #navOverlay').forEach(installForwarder);
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
