@@ -1,0 +1,15 @@
+# Code owners for Seechur Agro repo
+# When a PR touches the listed paths, the specified users are requested as reviewers.
+
+# All articles and assets - you (primary) are owner
+/articles/ @seechu13
+/assets/articles/ @seechu13
+
+# Site config and theme (protect these) - you only
+/navbar.html @seechu13
+/style.css @seechu13
+/layouts/ @seechu13
+/theme/ @seechu13
+
+# General fallback ownership for any other paths
+* @seechu13
