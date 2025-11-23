@@ -644,5 +644,156 @@ footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,
 <script>
   try{ (function(){ var y=new Date().getFullYear(); var el=document.getElementById('year'); if(el) el.textContent=y; })(); }catch(e){console.log(e);}
 </script>
+  <!-- START: Seechur article nav + all-articles sidebar (paste before </body>) -->
+<style id="seechur-article-nav-style">
+/* simple, non-invasive sidebar & nav tweaks */
+.seechur-all-articles {
+  position: fixed;
+  left: 18px;
+  top: 120px;
+  width: 220px;
+  max-height: calc(100vh - 160px);
+  overflow:auto;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,04);
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+  display: block;
+}
+.seechur-all-articles h4{margin:0 0 8px 0;font-size:0.95rem}
+.seechur-all-articles a{display:block;padding:6px 8px;border-radius:6px;text-decoration:none;color:inherit;margin:4px 0}
+.seechur-all-articles a:hover{background:rgba(255,255,255,0.02)}
+@media (max-width:900px){ .seechur-all-articles{display:none !important} }
+
+/* "Next" sticky small bar at bottom-right */
+.seechur-next-bar{
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9999;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding:10px 14px;
+  border-radius:999px;
+  font-weight:600;
+  max-width: calc(100% - 56px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+.seechur-next-bar a{color:inherit;text-decoration:none}
+@media (max-width:560px){ .seechur-next-bar{right:10px;left:10px} }
+</style>
+
+<script>
+(function(){
+  const articlesJsonUrl = '/articles.json';
+  // helper: normalize filename (strip leading path)
+  const filename = (location.pathname.split('/').pop() || '').toLowerCase();
+
+  function makeEl(html){
+    const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstElementChild;
+  }
+
+  fetch(articlesJsonUrl, {cache:'no-cache'}).then(r=>{
+    if(!r.ok) throw new Error('articles.json fetch failed');
+    return r.json();
+  }).then(list=>{
+    if(!Array.isArray(list) || list.length===0) return;
+    // sort newest-first by date if available, fallback keep order
+    list.sort((a,b)=>{
+      if(a.date && b.date) return String(b.date).localeCompare(String(a.date));
+      return 0;
+    });
+
+    // build sidebar
+    const side = document.createElement('aside');
+    side.className = 'seechur-all-articles';
+    side.innerHTML = '<h4>All articles</h4>';
+    list.forEach(it=>{
+      const u = (it.url || '').split('/').pop() || (it.id && (it.id + '.html'));
+      if(!u) return;
+      const a = document.createElement('a');
+      a.href = '/' + (it.url ? it.url.replace(/^\/+/,'') : 'articles/' + u);
+      a.textContent = it.title || it.id || u;
+      // highlight current
+      if(u.toLowerCase() === filename) {
+        a.style.fontWeight = '700';
+        a.style.opacity = '1';
+      }
+      side.appendChild(a);
+    });
+    // insert into DOM safely (before main container if possible)
+    const container = document.querySelector('main.container') || document.body;
+    container.parentNode.insertBefore(side, container);
+
+    // compute index of current article
+    const idx = list.findIndex(it => {
+      const u = (it.url || '').split('/').pop().toLowerCase();
+      if(u && u === filename) return true;
+      if(it.id && (it.id + '.html').toLowerCase() === filename) return true;
+      return false;
+    });
+
+    // Next / Prev computation (newest-first)
+    const curIndex = idx === -1 ? 0 : idx;
+    const next = (curIndex > 0) ? list[curIndex - 1] : null;   // newer
+    const prev = (curIndex < list.length - 1) ? list[curIndex + 1] : null; // older
+
+    // Update existing controls if present (robust selectors)
+    function updateAnchor(selectorCandidates, targetArticle, arrowBefore, defaultText){
+      const text = (targetArticle && (targetArticle.title || targetArticle.id)) ? (arrowBefore ? '← ' + (targetArticle.title || targetArticle.id) : (targetArticle.title || targetArticle.id) + ' →') : defaultText;
+      const href = targetArticle && targetArticle.url ? ('/' + targetArticle.url.replace(/^\/+/,'')) : null;
+
+      // try specific id first
+      selectorCandidates.forEach(sel=>{
+        document.querySelectorAll(sel).forEach(el=>{
+          if(href) { el.setAttribute('href', href); el.style.display = ''; el.textContent = text; }
+          else { if(el.tagName.toLowerCase()==='a') el.style.display='none'; }
+        });
+      });
+    }
+
+    updateAnchor(['#prevLink', '.nav-link-btn.prev', '.btn.prev', 'a.btn[href*="Prev"]'], prev, true, ''); 
+    updateAnchor(['#nextLink', '.nav-link-btn.next', '.btn.next', 'a.btn[href*="Next"]'], next, false, '');
+
+    // Defensive: remove/hide any anchors whose href is not in articles.json (stale links)
+    const validHrefs = new Set(list.map(i => '/' + (i.url ? i.url.replace(/^\/+/,'') : ('articles/' + (i.id || '') + '.html'))));
+    document.querySelectorAll('a').forEach(a=>{
+      try{
+        const h = a.getAttribute('href') || a.href || '';
+        // consider only site-internal links (starting with /articles or ./something with articles)
+        if(!h) return;
+        const cleanH = h.replace(location.origin,'').split('#')[0].split('?')[0];
+        // if link appears to point to articles but not in list -> hide
+        if((/articles/i.test(cleanH) || cleanH.endsWith('.html')) && !validHrefs.has(cleanH) && cleanH !== location.pathname){
+          // don't remove critical links (nav, footer) — only hide obvious article buttons with "Next" or "All articles" text
+          const txt = (a.textContent || '').toLowerCase();
+          if(txt.includes('next') || txt.includes('→') || txt.includes('all articles')) a.style.display='none';
+        }
+      }catch(e){}
+    });
+
+    // create a small bottom-right Next bar for easy navigation (only if next exists)
+    if(next){
+      const bar = document.createElement('div');
+      bar.className = 'seechur-next-bar';
+      bar.innerHTML = `<span style="opacity:.9">Next</span> <a href="/${next.url.replace(/^\/+/,'')}" title="${escapeHtml(next.title||'')}" rel="next">${next.title}</a>`;
+      document.body.appendChild(bar);
+    }
+
+    // small helper to escape quotes when used in title attribute
+    function escapeHtml(s){ return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  }).catch(err=>{
+    // fail silently but log for debugging
+    console.warn('seechur article-nav error', err);
+  });
+})();
+</script>
+<!-- END: Seechur article nav + all-articles sidebar -->
 </body>
 </html>
