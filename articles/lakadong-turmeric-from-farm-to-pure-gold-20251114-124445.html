@@ -127,11 +127,41 @@
   </article>
 
   <!-- PREV / NEXT -->
-  <div class="article-footer">
-    <a id="prevLink" class="nav-link-btn" href="#">← Prev</a>
-    <a id="allArticles" class="nav-link-btn" href="/articles.html">← All articles</a>
-    <a id="nextLink" class="nav-link-btn" href="#">Next →</a>
+   <!-- NAV -->
+  <div class="meta-nav" style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <div class="left">
+      <a class="btn" href="/articles.html" aria-label="All articles">← All articles</a>
+    </div>
+    <div class="right" id="nextContainer"></div>
   </div>
+
+  <script>
+  (function(){
+    fetch('/articles.json?ver=1',{cache:'no-cache'}).then(r=>r.json()).then(list=>{
+      if(!Array.isArray(list)||!list.length) return;
+      // newest-first ordering (same as site)
+      list.sort((a,b)=> String(b.date).localeCompare(String(a.date)));
+      const currentFile = (location.pathname.split('/').pop()||'').toLowerCase();
+      let idx = list.findIndex(it=>{
+        const u = (it.url||'').split('/').pop().toLowerCase();
+        return u === currentFile;
+      });
+      if(idx < 0) idx = 0;
+      const nextIdx = (idx + 1) < list.length ? (idx + 1) : null;
+      const box = document.getElementById('nextContainer');
+      if(nextIdx !== null && list[nextIdx] && list[nextIdx].url){
+        const next = list[nextIdx];
+        const a = document.createElement('a');
+        a.className = 'btn next-compact';
+        a.href = (next.url && next.url.startsWith('/') ) ? next.url : ('/' + (next.url||'').replace(/^\//,''));
+        a.setAttribute('aria-label','Next article');
+        a.innerHTML = 'Next →';
+        box.appendChild(a);
+      }
+    }).catch(()=>{ /* ignore */ });
+  })();
+  </script>
+
 
   <footer style="text-align:center;padding:30px 12px;color:#d9ffe6">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
 
@@ -176,5 +206,6 @@
 
 </body>
 </html>
+
 
 
