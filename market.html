@@ -3,11 +3,36 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Market • Seechur Agro Private Limited</title>
 
+<title>Market Opportunity • Seechur Agro Private Limited</title>
+<meta name="description" content="Premium hydroponic vegetables and high-curcumin Lakadong turmeric markets are expanding rapidly. Seechur Agro is positioned at the intersection of premium demand, policy support, and export growth." />
+<link rel="canonical" href="https://seechuragro.in/market.html" />
+
+<!-- Open Graph -->
+<meta property="og:locale" content="en_IN">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Market Opportunity — Seechur Agro">
+<meta property="og:description" content="Premium hydroponic vegetables and high-curcumin Lakadong turmeric are among India's fastest growing segments. Seechur Agro operates at this growth intersection.">
+<meta property="og:url" content="https://seechuragro.in/market.html">
+<meta property="og:site_name" content="Seechur Agro">
+<meta property="og:image" content="assets/og-market.png">
+<meta property="og:image:alt" content="Seechur Agro Market Growth">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Market Opportunity — Seechur Agro">
+<meta name="twitter:description" content="Premium agri segments such as hydroponics and Lakadong turmeric continue to surge, backed by strong demand and policy support.">
+<meta name="twitter:image" content="assets/og-market.png">
+
+<link rel="image_src" href="assets/og-market.png">
+
+<!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-<!-- ✅ Global stylesheet -->
+
+<!-- Global stylesheet -->
 <link rel="stylesheet" href="assets/style.css">
 
 <style>
@@ -26,52 +51,58 @@
     filter:saturate(1.1) brightness(0.95);
   }
 
-  /* ===== Page content (your original styles) ===== */
   .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
   h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.55)}
   h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.5)}
   p{line-height:1.8; color:#cfe9d8; margin-bottom:16px;}
+
   .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px}
+
   .table-wrap{overflow:auto; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); margin:10px 0}
   table{width:100%; border-collapse:collapse; min-width:620px;}
   th,td{border-bottom:1px solid rgba(255,255,255,.18); padding:12px 14px; text-align:left; color:#f3fff6}
   th{background:rgba(0,0,0,.25); font-weight:600}
   tr:last-child td{border-bottom:none}
+
   figure{position:relative; overflow:hidden; border-radius:18px; background:var(--glass); box-shadow:0 4px 20px rgba(0,0,0,.4); margin:12px 0}
   figure img{width:100%; height:auto; display:block}
   figcaption{padding:12px; font-size:.95rem; text-align:center; color:#f3fff6; background:rgba(0,0,0,.35); backdrop-filter:blur(4px)}
+
   .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+
   .badges{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0 4px}
   .badge{padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.25); color:#eafff4; font-size:.92rem; border:1px solid rgba(255,255,255,.15)}
+
   .quote{font-style:italic; color:#eaf9f0; margin-top:6px}
+
   footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+
   @media (max-width:720px){ h1{font-size:1.9rem;} }
 </style>
 </head>
+
 <body>
 
-<!-- ✅ Shared navbar include -->
+<!-- Navbar -->
 <div id="navbar-placeholder"></div>
 <script>
   (function loadNavbar(){
-    // Always fetch fresh to see your latest navbar.html edits
     fetch('navbar.html', {cache:'no-cache'})
       .then(r=>r.text())
       .then(html=>{
-        const host = document.getElementById('navbar-placeholder');
-        host.innerHTML = html;
+        const host=document.getElementById('navbar-placeholder');
+        host.innerHTML=html;
 
-        // Execute any scripts inside navbar.html (handles mobile drawer, overlay, etc.)
         host.querySelectorAll('script').forEach(s=>{
           const n=document.createElement('script');
-          if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+          if(s.src) n.src=s.src;
+          else n.textContent=s.textContent;
           document.body.appendChild(n);
         });
 
-        // Highlight active link for this page
         const current=(location.pathname.split('/').pop()||'market.html').toLowerCase();
         document.querySelectorAll('.menu a').forEach(a=>{
-          if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
+          if(a.getAttribute('href')?.toLowerCase()===current) a.classList.add('active');
         });
       });
   })();
@@ -80,20 +111,16 @@
 <main class="container">
   <h1>Market Opportunity & Growth Outlook</h1>
   <p>
-    India’s premium agri-produce is accelerating—driven by health-aware consumers, quick-commerce penetration
-    and export momentum in high-curcumin turmeric. Seechur Agro operates at this intersection with traceable
-    hydroponic vegetables and Lakadong turmeric, backed by policy support and strong B2B channels.
+    India's premium agri-produce categories—hydroponic vegetables and high-curcumin Lakadong turmeric—are growing rapidly.
+    Seechur Agro operates at this intersection with traceable, high-quality produce backed by strong B2B channels and export demand.
   </p>
 
-  <!-- GROWTH CHART (your image) -->
   <h2>Surging Demand & Policy Push</h2>
   <figure>
-    <img src="growth-chart.jpg" alt="Quick-commerce vs Organic Food Demand growth chart"
-         onerror="this.closest('figure').style.display='none'">
+    <img src="growth-chart.jpg" alt="Quick-commerce vs organic demand growth chart" onerror="this.closest('figure').style.display='none'">
     <figcaption>Indexed growth in quick-commerce and organic demand; reinforced by NHB’s 50% capex subsidy for cold-chain & logistics.</figcaption>
   </figure>
 
-  <!-- MARKET SIZE TABLE + IMAGE -->
   <h2>Market Size & Growth to 2030</h2>
   <div class="table-wrap">
     <table>
@@ -105,62 +132,61 @@
       </tbody>
     </table>
   </div>
+
   <figure>
-    <img src="market-size.jpg" alt="Market size bars for Premium Vegetables, Organic Turmeric and Exports"
-         onerror="this.closest('figure').style.display='none'">
+    <img src="market-size.jpg" alt="Market size comparison chart" onerror="this.closest('figure').style.display='none'">
     <figcaption>Premium veg & organic turmeric expected to more than double by 2030 (APEDA, IMARC).</figcaption>
   </figure>
 
-  <!-- COMPETITIVE EDGE -->
   <h2>Competitive Edge</h2>
   <div class="card">
     <ul>
-      <li><b>Capital efficiency:</b> Restart leveraging existing polyhouse/greenhouse assets.</li>
+      <li><b>Capital efficiency:</b> Restart using existing polyhouse/greenhouse assets.</li>
       <li><b>Premium mix:</b> Hydroponic vegetables for cash-flow + high-curcumin Lakadong for value.</li>
-      <li><b>Traceability:</b> Batch-level testing & compliance targeting modern trade and export buyers.</li>
-      <li><b>Speed to market:</b> Microgreens revenue from Day-30 post-investment; vegetables stabilise by Month-6.</li>
+      <li><b>Traceability:</b> Batch-level testing & compliance for retail chains and export buyers.</li>
+      <li><b>Speed to market:</b> Microgreens revenue from Day-30; vegetables stabilise by Month-6.</li>
     </ul>
   </div>
 
-  <!-- STRATEGY & BUYERS -->
   <h2>Market Strategy & Buyers</h2>
   <div class="card">
     <div class="badges">
-      <span class="badge">B2B 80% (quick-commerce & retail chains)</span>
-      <span class="badge">B2C 20% (local delivery & kits)</span>
-      <span class="badge">APEDA / Spices Board for exports</span>
-      <span class="badge">Batch testing for curcumin & residues</span>
+      <span class="badge">B2B 80%</span>
+      <span class="badge">Quick-commerce & Retail Chains</span>
+      <span class="badge">B2C 20%</span>
+      <span class="badge">APEDA / Spices Board</span>
     </div>
+
     <ul>
-      <li><b>Quick-commerce:</b> Target Zepto, Blinkit, Instamart for cucumbers/greens.</li>
+      <li><b>Quick-commerce:</b> Zepto, Blinkit, Instamart for cucumbers/greens.</li>
       <li><b>Modern trade:</b> Regional fresh chains & HoReCa suppliers.</li>
       <li><b>Export / nutraceutical:</b> High-curcumin Lakadong lots with lab certification.</li>
     </ul>
   </div>
 
-  <!-- POLICY SUPPORT -->
   <h2>Policy & Government Support</h2>
   <div class="grid">
     <div class="card">
       <h3 style="margin-bottom:6px;color:#fff">Mission Lakadong (Meghalaya)</h3>
-      <p>State mission to scale area, productivity & value addition for Lakadong turmeric; supports testing, FPOs and processing infrastructure.</p>
+      <p>State-backed mission supporting acreage, testing, processing and market linkage for Lakadong turmeric.</p>
     </div>
+
     <div class="card">
       <h3 style="margin-bottom:6px;color:#fff">NHB & AIF</h3>
-      <p><b>NHB</b>: eligible infra gets up to <b>50% capex subsidy</b> (cold storage/logistics). <b>AIF</b>: low-interest funding with interest subvention.</p>
+      <p><b>NHB:</b> Up to <b>50% capex subsidy</b> for eligible infra. <b>AIF:</b> Low-interest loans with interest subvention.</p>
     </div>
+
     <div class="card">
       <h3 style="margin-bottom:6px;color:#fff">APEDA & Spices Board</h3>
       <p>Export facilitation, quality norms, and market linkage programs for organic spices and fresh produce.</p>
     </div>
   </div>
 
-  <!-- SUMMARY -->
   <h2>Summary</h2>
   <div class="card">
     <p>
-      Seechur Agro is positioned to capture the fastest-growing niches of Indian agribusiness—traceable hydroponic vegetables and
-      high-curcumin Lakadong turmeric—by pairing capital-efficient refurbishment with strong B2B channels and policy alignment.
+      Seechur Agro is positioned to capture the fastest-growing niches of Indian agribusiness—premium hydroponic vegetables and
+      high-curcumin Lakadong turmeric—through capital-efficient refurbishment, strong B2B channels, and policy alignment.
     </p>
     <p class="quote">“India’s agri-future lies in traceable, high-yield, low-water cultivation — Seechur Agro is building that bridge.”</p>
   </div>
@@ -172,10 +198,10 @@
 
 <script>
 (function(){
-  // Footer year
   const y=document.getElementById('year');
   if(y) y.textContent=new Date().getFullYear();
 })();
 </script>
+
 </body>
 </html>
