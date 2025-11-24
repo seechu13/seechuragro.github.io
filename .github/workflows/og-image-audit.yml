@@ -1,0 +1,79 @@
+name: OG Image Audit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan:
+    name: Scan HTML for og:image correctness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create report folder
+        run: mkdir -p og-audit
+
+      - name: Find HTML files
+        run: |
+          find . -type f -name "*.html" > og-audit/html-files.txt || true
+          echo "Found HTML files:" > og-audit/og-audit-report.txt
+          wc -l og-audit/html-files.txt >> og-audit/og-audit-report.txt
+          echo "" >> og-audit/og-audit-report.txt
+
+      - name: Scan for og:image lines
+        run: |
+          echo "=== Files with og:image ===" >> og-audit/og-audit-report.txt
+          # List files and the og:image lines
+          while IFS= read -r file; do
+            grep -i "og:image" "$file" >/dev/null 2>&1 && echo "---- $file" >> og-audit/og-audit-report.txt && grep -n --color=never -i "og:image" "$file" >> og-audit/og-audit-report.txt || true
+          done < og-audit/html-files.txt
+          echo "" >> og-audit/og-audit-report.txt
+
+      - name: Files missing og:image entirely
+        run: |
+          echo "=== Files MISSING og:image ===" >> og-audit/og-audit-report.txt
+          while IFS= read -r file; do
+            if ! grep -q -i "og:image" "$file"; then
+              echo "$file" >> og-audit/og-audit-report.txt
+            fi
+          done < og-audit/html-files.txt
+          echo "" >> og-audit/og-audit-report.txt
+
+      - name: Files with og:image that are NOT absolute or not using seechuragro assets
+        run: |
+          echo "=== Files with og:image NOT using https://seechuragro.in/assets/og- prefix ===" >> og-audit/og-audit-report.txt
+          while IFS= read -r file; do
+            if grep -qi "og:image" "$file"; then
+              # extract content value
+              lines=$(grep -n -i "og:image" "$file")
+              echo "$lines" | while IFS= read -r line; do
+                # grab content="..."; tolerant to single/double quotes and property/name usage
+                content=$(echo "$line" | sed -n -E 's/.*content=[\"\x27]([^\"\x27]+)[\"\x27].*/\1/p' || true)
+                if [ -z "$content" ]; then
+                  echo "Could not extract content from line: $line" >> og-audit/og-audit-report.txt
+                else
+                  if [[ ! "$content" =~ ^https://seechuragro.in/assets/og- ]]; then
+                    echo "File: $file" >> og-audit/og-audit-report.txt
+                    echo "  Line: $line" >> og-audit/og-audit-report.txt
+                    echo "  Extracted content: $content" >> og-audit/og-audit-report.txt
+                    echo "" >> og-audit/og-audit-report.txt
+                  fi
+                fi
+              done
+            fi
+          done < og-audit/html-files.txt
+          echo "" >> og-audit/og-audit-report.txt
+
+      - name: Save full grep dump (optional)
+        run: |
+          echo "=== Full grep -n 'og:image' output ===" > og-audit/og-image-grep.txt
+          while IFS= read -r file; do
+            grep -n --color=never -i "og:image" "$file" >> og-audit/og-image-grep.txt || true
+          done < og-audit/html-files.txt
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: og-audit-report
+          path: og-audit/
