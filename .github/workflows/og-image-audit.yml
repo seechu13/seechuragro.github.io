@@ -2,6 +2,9 @@ name: OG Image Audit
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - staging
 
 jobs:
   scan:
