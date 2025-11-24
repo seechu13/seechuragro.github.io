@@ -5,10 +5,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Portfolio • Seechur Agro Private Limited</title>
 
+<meta name="description" content="See Seechur Agro's crop & infrastructure portfolio — hydroponic vegetables, microgreens and Lakadong turmeric. Infrastructure snapshot, timeline and partners." />
+<link rel="canonical" href="https://seechuragro.in/portfolio.html" />
+
+<!-- Open Graph / Twitter -->
+<meta property="og:locale" content="en_IN" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Portfolio • Seechur Agro Private Limited" />
+<meta property="og:description" content="See Seechur Agro's crop & infrastructure portfolio — hydroponic vegetables, microgreens and Lakadong turmeric." />
+<meta property="og:url" content="https://seechuragro.in/portfolio.html" />
+<meta property="og:site_name" content="Seechur Agro" />
+<meta property="og:image" content="/assets/og-portfolio.png" />
+<meta property="og:image:alt" content="Seechur Agro — Portfolio: hydroponic vegetables, microgreens & Lakadong turmeric" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Portfolio • Seechur Agro" />
+<meta name="twitter:description" content="See Seechur Agro's crop & infrastructure portfolio — hydroponic vegetables, microgreens and Lakadong turmeric." />
+<meta name="twitter:image" content="/assets/og-portfolio.png" />
+
+<link rel="image_src" href="/assets/og-portfolio.png" />
+
+<!-- JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Portfolio \u2022 Seechur Agro Private Limited",
+  "url": "https://seechuragro.in/portfolio.html",
+  "description": "See Seechur Agro's crop & infrastructure portfolio \u2014 hydroponic vegetables, microgreens and Lakadong turmeric.",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Seechur Agro Private Limited",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/assets/og-portfolio.png"
+    }
+  },
+  "image": {
+    "@type": "ImageObject",
+    "url": "/assets/og-portfolio.png",
+    "width": 1200,
+    "height": 630
+  }
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-<!-- ✅ Global stylesheet -->
+<!-- Global stylesheet -->
 <link rel="stylesheet" href="assets/style.css">
 
 <style>
@@ -26,66 +73,48 @@
       url('hydroponic-bg.jpg?v=11') center/cover no-repeat;
     filter:saturate(1.1) brightness(0.95);
   }
-
-  /* ===== Page content (your original styles) ===== */
   .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
   h1{font-size:2.2rem;font-weight:700;margin-bottom:8px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55)}
   h2{font-size:1.4rem;margin-top:28px;margin-bottom:10px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5)}
   p{line-height:1.8;color:var(--muted);margin-bottom:16px;}
   ul{color:var(--muted);line-height:1.8;margin-left:20px;}
   .grid{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
-
   .card, figure{background:var(--glass);border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
   figure{overflow:hidden}
   figure img{width:100%;height:auto;display:block;transition:transform .35s ease}
   figure:hover img{transform:scale(1.02)}
   figcaption{padding:12px;font-size:.95rem;text-align:center;color:#f3fff6;background:rgba(0,0,0,.35);backdrop-filter:blur(4px)}
-
   .table-wrap{overflow:auto;border-radius:18px;background:var(--glass);box-shadow:0 4px 20px rgba(0,0,0,.4);margin:10px 0}
   table{width:100%;border-collapse:collapse;min-width:720px;}
   th,td{border-bottom:1px solid rgba(255,255,255,.18);padding:12px 14px;text-align:left;color:#f3fff6}
   th{background:rgba(0,0,0,.25);font-weight:600}
   tr:last-child td{border-bottom:none}
-
   .badges{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 4px}
   .badge{padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.25);color:#eafff4;font-size:.92rem;border:1px solid rgba(255,255,255,.15)}
-
   .timeline{position:relative;margin-top:10px}
   .timeline::before{content:"";position:absolute;left:18px;top:0;bottom:0;width:3px;background:rgba(255,255,255,.35)}
   .milestone{position:relative;padding-left:48px;margin:14px 0}
   .milestone::before{content:"";position:absolute;left:10px;top:.35rem;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(255,255,255,.15)}
   .milestone b{color:#fff}
   .quote{font-style:italic;color:#eaf9f0;margin-top:8px}
-
   footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px)}
-
   @media (max-width:720px){h1{font-size:1.9rem}}
 </style>
 </head>
 <body>
 
-<!-- ✅ Shared navbar include -->
+<!-- Shared navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
   (function loadNavbar(){
     fetch('navbar.html', {cache:'no-cache'})
       .then(r=>r.text())
       .then(html=>{
-        const host = document.getElementById('navbar-placeholder');
-        host.innerHTML = html;
-
-        // Run any scripts that are inside navbar.html (drawer, overlay, etc.)
-        host.querySelectorAll('script').forEach(s=>{
-          const n=document.createElement('script');
-          if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
-          document.body.appendChild(n);
-        });
-
-        // Highlight active link for this page
+        const host=document.getElementById('navbar-placeholder');
+        host.innerHTML=html;
+        host.querySelectorAll('script').forEach(s=>{ const n=document.createElement('script'); if(s.src) n.src=s.src; else n.textContent=s.textContent; document.body.appendChild(n); });
         const current=(location.pathname.split('/').pop()||'portfolio.html').toLowerCase();
-        document.querySelectorAll('.menu a').forEach(a=>{
-          if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
-        });
+        document.querySelectorAll('.menu a').forEach(a=>{ if(a.getAttribute('href')?.toLowerCase()===current) a.classList.add('active'); });
       });
   })();
 </script>
@@ -179,8 +208,7 @@
   <!-- Portfolio chart (optional) -->
   <div class="grid" style="margin-top:18px;">
     <figure>
-      <img src="crop-portfolio.png" alt="Crop portfolio chart"
-           onerror="this.closest('figure').style.display='none'">
+      <img src="crop-portfolio.png" alt="Crop portfolio chart" onerror="this.closest('figure').style.display='none'">
       <figcaption>Balanced mix of high-frequency vegetables and high-value Lakadong turmeric.</figcaption>
     </figure>
   </div>
