@@ -69,7 +69,35 @@
 
 <link rel="image_src" href="https://seechuragro.in/assets/og-lakadong.png">
 
-<!-- ========== JSON-LD: WebPage Schema ========== -->
+<!-- ========== JSON-LD: Organization Schema (added) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "SEECHUR AGRO PRIVATE LIMITED",
+  "url": "https://seechuragro.in",
+  "logo": "https://seechuragro.in/assets/logo.png",
+  "email": "mailto:seechu@seechuragro.in",
+  "sameAs": [
+    "https://www.linkedin.com/in/srivatsan-renga-85219151",
+    "https://www.instagram.com/seechuragro",
+    "https://www.facebook.com/seechuragro",
+    "https://twitter.com/seechuragro",
+    "https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ",
+    "https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p",
+    "https://calendly.com/seechu-seechuragro"
+  ],
+  "contactPoint": [
+    {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "email": "mailto:seechu@seechuragro.in"
+    }
+  ]
+}
+</script>
+
+<!-- ========== JSON-LD: AboutPage (existing) ========== -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -86,6 +114,28 @@
     }
   },
   "image": "https://seechuragro.in/assets/og-lakadong.png"
+}
+</script>
+
+<!-- ========== JSON-LD: BreadcrumbList (page-specific) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://seechuragro.in/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "About",
+      "item": "https://seechuragro.in/about.html"
+    }
+  ]
 }
 </script>
 
