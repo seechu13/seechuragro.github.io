@@ -89,7 +89,7 @@
   .footer-copy{ font-size:.95rem; margin-top:10px; color:#d9ffe6 }
   @media (max-width:520px){ .footer-socials a{ width:34px; height:34px } .footer-socials svg{ width:16px; height:16px } }
 
-  /* end */
+  footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px)}
 </style>
 <!-- ===== END INLINE STYLES ===== -->
 
@@ -126,6 +126,7 @@
 }
 </script>
 
+<!-- FAQ Schema -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -344,7 +345,7 @@
           <span class="chev">▾</span>
         </button>
         <div class="acc-panel"><div class="inner">
-          <p>We prioritise <b>capital efficiency</b> (existing infra), diversified crop mix, strong B2B channels, and policy tailwinds. Instruments (equity, CCDs, revenue-share) can be structured to match investor risk appetite.</p>
+          <p>We prioritize <b>capital efficiency</b> (existing infra), diversified crop mix, strong B2B channels, and policy tailwinds. Instruments (equity, CCDs, revenue-share) can be structured to match investor risk appetite.</p>
         </div></div>
       </div>
     </div>
@@ -434,11 +435,12 @@
   </section>
 </main>
 
+<!-- UPDATED FOOTER WITH LOGO + SOCIAL ICONS (keeps UI intact) -->
 <footer class="footer-wrap">
   <div class="footer-top">
     <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
-      <!-- staging logo path: using local uploaded path (will be transformed in your build) -->
-      <img src="/mnt/data/logo.png" alt="Seechur Agro logo">
+      <!-- Use production asset path (change if your build expects a different path) -->
+      <img src="/assets/logo.png" alt="Seechur Agro logo">
     </div>
 
     <div class="footer-socials" aria-label="Seechur Agro social links">
