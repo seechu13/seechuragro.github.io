@@ -8,7 +8,7 @@
 <meta name="description" content="Meet the leadership team of Seechur Agro — hands-on agri-entrepreneurship, protected cultivation expertise, and sustainable farming vision." />
 <link rel="canonical" href="https://seechuragro.in/team.html" />
 
-<!-- Open Graph / Social Sharing -->
+<!-- Open Graph -->
 <meta property="og:locale" content="en_IN">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Team • Seechur Agro Private Limited">
@@ -17,25 +17,15 @@
 <meta property="og:site_name" content="Seechur Agro">
 <meta property="og:image" content="https://seechuragro.in/assets/og-team.png">
 <meta property="og:image:alt" content="Seechur Agro Leadership Team">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
 
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Team • Seechur Agro Private Limited">
-<meta name="twitter:description" content="Leadership team of Seechur Agro — sustainable, tech-driven farming.">
-<meta name="twitter:image" content="https://seechuragro.in/assets/og-team.png">
-
-<link rel="image_src" href="https://seechuragro.in/assets/og-team.png">
-
-<!-- JSON-LD Schema -->
+<!-- Schema (WebPage + Organization via publisher) -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Team • Seechur Agro Private Limited",
   "url": "https://seechuragro.in/team.html",
-  "description": "Meet the leadership and advisory team of Seechur Agro — hands-on agri-entrepreneurship driven by innovation.",
+  "description": "Leadership team of Seechur Agro — sustainable farming and agri-technology.",
   "publisher": {
     "@type": "Organization",
     "name": "Seechur Agro Private Limited",
@@ -43,30 +33,25 @@
       "@type": "ImageObject",
       "url": "https://seechuragro.in/assets/logo.png"
     }
-  },
-  "image": {
-    "@type": "ImageObject",
-    "url": "https://seechuragro.in/assets/og-team.png",
-    "width": 1200,
-    "height": 630
   }
 }
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
 
 <style>
   :root{
     --text:#f3fff6; --muted:#cfe9d8;
-    --glass:rgba(255,255,255,.12); --max:1100px;
-    --hover:#33d18f;
+    --glass:rgba(255,255,255,.12); --max:1100px; --accent:#1f7a4d;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
     font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
-    color:var(--text);min-height:100vh;
+    color:var(--text);
+    min-height:100vh;
+    scroll-padding-top:70px;
+    background:#000;
   }
   body::before{
     content:"";position:fixed;inset:0;z-index:-1;
@@ -76,47 +61,45 @@
     filter:saturate(1.05) brightness(.97);
   }
 
-  /* Banner */
-  .banner{
-    background:rgba(51,209,143,.12);
-    border:1px solid rgba(51,209,143,.4);
-    border-radius:12px;
-    padding:10px 18px;
-    text-align:center;
-    font-weight:600;
-    color:#b2ffcb;
-    max-width:var(--max);
-    margin:22px auto;
-    backdrop-filter:blur(5px);
-    animation:glow 3s ease-in-out infinite alternate;
-  }
-  @keyframes glow{
-    from{box-shadow:0 0 6px rgba(51,209,143,.2);}
-    to{box-shadow:0 0 16px rgba(51,209,143,.4);}
-  }
-
   .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
   h1{font-size:2.2rem;font-weight:700;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,.55)}
-  h2{font-size:1.4rem;margin-top:28px;margin-bottom:10px;text-shadow:0 2px 6px rgba(0,0,0,.5)}
-  p{line-height:1.8;color:var(--muted);margin-bottom:16px;}
-  .grid{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+  h2{font-size:1.4rem;margin-top:10px;margin-bottom:8px;}
+  p{line-height:1.75;color:var(--muted);margin-bottom:14px;}
 
+  /* GRID & CARD */
+  .grid{display:grid;gap:28px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
   .card{
-    background:var(--glass);border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.4);padding:18px;
-    opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease;
+    background:var(--glass);
+    border-radius:20px;
+    padding:22px;
+    backdrop-filter:blur(4px);
+    box-shadow:0 6px 24px rgba(0,0,0,.45);
+    overflow:visible;
   }
-  .card.show{opacity:1;transform:translateY(0);}
 
-  .profile{display:flex;gap:18px;align-items:center}
+  /* PROFILE (fixed to avoid visual cropping on desktop) */
+  .profile{
+    display:flex;
+    gap:20px;
+    align-items:flex-start;    /* top-align avatar so it doesn't get clipped next to long text */
+    flex-wrap:wrap;
+  }
   .avatar{
-    flex:0 0 260px;width:260px;aspect-ratio:1/1;border-radius:16px;overflow:hidden;
-    background:#0b0b0b22;margin:auto;display:flex;justify-content:center;align-items:center;
+    width:240px;
+    max-width:34%;
+    aspect-ratio:1/1;
+    border-radius:16px;
+    overflow:hidden;
+    background:#0b0b0b22;
+    flex-shrink:0;
   }
   .avatar img{
-    width:100%;height:100%;object-fit:cover;display:block;
-    transition:transform .4s ease;
+    width:100%;height:100%;
+    object-fit:cover;
+    object-position:center top; /* show the top of portrait images (fix crop) */
+    display:block;
+    transition:transform .35s ease;
   }
-  .avatar img:hover{transform:scale(1.03);}
 
   .role{color:#d6ffe9;font-weight:600;margin-top:2px}
   .icons{display:flex;gap:10px;margin-top:8px}
@@ -127,64 +110,52 @@
   }
   .icon:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.35);background:rgba(0,0,0,.35)}
   .icon svg{width:18px;height:18px;fill:#eafff4}
-  .icon.linkedin:hover svg{fill:var(--hover)}
-  .icon.mail:hover svg{fill:#fff}
+  .icon.linkedin:hover svg{fill:var(--accent)}
 
-  /* Footer styles added (uniform across pages) */
-  .site-footer{
-    text-align:center;color:#d9ffe6;padding:36px 12px 56px;background:rgba(0,0,0,.44);
-    backdrop-filter:blur(6px); margin-top:28px;
-  }
-  .footer-inner{max-width:var(--max);margin:0 auto;padding:6px 18px;display:flex;flex-direction:column;align-items:center;gap:12px}
-  .footer-logo{width:56px;height:56px;border-radius:10px;overflow:hidden;background:#fff;padding:6px;display:flex;align-items:center;justify-content:center}
-  .footer-logo img{width:100%;height:100%;object-fit:contain;display:block}
-  .social-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
-  .sbtn{
-    width:44px;height:44px;border-radius:10px;background:rgba(0,0,0,.25);display:grid;place-items:center;border:1px solid rgba(255,255,255,.08);
-    transition:transform .12s ease, background .12s ease;
-  }
-  .sbtn:hover{transform:translateY(-4px);background:rgba(0,0,0,.35)}
-  .sbtn svg{width:18px;height:18px;fill:#eafff4}
-  .footer-copy{font-size:0.96rem;color:#e7fff1;margin-top:6px}
-  .footer-copy a{color:inherit;text-decoration:none;font-weight:600}
-  @media (max-width:720px){
-    h1{font-size:1.9rem;}
+  footer.site-footer{ text-align:center; color:#d9ffe6; padding:28px 12px 40px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:28px; }
+  .footer-top{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+  .footer-logo{ display:inline-flex; align-items:center; gap:10px; justify-content:center; }
+  .footer-logo img{ width:56px; height:56px; object-fit:contain; border-radius:8px; background:#fff; padding:6px; }
+  .footer-socials{ display:flex; gap:10px; justify-content:center; align-items:center; margin-top:4px; flex-wrap:wrap }
+  .footer-socials a{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px;
+                     border-radius:10px; background:rgba(0,0,0,.12); border:1px solid rgba(255,255,255,.04);
+                     text-decoration:none; transition:transform .12s ease, background .12s ease; }
+  .footer-socials a:hover{ transform:translateY(-3px); background:rgba(0,0,0,.24) }
+  .footer-socials svg{ width:18px; height:18px; fill:#eafff4; display:block; }
+  .footer-copy{ font-size:.95rem; margin-top:10px; color:#d9ffe6 }
+
+  @media (max-width:760px){
+    h1{font-size:1.9rem}
     .profile{flex-direction:column;text-align:center}
-    .avatar{width:280px;}
-    .footer-inner{padding:12px}
+    .avatar{width:260px;max-width:100%;margin:auto}
+    .footer-logo img{width:48px;height:48px}
   }
 </style>
 </head>
 <body>
 
-<!-- Navbar -->
+<!-- Navbar (keeps your existing navbar behaviour) -->
 <div id="navbar-placeholder"></div>
 <script>
-(function loadNavbar(){
-  fetch('navbar.html', {cache:'no-cache'})
-    .then(r=>r.text())
-    .then(html=>{
-      const host=document.getElementById('navbar-placeholder');
-      host.innerHTML=html;
-
-      host.querySelectorAll('script').forEach(s=>{
-        const n=document.createElement('script');
-        if(s.src){n.src=s.src;}else{n.textContent=s.textContent;}
-        document.body.appendChild(n);
-      });
-
-      const current=(location.pathname.split('/').pop()||'team.html').toLowerCase();
-      document.querySelectorAll('.menu a').forEach(a=>{
-        if(a.getAttribute('href')?.toLowerCase()===current){a.classList.add('active');}
-      });
-    });
-})();
+  (function loadNavbar(){
+    fetch('navbar.html', {cache:'no-cache'})
+      .then(r=>r.text())
+      .then(html=>{
+        const host=document.getElementById('navbar-placeholder');
+        host.innerHTML=html;
+        host.querySelectorAll('script').forEach(s=>{
+          const n=document.createElement('script');
+          if(s.src){ n.src = s.src; } else { n.textContent = s.textContent; }
+          document.body.appendChild(n);
+        });
+        const current=(location.pathname.split('/').pop()||'team.html').toLowerCase();
+        document.querySelectorAll('.menu a').forEach(a=>{
+          if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
+        });
+      })
+      .catch(()=>{/* silent fallback */});
+  })();
 </script>
-
-<!-- Banner -->
-<div class="banner">
-  Advisory collaborations underway with <b>Mission Lakadong</b> & <b>Tamil Nadu Agricultural University (TNAU)</b>
-</div>
 
 <main class="container">
   <h1>Our Leadership Team</h1>
@@ -193,29 +164,31 @@
     and capital efficiency. Meet the people steering Seechur Agro forward.
   </p>
 
-  <section class="grid">
+  <section class="grid" aria-live="polite">
 
     <!-- Srivatsan -->
-    <article class="card">
+    <article class="card" aria-labelledby="srivatsan-name">
       <div class="profile">
-        <div class="avatar">
+        <div class="avatar" role="img" aria-label="Photo of Srivatsan Renga">
           <img src="srivatsan-renga.jpg" alt="Srivatsan Renga">
         </div>
+
         <div>
-          <h2>Srivatsan Renga</h2>
-          <div class="role">Founder & Managing Director</div>
+          <h2 id="srivatsan-name">Srivatsan Renga</h2>
+          <div class="role">Founder &amp; Managing Director</div>
           <p>
             Business leader with extensive experience in <b>agri-project development</b>, protected cultivation,
             and farm reactivation. Brings over <b>22 years of banking and risk management expertise</b>, including
             <b>12 years as an Agricultural Officer</b> in a leading Indian Private Bank. His combined background in
             agriculture and finance drives operational viability and long-term sustainability for Seechur Agro.
           </p>
-          <div class="icons">
-            <a class="icon linkedin" href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
+
+          <div class="icons" aria-hidden="false">
+            <a class="icon linkedin" href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener" title="LinkedIn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
             </a>
-            <a class="icon mail" href="mailto:seechu@seechuragro.in">
-              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <a class="icon mail" href="mailto:seechu@seechuragro.in" title="Email">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
             </a>
           </div>
         </div>
@@ -223,24 +196,26 @@
     </article>
 
     <!-- Kanaka -->
-    <article class="card">
+    <article class="card" aria-labelledby="kanaka-name">
       <div class="profile">
-        <div class="avatar">
+        <div class="avatar" role="img" aria-label="Photo of Kanaka Srivatsan">
           <img src="kanaka-srivatsan.jpg" alt="Kanaka Srivatsan">
         </div>
+
         <div>
-          <h2>Kanaka Srivatsan</h2>
+          <h2 id="kanaka-name">Kanaka Srivatsan</h2>
           <div class="role">Director</div>
           <p>
             Graduate in Sociology with over a decade of experience managing premium dining operations and teaching.
             A detail-oriented leader passionate about sustainable farming and quality management.
           </p>
+
           <div class="icons">
-            <a class="icon linkedin" href="https://www.linkedin.com/in/kanaka-srivatsan-8a8b17371" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
+            <a class="icon linkedin" href="https://www.linkedin.com/in/kanaka-srivatsan-8a8b17371" target="_blank" rel="noopener" title="LinkedIn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
             </a>
-            <a class="icon mail" href="mailto:kanaka@seechuragro.in">
-              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <a class="icon mail" href="mailto:kanaka@seechuragro.in" title="Email">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
             </a>
           </div>
         </div>
@@ -250,66 +225,53 @@
   </section>
 </main>
 
-<!-- Footer (uniform across pages) -->
+<!-- Unified Footer (matches index style) -->
 <footer class="site-footer" role="contentinfo">
-  <div class="footer-inner">
-    <div class="footer-top" style="display:flex;flex-direction:column;align-items:center;gap:8px">
-      <a href="https://seechuragro.in/" aria-label="Seechur Agro home" class="footer-logo" title="Seechur Agro">
-        <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo" />
+  <div class="footer-top">
+    <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
+      <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo">
+    </div>
+
+    <div class="footer-socials" aria-label="Seechur Agro social links">
+      <a href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
 
-      <div class="social-row" aria-label="Social links">
-        <!-- WhatsApp direct chat -->
-        <a class="sbtn" href="https://wa.me/918056021869" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
-        </a>
+      <a href="mailto:seechu@seechuragro.in" title="Email" aria-label="Email">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      </a>
 
-        <!-- Email -->
-        <a class="sbtn" href="mailto:seechu@seechuragro.in" aria-label="Email Seechur Agro">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-        </a>
+      <a href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.9 3.87 6 2.48 6S0 4.9 0 3.5 1.11 1 2.5 1 4.98 2.1 4.98 3.5zM0 8h4.96v13H0V8zm7.5 0H12v1.8h.07c.57-1.08 1.96-2.22 4.03-2.22 4.31 0 5.11 2.84 5.11 6.54V21h-4.96v-5.3c0-1.27-.02-2.9-1.77-2.9-1.78 0-2.05 1.39-2.05 2.82V21H7.5V8z"/></svg>
+      </a>
 
-        <!-- LinkedIn -->
-        <a class="sbtn" href="https://www.linkedin.com/company/seechur-agro" target="_blank" rel="noopener" aria-label="Seechur Agro on LinkedIn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zm7.5 0h3.84v1.98h.06c.53-1 1.82-2.06 3.76-2.06 4.02 0 4.76 2.65 4.76 6.09V23h-4v-6.64c0-1.58-.03-3.62-2.2-3.62-2.2 0-2.54 1.72-2.54 3.5V23h-4V8.5z"/></svg>
-        </a>
+      <a href="https://www.instagram.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 6.5A4.5 4.5 0 1016.5 13 4.5 4.5 0 0012 8.5zm6.8-3.7a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2z"/></svg>
+      </a>
 
-        <!-- Instagram -->
-        <a class="sbtn" href="https://instagram.com/seechuragro" target="_blank" rel="noopener" aria-label="Seechur Agro on Instagram">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 5.9A4.1 4.1 0 1016.1 12 4.1 4.1 0 0012 7.9zm5.2-.6a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2zM12 9.7A2.3 2.3 0 1112 14.3 2.3 2.3 0 0112 9.7z"/></svg>
-        </a>
+      <a href="https://www.facebook.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.2c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12H20l-.5 2.9h-2v7A10 10 0 0022 12z"/></svg>
+      </a>
 
-        <!-- Facebook -->
-        <a class="sbtn" href="https://facebook.com/seechuragro" target="_blank" rel="noopener" aria-label="Seechur Agro on Facebook">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8.9V12h1.6V9.8c0-1.6 1-2.5 2.4-2.5.7 0 1.4.1 1.4.1v1.6h-.8c-.8 0-1 .5-1 1v1.2h1.8l-.3 2.9h-1.5v7A10 10 0 0022 12z"/></svg>
-        </a>
+      <a href="https://twitter.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.46 6c-.77.34-1.6.57-2.46.67a4.26 4.26 0 001.88-2.35 8.6 8.6 0 01-2.7 1.03 4.22 4.22 0 00-7.2 3.85A12 12 0 013 4.79a4.2 4.2 0 001.3 5.63c-.66-.02-1.28-.2-1.82-.5v.05a4.22 4.22 0 003.38 4.13c-.6.16-1.24.2-1.9.08a4.22 4.22 0 003.94 2.93A8.47 8.47 0 012 19.5a11.95 11.95 0 006.29 1.84c7.55 0 11.68-6.27 11.68-11.7v-.53A8.36 8.36 0 0024 5.1a8.3 8.3 0 01-2.4.66z"/></svg>
+      </a>
 
-        <!-- X / Twitter -->
-        <a class="sbtn" href="https://x.com/seechuragro" target="_blank" rel="noopener" aria-label="Seechur Agro on X">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 4.01a9.7 9.7 0 01-2.83.78 4.93 4.93 0 002.16-2.72 9.86 9.86 0 01-3.13 1.2 4.92 4.92 0 00-8.4 4.48A13.96 13.96 0 011.67 3.15a4.9 4.9 0 001.52 6.56 4.9 4.9 0 01-2.23-.62v.06a4.93 4.93 0 003.95 4.82 4.9 4.9 0 01-2.22.08 4.94 4.94 0 004.6 3.42A9.87 9.87 0 010 19.54a13.94 13.94 0 007.55 2.21c9.06 0 14.03-7.5 14.03-14.02l-.02-.64A10.02 10.02 0 0023 4.01z"/></svg>
-        </a>
+      <a href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2s-.2-1.7-.8-2.4c-.7-.9-1.5-.9-1.9-1-2.7-.2-6.8-.2-6.8-.2s-4.1 0-6.8.2c-.4.1-1.2.1-1.9 1-.6.7-.8 2.4-.8 2.4S1 8 1 9.8v1.4C1 13.9 1.6 15.6 1.6 15.6s.2 1.7.8 2.4c.7.9 1.6.9 2 1 1.4.1 6.1.2 6.1.2s4.1 0 6.8-.2c.4-.1 1.2-.1 1.9-1 .6-.7.8-2.4.8-2.4s.6-1.7.6-3.5V9.8c0-1.8-.6-3.6-.6-3.6zM9.8 14.6v-5l4.8 2.5-4.8 2.5z"/></svg>
+      </a>
 
-        <!-- YouTube -->
-        <a class="sbtn" href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener" aria-label="Seechur Agro on YouTube">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2s-.2-1.7-.8-2.4c-.8-.9-1.7-.9-2.1-1C16.8 2.5 12 2.5 12 2.5h-.1s-4.8 0-8.5.3c-.4 0-1.3.1-2.1 1-.6.7-.8 2.4-.8 2.4S0 8 0 9.8v1.4C0 13 0 14.7 0 14.7s.2 1.7.8 2.4c.8.9 1.9.9 2.4 1 1.7.2 7.9.3 7.9.3s4.8 0 8.5-.3c.4 0 1.3-.1 2.1-1 .6-.7.8-2.4.8-2.4s.1-1.7.1-3.5V9.8c0-1.8-.1-3.6-.1-3.6zM9.8 14.4V7.6l6.2 3.4-6.2 3.4z"/></svg>
-        </a>
+      <a href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
+      </a>
 
-        <!-- WhatsApp Channel (if you want channel link) -->
-        <a class="sbtn" href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener" aria-label="Seechur Agro WhatsApp Channel">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
-        </a>
-
-        <!-- Calendly -->
-        <a class="sbtn" href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener" aria-label="Book a meeting (Calendly)">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h10v2H7v-2zm0-4h10v2H7V7zM5 3h2V1h2v2h6V1h2v2h2a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
-        </a>
-      </div>
-    </div>
-
-    <div class="footer-copy">
-      © <span id="year"></span> <a href="https://seechuragro.in/">Seechur Agro Private Limited</a> • Human by Chance, Farmer by Choice
+      <a href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h5v5H7zM19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 14H5V9h14v9z"/></svg>
+      </a>
     </div>
   </div>
+
+  <div class="footer-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
 </footer>
 
 <script>
@@ -323,14 +285,19 @@
   const io=new IntersectionObserver((entries)=>{
     entries.forEach(e=>{
       if(e.isIntersecting){
-        e.target.classList.add('show');
+        e.target.style.opacity = 1;
+        e.target.style.transform = 'translateY(0)';
         io.unobserve(e.target);
       }
     });
-  },{threshold:0.18});
-  cards.forEach(c=>io.observe(c));
+  },{threshold:0.12});
+  cards.forEach(c=>{
+    // initial hidden style
+    c.style.opacity = 0;
+    c.style.transform = 'translateY(14px)';
+    io.observe(c);
+  });
 })();
 </script>
-
 </body>
 </html>
