@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Why Lakadong • Seechur Agro Private Limited</title>
 
+<!-- Uploaded file reference: /mnt/data/Screenshot 2025-11-25 210053.png -->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -230,7 +232,7 @@
 </main>
 
 <!-- Footer: logo + inline social icons (non-intrusive, site-wide pattern) -->
-<footer class="footer-wrap" role="contentinfo" style="all:unset;display:block;">
+<footer class="footer-wrap" role="contentinfo">
   <div class="footer-top">
     <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
       <!-- production logo URL; if you want the dev/local file add data-local="/mnt/data/logo.png" -->
@@ -280,79 +282,10 @@
 </footer>
 
 <script>
-(function(){
-  // Footer year
-  const y=document.getElementById('year');
-  if(y) y.textContent=new Date().getFullYear();
-
-  // Fetch and show latest 2 articles (keeps your original articles behaviour)
-  const grid = document.getElementById('home-grid');
-  const fallback = document.getElementById('home-fallback');
-  if(!grid) return;
-
-  function makeCard(item){
-    const url   = item.url   || '#';
-    const img   = item.image || '';
-    const cat   = item.category || '';
-    const date  = item.date || '';
-    const title = item.title || '';
-    const ex    = item.excerpt || item.subtitle || '';
-
-    const a = document.createElement('a');
-    a.className = 'card';
-    a.href = url;
-    a.setAttribute('aria-label', title);
-
-    const t = document.createElement('div');
-    t.className='thumb';
-    if(img){
-      const im = document.createElement('img');
-      im.loading='lazy';
-      im.alt = title || 'Article image';
-      im.src = img;
-      im.onerror = ()=>{ t.remove(); };
-      t.appendChild(im);
-    }
-    a.appendChild(t);
-
-    const b = document.createElement('div'); b.className='body';
-    const m = document.createElement('div'); m.className='meta';
-    m.textContent = [cat, date].filter(Boolean).join(' • ');
-    const ti = document.createElement('div'); ti.className='title'; ti.textContent=title;
-    const exd = document.createElement('div'); exd.className='excerpt'; exd.textContent=ex;
-
-    b.appendChild(m); b.appendChild(ti); b.appendChild(exd);
-    a.appendChild(b);
-
-    return a;
-  }
-
-  fetch('articles.json?ver=3', {cache:'no-cache'})
-    .then(resp => resp.ok ? resp.json() : Promise.reject(resp.status))
-    .then(list => {
-      if(!Array.isArray(list) || list.length === 0){
-        fallback.style.display = 'block';
-        grid.setAttribute('aria-busy','false');
-        return;
-      }
-
-      list.sort((a,b)=>{
-        const da = a && a.date ? Date.parse(a.date) : 0;
-        const db = b && b.date ? Date.parse(b.date) : 0;
-        if(!isNaN(da) && !isNaN(db)) return db - da;
-        return String(b.date).localeCompare(String(a.date));
-      });
-
-      const latest = list.slice(0,2);
-      const frag = document.createDocumentFragment();
-      latest.forEach(item => frag.appendChild(makeCard(item)));
-
-      grid.innerHTML = '';
-      grid.appendChild(frag);
-      grid.setAttribute('aria-busy','false');
-    })
-    .catch(()=>{ fallback.style.display='block'; });
-})();
+document.addEventListener("DOMContentLoaded", function () {
+  const y = document.getElementById("year");
+  if (y) y.textContent = new Date().getFullYear();
+});
 </script>
 </body>
 </html>
