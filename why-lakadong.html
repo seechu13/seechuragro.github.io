@@ -207,200 +207,185 @@
   </div>
 </main>
 
-<!-- START: Seechur Agro — Single-line logo (left) + centered 9 icons + year (drop-in) -->
+<!-- START: Seechur Agro — Strong fixed footer (logo left, icons centered, small icons) -->
 <style>
-  /* Scoped footer (unique class names to avoid conflicts) */
-  .sc2-footer { 
-    background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.62));
-    color: #e8f9ec;
-    padding: 22px 18px 18px;
-    backdrop-filter: blur(4px);
-    border-top: 1px solid rgba(255,255,255,0.04);
+  /* Scoped & aggressive footer styles */
+  .sc3-footer {
+    background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.62)) !important;
+    color: #e8f9ec !important;
+    padding: 22px 18px 18px !important;
+    backdrop-filter: blur(4px) !important;
+    border-top: 1px solid rgba(255,255,255,0.04) !important;
   }
 
-  .sc2-footer-inner {
-    max-width: var(--max,1100px);
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: auto 1fr auto; /* logo | icons (center) | spacer */
-    align-items: center;
-    gap: 12px;
-    column-gap: 24px;
-    padding: 6px 8px;
+  .sc3-inner {
+    max-width: 1100px !important;
+    margin: 0 auto !important;
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important; /* logo | icons | spacer */
+    align-items: center !important;
+    gap: 12px !important;
+    column-gap: 24px !important;
+    padding: 6px 8px !important;
   }
 
-  /* left logo */
-  .sc2-logo {
-    display:flex;
-    align-items:center;
-    justify-content:flex-start;
-    padding-left:6px;
-  }
-  .sc2-logo img {
-    height:56px; /* fixed visual height to match reference */
-    width:auto;
-    max-width:160px;
-    object-fit:contain;
-    display:block;
+  .sc3-logo img {
+    height: 56px !important;
+    width: auto !important;
+    max-width: 160px !important;
+    object-fit: contain !important;
+    display: block !important;
   }
 
-  /* center icons */
-  .sc2-icons {
-    display:flex;
-    justify-content:center; /* keeps icons centered in the middle column */
-    gap:12px;
-    align-items:center;
-    flex-wrap:nowrap;
-    min-width:220px;
+  .sc3-icons {
+    display:flex !important;
+    justify-content:center !important;
+    gap:12px !important;
+    align-items:center !important;
+    flex-wrap:nowrap !important;
+    min-width:220px !important;
   }
 
-  /* right spacer (keeps center properly centered) */
-  .sc2-spacer { /* intentionally empty to balance the grid */ }
-
-  /* icon button style */
-  .sc2-icon-btn {
-    display:inline-grid;
-    place-items:center;
-    width:44px;
-    height:44px;
-    border-radius:10px;
-    background: rgba(255,255,255,0.04);
-    color: #eaf8ee;
-    text-decoration:none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.36), inset 0 1px rgba(255,255,255,0.02);
-    transition: transform .16s ease, background .16s ease, opacity .16s ease;
-  }
-  .sc2-icon-btn svg { width:18px; height:18px; display:block; fill:currentColor; }
-
-  .sc2-icon-btn:hover { transform: translateY(-3px); background: rgba(255,255,255,0.06); }
-
-  .sc2-footer-copy {
-    margin-top:14px;
-    text-align:center;
-    font-size:13px;
-    color:#cfeee0;
-    opacity:.95;
-  }
-
-  /* Responsiveness */
-  @media (max-width:880px) {
-    .sc2-logo img { height:50px; }
-    .sc2-icon-btn { width:40px; height:40px; }
-    .sc2-icon-btn svg { width:16px; height:16px; }
-  }
-
-  @media (max-width:520px) {
-    .sc2-footer-inner {
-      grid-template-columns: 1fr; /* stack vertically on small screens */
-      gap:10px;
-      text-align:center;
-    }
-    .sc2-logo { justify-content:center; }
-    .sc2-icons { justify-content:center; flex-wrap:wrap; gap:10px; }
-    .sc2-spacer { display:none; }
-    .sc2-logo img { height:48px; }
-  }
-
-  /* VERY important — force icons to the correct size even if other CSS tries to override */
-  .sc2-icons .sc2-icon-btn,
-  .sc2-icons .sc2-icon-btn svg {
+  /* force the icon button size and neutralize other site rules */
+  .sc3-icon {
+    display:inline-grid !important;
+    place-items:center !important;
     width:44px !important;
     height:44px !important;
     min-width:44px !important;
     min-height:44px !important;
+    border-radius:10px !important;
+    background: rgba(255,255,255,0.04) !important;
+    color: #eaf8ee !important;
+    text-decoration:none !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.36), inset 0 1px rgba(255,255,255,0.02) !important;
+    transition: transform .16s ease, background .16s ease, opacity .16s ease !important;
+    transform: none !important; /* remove any inherited transforms */
+    padding:0 !important; /* remove inherited padding */
+    line-height:1 !important;
+    vertical-align:middle !important;
   }
+
+  .sc3-icon svg {
+    width:18px !important;
+    height:18px !important;
+    display:block !important;
+    fill: currentColor !important;
+  }
+
+  .sc3-icon:hover { transform: translateY(-3px) !important; background: rgba(255,255,255,0.06) !important; }
+
+  .sc3-copy {
+    margin-top:14px !important;
+    text-align:center !important;
+    font-size:13px !important;
+    color:#cfeee0 !important;
+    opacity:.95 !important;
+  }
+
   @media (max-width:880px) {
-    .sc2-icons .sc2-icon-btn,
-    .sc2-icons .sc2-icon-btn svg {
-      width:40px !important;
-      height:40px !important;
-      min-width:40px !important;
-      min-height:40px !important;
-    }
+    .sc3-logo img { height:50px !important; }
+    .sc3-icon { width:40px !important; height:40px !important; min-width:40px !important; min-height:40px !important; }
+    .sc3-icon svg { width:16px !important; height:16px !important; }
   }
+
   @media (max-width:520px) {
-    .sc2-icons .sc2-icon-btn,
-    .sc2-icons .sc2-icon-btn svg {
-      width:38px !important;
-      height:38px !important;
-      min-width:38px !important;
-      min-height:38px !important;
-    }
+    .sc3-inner { grid-template-columns: 1fr !important; gap:10px !important; text-align:center !important; }
+    .sc3-logo { justify-content:center !important; }
+    .sc3-icons { justify-content:center !important; flex-wrap:wrap !important; gap:10px !important; }
+    .sc3-logo img { height:48px !important; }
+  }
+
+  /* final defensive overrides for any stray selectors */
+  .sc3-footer .sc3-icon,
+  .sc3-footer .sc3-icon * {
+    box-sizing: border-box !important;
+    max-width: none !important;
+    max-height: none !important;
   }
 </style>
 
-<footer class="sc2-footer" role="contentinfo" aria-label="Seechur Agro footer">
-  <div class="sc2-footer-inner" role="group" aria-label="footer brand and social">
-    <!-- left: logo -->
-    <div class="sc2-logo" aria-hidden="false">
-      <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo">
+<footer class="sc3-footer" role="contentinfo" aria-label="Seechur Agro footer (fixed)">
+  <div class="sc3-inner" role="group" aria-label="footer brand and social">
+    <div class="sc3-logo" aria-hidden="false">
+      <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo" />
     </div>
 
-    <!-- center: icons -->
-    <div class="sc2-icons" aria-label="Seechur Agro social links">
-      <!-- 1 WhatsApp -->
-      <a class="sc2-icon-btn" href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
+    <div class="sc3-icons" aria-label="Seechur Agro social links">
+      <a class="sc3-icon" style="width:44px;height:44px" href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
 
-      <!-- 2 Email -->
-      <a class="sc2-icon-btn" href="mailto:seechu@seechuragro.in" title="Email" aria-label="Email">
+      <a class="sc3-icon" style="width:44px;height:44px" href="mailto:seechu@seechuragro.in" title="Email" aria-label="Email">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
       </a>
 
-      <!-- 3 LinkedIn -->
-      <a class="sc2-icon-btn" href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+      <a class="sc3-icon" style="width:44px;height:44px" href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.9 3.87 6 2.48 6S0 4.9 0 3.5 1.11 1 2.5 1 4.98 2.1 4.98 3.5zM0 8h4.96v13H0V8zm7.5 0H12v1.8h.07c.57-1.08 1.96-2.22 4.03-2.22 4.31 0 5.11 2.84 5.11 6.54V21h-4.96v-5.3c0-1.27-.02-2.9-1.77-2.9-1.78 0-2.05 1.39-2.05 2.82V21H7.5V8z"/></svg>
       </a>
 
-      <!-- 4 Instagram -->
-      <a class="sc2-icon-btn" href="https://www.instagram.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+      <a class="sc3-icon" style="width:44px;height:44px" href="https://www.instagram.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 6.5A4.5 4.5 0 1016.5 13 4.5 4.5 0 0012 8.5zm6.8-3.7a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2z"/></svg>
       </a>
 
-      <!-- 5 Facebook -->
-      <a class="sc2-icon-btn" href="https://www.facebook.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
+      <a class="sc3-icon" style="width:44px;height:44px" href="https://www.facebook.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.2c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12H20l-.5 2.9h-2v7A10 10 0 0022 12z"/></svg>
       </a>
 
-      <!-- 6 X / Twitter -->
-      <a class="sc2-icon-btn" href="https://twitter.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
+      <a class="sc3-icon" style="width:44px;height:44px" href="https://twitter.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.46 6c-.77.34-1.6.57-2.46.67a4.26 4.26 0 001.88-2.35 8.6 8.6 0 01-2.7 1.03 4.22 4.22 0 00-7.2 3.85A12 12 0 013 4.79a4.2 4.2 0 001.3 5.63c-.66-.02-1.28-.2-1.82-.5v.05a4.22 4.22 0 003.38 4.13c-.6.16-1.24.2-1.9.08a4.22 4.22 0 003.94 2.93A8.47 8.47 0 012 19.5a11.95 11.95 0 006.29 1.84c7.55 0 11.68-6.27 11.68-11.7v-.53A8.36 8.36 0 0024 5.1a8.3 8.3 0 01-2.4.66z"/></svg>
       </a>
 
-      <!-- 7 YouTube -->
-      <a class="sc2-icon-btn" href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
+      <a class="sc3-icon" style="width:44px;height:44px" href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2s-.2-1.7-.8-2.4c-.7-.9-1.5-.9-1.9-1-2.7-.2-6.8-.2-6.8-.2s-4.1 0-6.8.2c-.4.1-1.2.1-1.9 1-.6.7-.8 2.4-.8 2.4S1 8 1 9.8v1.4C1 13.9 1.6 15.6 1.6 15.6s.2 1.7.8 2.4c.7.9 1.6.9 2 1 1.4.1 6.1.2 6.1.2s4.1 0 6.8-.2c.4-.1 1.2-.1 1.9-1 .6-.7.8-2.4.8-2.4s.6-1.7.6-3.5V9.8c0-1.8-.6-3.6-.6-3.6zM9.8 14.6v-5l4.8 2.5-4.8 2.5z"/></svg>
       </a>
 
-      <!-- 8 WhatsApp Channel -->
-      <a class="sc2-icon-btn" href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
+      <a class="sc3-icon" style="width:44px;height:44px" href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
 
-      <!-- 9 Calendly -->
-      <a class="sc2-icon-btn" href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
+      <a class="sc3-icon" style="width:44px;height:44px" href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h5v5H7zM19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 14H5V9h14v9z"/></svg>
       </a>
     </div>
 
-    <!-- right spacer -->
-    <div class="sc2-spacer" aria-hidden="true"></div>
+    <div class="sc3-spacer" aria-hidden="true"></div>
   </div>
 
-  <!-- centered tagline / year below -->
-  <div class="sc2-footer-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
+  <div class="sc3-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
 </footer>
 
 <script>
-  (function(){
+  /* defensive JS: set inline sizes and kill transforms that may be applied later by other scripts */
+  (function enforceFooterStyles(){
     try {
-      var y = document.getElementById('year');
-      if (y) y.textContent = new Date().getFullYear();
+      const footer = document.querySelector('.sc3-footer');
+      if(!footer) return;
+      // force year
+      const y = document.getElementById('year');
+      if(y) y.textContent = new Date().getFullYear();
+
+      // set sizes on anchors and svgs
+      const icons = footer.querySelectorAll('.sc3-icon');
+      icons.forEach(a=>{
+        a.style.width = '44px';
+        a.style.height = '44px';
+        a.style.minWidth = '44px';
+        a.style.minHeight = '44px';
+        a.style.padding = '0';
+        a.style.transform = 'none';
+        const svg = a.querySelector('svg');
+        if(svg){
+          svg.style.width = '18px';
+          svg.style.height = '18px';
+          svg.style.maxWidth = 'none';
+          svg.style.maxHeight = 'none';
+        }
+      });
     } catch(e){}
   })();
 </script>
-<!-- END: Seechur Agro footer -->
+<!-- END: Seechur Agro strong fixed footer -->
 
 <script>
 (function(){
