@@ -211,202 +211,182 @@
      FINAL footer: FLEX layout so logo stays left on baseline and icons centered
      Extra defensive rules so global CSS can't break it
      ============================ -->
+<!-- ===== defensive footer: left logo + absolutely centered icons ===== -->
 <style>
-  .scf {
-    background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.62)) !important;
+  /* Footer container */
+  .fix-footer {
+    position: relative !important;
+    background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.62)) !important;
     color: #e8f9ec !important;
-    padding: 14px 12px !important;
-    backdrop-filter: blur(4px) !important;
+    padding: 18px 12px !important;
+    overflow: visible !important;
     border-top: 1px solid rgba(255,255,255,0.04) !important;
+    -webkit-font-smoothing: antialiased !important;
   }
 
-  .scf-inner {
+  .fix-footer .inner {
     max-width: 1100px !important;
     margin: 0 auto !important;
-    display: flex !important;
+    display: block !important; /* simple flow for left logo */
+    min-height: 60px !important;
+    position: relative !important;
+  }
+
+  /* left logo in normal flow */
+  .fix-logo {
+    display: inline-flex !important;
     align-items: center !important;
-    justify-content: center !important; /* center container horizontally */
-    gap: 18px !important;
+    justify-content: flex-start !important;
+    vertical-align: middle !important;
+    padding-left: 8px !important;
+  }
+  .fix-logo img {
+    height: 52px !important;
+    width: auto !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    object-fit: contain !important;
+    vertical-align: middle !important;
+    max-width: none !important;
+  }
+
+  /* absolutely centered icon bar (always overlays center of footer) */
+  .fix-icons {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    display: flex !important;
+    gap: 12px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    pointer-events: auto !important;
+    white-space: nowrap !important;
+    overflow-x: auto !important; /* allows horizontal scroll on very narrow devices */
     padding: 6px 8px !important;
-  }
-
-  /* left: logo area - fixed width so icons remain visually centered */
-  .scf-logo-wrap {
-    flex: 0 0 120px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:flex-start !important;
-    padding-left:6px !important;
-  }
-  .scf-logo-wrap img {
-    height:52px !important;
-    width:auto !important;
-    display:block !important;
-    margin:0 !important;
-    padding:0 !important;
-    object-fit:contain !important;
-    vertical-align:middle !important;
-  }
-
-  /* center: icons area */
-  .scf-icons {
-    flex: 1 1 auto !important;
-    display:flex !important;
-    justify-content:center !important;
-    align-items:center !important;
-    gap:12px !important;
-    overflow-x:auto !important; /* allow horizontal scroll on very narrow screens */
-    padding:6px 4px !important;
     -webkit-overflow-scrolling: touch !important;
   }
 
-  .scf-icon {
-    flex: 0 0 auto !important;
-    display:inline-grid !important;
-    place-items:center !important;
-    width:40px !important;
-    height:40px !important;
-    min-width:40px !important;
-    min-height:40px !important;
-    border-radius:10px !important;
+  .fix-icons::-webkit-scrollbar { height: 6px; }
+  .fix-icons::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 4px; }
+
+  /* icon button */
+  .fix-icon-btn {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
     background: rgba(255,255,255,0.04) !important;
     color: #eaf8ee !important;
-    text-decoration:none !important;
+    text-decoration: none !important;
     box-shadow: 0 4px 18px rgba(0,0,0,0.35), inset 0 1px rgba(255,255,255,0.02) !important;
     transition: transform .16s ease !important;
-    padding:0 !important;
-    line-height:1 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
   }
-  .scf-icon svg { width:16px !important; height:16px !important; display:block !important; fill:currentColor !important; }
+  .fix-icon-btn svg { width: 16px !important; height: 16px !important; display:block !important; fill: currentColor !important; }
 
-  .scf-icon:hover { transform: translateY(-3px) !important; background: rgba(255,255,255,0.06) !important; }
+  .fix-icon-btn:hover { transform: translateY(-3px) !important; background: rgba(255,255,255,0.06) !important; }
 
-  /* right spacer (keeps visual centering) */
-  .scf-right {
-    flex: 0 0 120px !important;
-    display:block !important;
-  }
-
-  .scf-copy { margin-top:12px !important; text-align:center !important; color:#cfeee0 !important; font-size:13px !important; }
-
-  /* responsive: reduce sizes slightly */
-  @media (max-width:640px) {
-    .scf-logo-wrap { flex: 0 0 84px !important; }
-    .scf-logo-wrap img { height:44px !important; }
-    .scf-icon { width:36px !important; height:36px !important; min-width:36px !important; min-height:36px !important; }
-    .scf-icon svg { width:14px !important; height:14px !important; }
+  /* copy line under everything */
+  .fix-copy {
+    margin-top: 62px !important; /* enough room for centered icons and baseline */
+    text-align: center !important;
+    font-size: 13px !important;
+    color: #cfeee0 !important;
+    opacity: 0.97 !important;
+    padding-bottom: 4px !important;
   }
 
-  /* strong defensive rules */
-  .scf * { box-sizing: border-box !important; }
-  .scf .scf-icon, .scf .scf-icon * , .scf .scf-logo-wrap img { max-width:none !important; max-height:none !important; transform:none !important; }
+  /* responsiveness: reduce icon & logo sizes a bit */
+  @media (max-width: 640px) {
+    .fix-logo img { height: 44px !important; }
+    .fix-icon-btn { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; }
+    .fix-icon-btn svg { width: 14px !important; height: 14px !important; }
+    .fix-copy { margin-top: 74px !important; font-size: 12px !important; }
+  }
+
+  /* strong defensive rule to stop inherited scaling */
+  .fix-footer * { box-sizing: border-box !important; }
+  .fix-footer img, .fix-footer svg { max-width: none !important; max-height: none !important; transform: none !important; }
 </style>
 
-<footer class="scf" role="contentinfo" aria-label="Seechur Agro footer">
-  <div class="scf-inner" role="group" aria-label="footer brand and social">
-    <div class="scf-logo-wrap" aria-hidden="false">
-      <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo" />
+<footer class="fix-footer" role="contentinfo" aria-label="Seechur Agro footer">
+  <div class="inner">
+    <!-- left logo (normal flow) -->
+    <div class="fix-logo" aria-hidden="false">
+      <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo">
     </div>
 
-    <div class="scf-icons" aria-label="Seechur Agro social links">
-      <a class="scf-icon" href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
+    <!-- centered icons (absolute, always center) -->
+    <div class="fix-icons" role="navigation" aria-label="Seechur Agro social links">
+      <a class="fix-icon-btn" href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
 
-      <a class="scf-icon" href="mailto:seechu@seechuragro.in" title="Email" aria-label="Email">
+      <a class="fix-icon-btn" href="mailto:seechu@seechuragro.in" aria-label="Email" title="Email">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
       </a>
 
-      <a class="scf-icon" href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+      <a class="fix-icon-btn" href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.9 3.87 6 2.48 6S0 4.9 0 3.5 1.11 1 2.5 1 4.98 2.1 4.98 3.5zM0 8h4.96v13H0V8zm7.5 0H12v1.8h.07c.57-1.08 1.96-2.22 4.03-2.22 4.31 0 5.11 2.84 5.11 6.54V21h-4.96v-5.3c0-1.27-.02-2.9-1.77-2.9-1.78 0-2.05 1.39-2.05 2.82V21H7.5V8z"/></svg>
       </a>
 
-      <a class="scf-icon" href="https://www.instagram.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+      <a class="fix-icon-btn" href="https://www.instagram.com/seechuragro" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 6.5A4.5 4.5 0 1016.5 13 4.5 4.5 0 0012 8.5zm6.8-3.7a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2z"/></svg>
       </a>
 
-      <a class="scf-icon" href="https://www.facebook.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
+      <a class="fix-icon-btn" href="https://www.facebook.com/seechuragro" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.2c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12H20l-.5 2.9h-2v7A10 10 0 0022 12z"/></svg>
       </a>
 
-      <a class="scf-icon" href="https://twitter.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
+      <a class="fix-icon-btn" href="https://twitter.com/seechuragro" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter" title="X / Twitter">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.46 6c-.77.34-1.6.57-2.46.67a4.26 4.26 0 001.88-2.35 8.6 8.6 0 01-2.7 1.03 4.22 4.22 0 00-7.2 3.85A12 12 0 013 4.79a4.2 4.2 0 001.3 5.63c-.66-.02-1.28-.2-1.82-.5v.05a4.22 4.22 0 003.38 4.13c-.6.16-1.24.2-1.9.08a4.22 4.22 0 003.94 2.93A8.47 8.47 0 012 19.5a11.95 11.95 0 006.29 1.84c7.55 0 11.68-6.27 11.68-11.7v-.53A8.36 8.36 0 0024 5.1a8.3 8.3 0 01-2.4.66z"/></svg>
       </a>
 
-      <a class="scf-icon" href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
+      <a class="fix-icon-btn" href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2s-.2-1.7-.8-2.4c-.7-.9-1.5-.9-1.9-1-2.7-.2-6.8-.2-6.8-.2s-4.1 0-6.8.2c-.4.1-1.2.1-1.9 1-.6.7-.8 2.4-.8 2.4S1 8 1 9.8v1.4C1 13.9 1.6 15.6 1.6 15.6s.2 1.7.8 2.4c.7.9 1.6.9 2 1 1.4.1 6.1.2 6.1.2s4.1 0 6.8-.2c.4-.1 1.2-.1 1.9-1 .6-.7.8-2.4.8-2.4s.6-1.7.6-3.5V9.8c0-1.8-.6-3.6-.6-3.6zM9.8 14.6v-5l4.8 2.5-4.8 2.5z"/></svg>
       </a>
 
-      <a class="scf-icon" href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
+      <a class="fix-icon-btn" href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Channel" title="WhatsApp Channel">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
 
-      <a class="scf-icon" href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
+      <a class="fix-icon-btn" href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" aria-label="Calendly" title="Book a meeting">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h5v5H7zM19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 14H5V9h14v9z"/></svg>
       </a>
     </div>
-
-    <div class="scf-right" aria-hidden="true"></div>
   </div>
 
-  <div class="scf-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
+  <div class="fix-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
 </footer>
 
 <script>
-  // set year and enforce sizes after load
-  (function footerEnforce(){
+  // set year and re-enforce sizes (defensive)
+  (function(){
     try {
       const y = document.getElementById('year');
       if(y) y.textContent = new Date().getFullYear();
 
-      const footer = document.querySelector('.scf');
+      const footer = document.querySelector('.fix-footer');
       if(!footer) return;
-
-      const icons = footer.querySelectorAll('.scf-icon');
+      const icons = footer.querySelectorAll('.fix-icon-btn');
       icons.forEach(a=>{
-        a.style.width = '40px';
-        a.style.height = '40px';
-        a.style.minWidth = '40px';
-        a.style.minHeight = '40px';
-        a.style.padding = '0';
+        a.style.width='40px';
+        a.style.height='40px';
         const svg = a.querySelector('svg');
-        if(svg){
-          svg.style.width = '16px';
-          svg.style.height = '16px';
-        }
+        if(svg){ svg.style.width='16px'; svg.style.height='16px'; }
       });
-
-      const logo = footer.querySelector('.scf-logo-wrap img');
-      if(logo){
-        logo.style.height = '52px';
-        logo.style.margin = '0';
-      }
+      const logo = footer.querySelector('.fix-logo img');
+      if(logo) logo.style.height='52px';
     } catch(e){}
   })();
 </script>
-
-<!-- preserved fade-in script -->
-<script>
-(function(){
-  const cards=[...document.querySelectorAll('.card')];
-  if(cards && cards.length){
-    const io=new IntersectionObserver((entries)=>{
-      entries.forEach(e=>{
-        if(e.isIntersecting){
-          e.target.style.opacity = 1;
-          e.target.style.transform = 'translateY(0)';
-          io.unobserve(e.target);
-        }
-      });
-    },{threshold:0.12});
-    cards.forEach(c=>{
-      c.style.opacity = 0;
-      c.style.transform = 'translateY(14px)';
-      io.observe(c);
-    });
-  }
-})();
-</script>
+<!-- ===== end defensive footer ===== -->
 
 </body>
 </html>
