@@ -11,11 +11,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/style.css">
 
-<!-- Page-specific inline styles (kept scoped to avoid overriding global styles) -->
 <style>
+  /* PAGE-SCOPED: main layout */
   :root{ --text:#f3fff6; --muted:#cfe9d8; --glass:rgba(255,255,255,.12); --max:1100px; }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Poppins',system-ui,sans-serif;color:var(--text);min-height:100vh;}
+  body{font-family:'Poppins',system-ui,sans-serif;color:var(--text);min-height:100vh; -webkit-font-smoothing:antialiased;}
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
     background:linear-gradient(180deg,rgba(0,0,0,.30),rgba(0,0,0,.40)),url('/assets/hydroponic-bg.jpg?v=42') center/cover no-repeat;
@@ -46,41 +46,120 @@
   .tags{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:8px}
   .tag{padding:6px 10px; border-radius:999px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.12); color:#eafff4; font-size:.9rem}
 
-  /* Defensive base footer style (kept minimal — the working footer markup below supplies final UI) */
-  footer{ text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:30px; }
+  /* ----------------------------
+     DEFENSIVE FOOTER STYLES (very specific)
+     Ensures icons don't get huge due to global overrides
+     ---------------------------- */
+  footer.footer-wrap { text-align:center; color:#d9ffe6; padding:28px 12px 40px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:28px; position:relative; z-index:6; }
 
-  /* small helper so injected footer doesn't get cut */
-  .footer-wrap img{ display:block; max-width:100%; height:auto; }
+  /* top row with logo + socials */
+  footer.footer-wrap .footer-top { display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+
+  footer.footer-wrap .footer-logo { display:inline-flex; align-items:center; gap:10px; justify-content:center; }
+  footer.footer-wrap .footer-logo img {
+    width:44px !important;
+    height:44px !important;
+    object-fit:contain !important;
+    border-radius:6px !important;
+    display:block !important;
+  }
+
+  /* socials: enforce explicit box sizes and prevent SVGs from growing */
+  footer.footer-wrap .footer-socials {
+    display:flex !important;
+    gap:10px !important;
+    justify-content:center !important;
+    align-items:center !important;
+    margin-top:4px !important;
+    flex-wrap:wrap !important;
+  }
+
+  /* anchor (button) */
+  footer.footer-wrap .footer-socials a{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    width:44px !important;
+    height:44px !important;
+    min-width:0 !important;
+    min-height:0 !important;
+    padding:0 !important;
+    border-radius:10px !important;
+    background:rgba(0,0,0,.12) !important;
+    border:1px solid rgba(255,255,255,.04) !important;
+    text-decoration:none !important;
+    box-sizing:border-box !important;
+    transition: transform .12s ease, background .12s ease !important;
+    overflow:hidden !important;
+  }
+
+  /* svg icon inside link */
+  footer.footer-wrap .footer-socials a svg{
+    width:20px !important;
+    height:20px !important;
+    max-width:100% !important;
+    max-height:100% !important;
+    display:block !important;
+    fill:#eafff4 !important;
+    flex:0 0 auto !important;
+  }
+
+  /* hover */
+  footer.footer-wrap .footer-socials a:hover{
+    transform:translateY(-4px) !important;
+    background:rgba(0,0,0,.24) !important;
+  }
+
+  /* copyright */
+  footer.footer-wrap .footer-copy{ font-size:.95rem; margin-top:10px; color:#d9ffe6 }
+
+  /* responsive tweaks: slightly smaller buttons on narrow screens */
+  @media (max-width:520px){
+    footer.footer-wrap .footer-socials a{ width:38px !important; height:38px !important; border-radius:10px !important; }
+    footer.footer-wrap .footer-socials a svg{ width:16px !important; height:16px !important; }
+    footer.footer-wrap .footer-logo img{ width:40px !important; height:40px !important; }
+  }
+
+  /* FINAL DEFENSIVE: override any other footer rules that might affect svgs or anchors */
+  :where(body) footer.footer-wrap .footer-socials a,
+  :where(body) footer.footer-wrap .footer-socials a svg,
+  :where(body) footer.footer-wrap .footer-logo img {
+    -webkit-tap-highlight-color: transparent;
+    image-rendering: auto !important;
+  }
+
+  /* ensure no global :root or svg global style breaks this area */
+  footer.footer-wrap svg { vector-effect: non-scaling-stroke; }
 </style>
 
-<!-- ===== JSON-LD: BreadcrumbList & Webpage & Organization & (placeholder) Advisor Schema ===== -->
+<!-- JSON-LD: structured data (WebPage, BreadcrumbList, Organization, Person placeholder) -->
 <script type="application/ld+json">
 {
-  "@context": "https://schema.org",
-  "@graph": [
+  "@context":"https://schema.org",
+  "@graph":[
     {
-      "@type": "WebPage",
-      "@id": "https://seechuragro.in/advisors.html",
-      "url": "https://seechuragro.in/advisors.html",
-      "name": "Advisors — Seechur Agro",
-      "description": "Advisory panel in formation for Seechur Agro covering protected cultivation, turmeric value chains and quality testing.",
-      "inLanguage": "en-IN",
-      "isPartOf": { "@id": "https://seechuragro.in/#website" }
+      "@type":"WebPage",
+      "@id":"https://seechuragro.in/advisors.html",
+      "url":"https://seechuragro.in/advisors.html",
+      "name":"Advisors — Seechur Agro",
+      "description":"Advisory panel in formation for Seechur Agro covering protected cultivation, turmeric value chains and quality testing.",
+      "inLanguage":"en-IN",
+      "isPartOf": {"@id":"https://seechuragro.in/#website"}
     },
     {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://seechuragro.in/" },
-        { "@type": "ListItem", "position": 2, "name": "Advisors", "item": "https://seechuragro.in/advisors.html" }
+      "@type":"BreadcrumbList",
+      "itemListElement":[
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://seechuragro.in/"},
+        {"@type":"ListItem","position":2,"name":"Advisors","item":"https://seechuragro.in/advisors.html"}
       ]
     },
     {
-      "@type": "Organization",
-      "@id": "https://seechuragro.in/#org",
-      "name": "Seechur Agro Private Limited",
-      "url": "https://seechuragro.in/",
-      "logo": "https://seechuragro.in/assets/logo.png",
-      "sameAs": [
+      "@type":"Organization",
+      "@id":"https://seechuragro.in/#org",
+      "name":"Seechur Agro Private Limited",
+      "url":"https://seechuragro.in/",
+      "logo":"https://seechuragro.in/assets/logo.png",
+      "sameAs":[
         "https://www.linkedin.com/in/srivatsan-renga-85219151",
         "https://www.instagram.com/seechuragro",
         "https://www.facebook.com/seechuragro",
@@ -89,24 +168,20 @@
         "https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p",
         "https://calendly.com/seechu-seechuragro"
       ],
-      "contactPoint": [{
-        "@type":"ContactPoint",
-        "contactType":"customer support",
-        "email":"mailto:seechu@seechuragro.in"
-      }]
+      "contactPoint":[{"@type":"ContactPoint","contactType":"customer support","email":"mailto:seechu@seechuragro.in"}]
     },
     {
-      "@type": "Person",
-      "name": "Advisor (TBA)",
-      "description": "Placeholder advisor entry — final advisor names and detailed profiles will be published when confirmed.",
-      "jobTitle": "Advisor",
-      "worksFor": { "@id": "https://seechuragro.in/#org" }
+      "@type":"Person",
+      "name":"Advisor (TBA)",
+      "description":"Placeholder advisor entry — final advisor names and detailed profiles will be published when confirmed.",
+      "jobTitle":"Advisor",
+      "worksFor":{"@id":"https://seechuragro.in/#org"}
     }
   ]
 }
 </script>
-
 </head>
+
 <body>
 
 <!-- Shared Navbar -->
@@ -118,15 +193,17 @@
       const host=document.getElementById('navbar-placeholder'); host.innerHTML=html;
       host.querySelectorAll('script').forEach(s=>{
         const n=document.createElement('script');
-        if(s.src) n.src=s.src; else n.textContent=s.textContent;
+        if(s.src){
+          // make script src absolute if necessary
+          n.src = s.src;
+        } else n.textContent = s.textContent;
         document.body.appendChild(n);
       });
-      // robust active link highlight
       document.querySelectorAll('.menu a').forEach(a=>{
         const href=(a.getAttribute('href')||'').toLowerCase();
         if(href.endsWith('advisors.html') || href.endsWith('/advisors')) a.classList.add('active');
       });
-    }).catch(()=>{/* navbar not critical */});
+    }).catch(()=>{/* navbar missing: continue */});
 })();
 </script>
 
@@ -137,7 +214,6 @@
   <p>We’re assembling a small, hands-on advisory panel covering protected cultivation, Lakadong turmeric value chains, and quality/testing.</p>
 
   <section class="grid" aria-label="Advisors list">
-    <!-- Placeholder Advisor (TBA) -->
     <article class="card" role="article">
       <div class="avatar"><img src="/assets/avatar-placeholder.jpg" alt="Advisor placeholder" onerror="this.src='/assets/avatar-placeholder.jpg'"></div>
       <h2>Advisor (TBA)</h2>
@@ -151,7 +227,7 @@
   </section>
 </main>
 
-<!-- ====== FOOTER (exact working footer copied from financials.html) ====== -->
+<!-- FOOTER (exact design from financials, with defensive CSS above to avoid blown icons) -->
 <footer class="footer-wrap" role="contentinfo">
   <div class="footer-top">
     <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
@@ -215,11 +291,9 @@
     }, {threshold:.18});
     cards.forEach(c => io.observe(c));
   } else {
-    // fallback: show all
     cards.forEach(c=>c.classList.add('show'));
   }
 })();
 </script>
-
 </body>
 </html>
