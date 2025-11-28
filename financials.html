@@ -77,7 +77,7 @@
 <meta property="og:locale" content="en_IN">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Financials & Investor Outlook — Seechur Agro">
-<meta property="og:description" content="Use-of-funds (₹3.0 Cr), revenue and profit projections, and investor outlook for Seechur Agro's Edaiyarpakkam hydroponic project." />
+<meta property="og:description" content="Use-of-funds (₹3.0 Cr), revenue and profit projections, charts and investor highlights for Seechur Agro's hydroponic project." />
 <meta property="og:url" content="https://seechuragro.in/financials.html">
 <meta property="og:site_name" content="Seechur Agro">
 <meta property="og:image" content="https://seechuragro.in/assets/og-lakadong.png">
@@ -217,7 +217,7 @@
   <!-- Yield Scenario Charts -->
   <h2>Yield Scenario Visuals</h2>
   <div class="card">
-    <h3 style="margin-bottom:8px">Revenue (₹ Cr) by Yield Scenario</h3>
+    <h3 style="margin-bottom:8px; color:#ffffff;">Revenue (₹ Cr) by Yield Scenario</h3>
     <div id="revChart" class="chart" role="img" aria-label="Revenue by yield scenario line chart"></div>
     <div class="legend">
       <span><span class="key" style="background:var(--c100)"></span>100% Yield</span>
@@ -229,7 +229,7 @@
 
   <div class="grid">
     <div class="card">
-      <h3 style="margin-bottom:8px">Net Profit (₹ Cr) by Yield Scenario</h3>
+      <h3 style="margin-bottom:8px; color:#ffffff;">Net Profit (₹ Cr) by Yield Scenario</h3>
       <div id="npChart" class="chart" role="img" aria-label="Net profit by yield scenario line chart"></div>
       <div class="legend">
         <span><span class="key" style="background:var(--c100)"></span>100% Yield</span>
@@ -240,7 +240,7 @@
     </div>
 
     <div class="card">
-      <h3 style="margin-bottom:8px">Dividend Payout (₹ Cr) by Yield Scenario</h3>
+      <h3 style="margin-bottom:8px; color:#ffffff;">Dividend Payout (₹ Cr) by Yield Scenario</h3>
       <div id="divChart" class="chart" role="img" aria-label="Dividend payout by yield scenario line chart"></div>
       <div class="legend">
         <span><span class="key" style="background:var(--c100)"></span>100% Yield</span>
@@ -305,7 +305,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
 
-      <a href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
+      <a href="https://calendly.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h5v5H7zM19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 14H5V9h14v9z"/></svg>
       </a>
     </div>
@@ -443,7 +443,7 @@ function donutChart(el, slices){
   // charts data (in ₹ Cr)
   const revenue100 = [1.8, 3.2, 5.2, 5.2, 5.2, 5.2];
   const revenue80  = revenue100.map(v => +(v*0.80).toFixed(2));
-  const revenue70  = revenue100.map(v => +(v*0.70).toFixed(2));
+  const revenue70  = revenue100.map(v => +(v*0.70).toFixed(02));
 
   const np100 = [0.8, 1.8, 3.10, 3.15, 3.18, 3.19];
   const np80  = [0.5, 1.2, 1.80, 1.80, 1.80, 1.80];
