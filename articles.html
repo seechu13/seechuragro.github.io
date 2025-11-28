@@ -80,6 +80,17 @@
 }
 </script>
 
+<!-- Add WebPage JSON-LD for page completeness (keeps schema consistent across pages) -->
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"WebPage",
+  "url":"https://seechuragro.in/articles.html",
+  "name":"Seechur Agro — Articles & Farming Guides",
+  "description":"Readable, practical notes on hydroponics, Lakadong turmeric, and microgreens."
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -125,109 +136,6 @@
 
   /* BASIC footer baseline kept but we'll override with defensive footer below */
   footer { text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:var(--footer-bg); backdrop-filter:blur(4px); margin-top:30px; }
-
-  /* ------------------------
-     DEFENSIVE CENTERED FOOTER
-     logo + icons inline and centered
-     Scoped to .sf-cent-footer to avoid conflicts
-     ------------------------ */
-  .sf-cent-footer {
-    --maxw:1100px;
-    background: linear-gradient(180deg, rgba(0,0,0,0.58), rgba(0,0,0,0.66));
-    padding: 22px 18px 18px;
-    color: #eaf8ee;
-    backdrop-filter: blur(4px);
-    border-top: 1px solid rgba(255,255,255,0.04);
-    position: relative;
-    z-index: 10;
-  }
-
-  .sf-cent-inner {
-    max-width: var(--maxw);
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center; /* center whole block */
-    gap: 18px;
-    flex-direction: column;
-    padding: 6px 8px;
-  }
-
-  /* The central row that contains icons and logo inline */
-  .sf-cent-row {
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:14px;
-    flex-wrap:nowrap;
-  }
-
-  /* icon button */
-  .sf-icon {
-    display:inline-grid;
-    place-items:center;
-    width:44px !important;
-    height:44px !important;
-    min-width:44px !important;
-    min-height:44px !important;
-    border-radius:10px !important;
-    background: rgba(255,255,255,0.04) !important;
-    color: #eaf8ee !important;
-    text-decoration:none !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.36), inset 0 1px rgba(255,255,255,0.02) !important;
-    transition: transform .16s ease, background .16s ease !important;
-  }
-  .sf-icon svg { width:18px !important; height:18px !important; fill:currentColor !important; display:block; }
-
-  .sf-icon:hover { transform: translateY(-3px) !important; background: rgba(255,255,255,0.06) !important; }
-
-  /* Logo placed inline with icons — styled as a square btn so it matches */
-  .sf-logo-inline {
-    display:inline-grid;
-    place-items:center;
-    width:48px !important;
-    height:48px !important;
-    min-width:48px !important;
-    min-height:48px !important;
-    border-radius:8px !important;
-    background: rgba(255,255,255,0.03) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.36) !important;
-  }
-  .sf-logo-inline img {
-    display:block !important;
-    width:36px !important;
-    height:36px !important;
-    object-fit:contain !important;
-    margin:0 !important;
-  }
-
-  /* copyright row */
-  .sf-cent-copy {
-    margin-top:12px;
-    font-size:13px;
-    color:#cfeee0;
-    opacity:.95;
-    text-align:center;
-  }
-
-  /* responsive: allow wrapping and smaller sizes */
-  @media (max-width:520px) {
-    .sf-cent-row { gap:10px; flex-wrap:wrap; }
-    .sf-icon { width:38px !important; height:38px !important; min-width:38px !important; min-height:38px !important; }
-    .sf-icon svg { width:16px !important; height:16px !important; }
-    .sf-logo-inline { width:44px !important; height:44px !important; }
-    .sf-logo-inline img { width:34px !important; height:34px !important; }
-  }
-
-  /* VERY DEFENSIVE: ensure nothing else can override these sizes */
-  .sf-cent-footer .sf-icon,
-  .sf-cent-footer .sf-logo-inline,
-  .sf-cent-footer .sf-icon svg,
-  .sf-cent-footer .sf-logo-inline img {
-    width: auto !important;
-    min-width: 0 !important;
-    /* we set explicit width/height above; keep those enforced */
-  }
 </style>
 </head>
 <body>
@@ -275,79 +183,71 @@
   <div id="fallback" class="empty" style="display:none">No articles yet.</div>
 </main>
 
-<!-- ======= REPLACEMENT FOOTER: MATCHES ADVISORS FOOTER VISUALS ======= -->
-<footer class="sf-cent-footer" role="contentinfo" aria-label="Seechur Agro footer">
-  <style>
-    /* Scoped overrides to ensure articles footer matches advisors */
-    .sf-cent-footer { --maxw:1100px; background: linear-gradient(180deg, rgba(0,0,0,0.58), rgba(0,0,0,0.66)); padding:22px 18px 18px; color:#eaf8ee; backdrop-filter: blur(4px); border-top:1px solid rgba(255,255,255,0.04); z-index:10; }
-    .sf-cent-inner{ max-width:var(--maxw); margin:0 auto; display:flex; align-items:center; justify-content:center; gap:18px; flex-direction:column; padding:6px 8px; }
-    .sf-cent-row{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
-    .sf-icon{ display:inline-grid; place-items:center; width:44px; height:44px; min-width:44px; min-height:44px; border-radius:10px; background: rgba(255,255,255,0.04); color:#eaf8ee; text-decoration:none; box-shadow:0 8px 20px rgba(0,0,0,0.44), inset 0 1px rgba(255,255,255,0.02); transition: transform .22s cubic-bezier(.2,.9,.2,1), box-shadow .22s, background .22s, border-color .22s; }
-    .sf-icon svg{ width:20px; height:20px; display:block; fill:currentColor; opacity:0.95; transition: transform .22s ease, filter .22s ease; }
-    .sf-icon:hover{ transform: translateY(-6px) scale(1.03); box-shadow:0 18px 36px rgba(0,0,0,.55); background: rgba(111,255,189,0.03); border-color: rgba(111,255,189,0.12); }
-    .sf-icon:hover svg{ filter:drop-shadow(0 0 6px rgba(111,255,189,.95)); transform: translateY(-1px); }
+<!-- ======= REPLACEMENT FOOTER: MATCHES financials.html footer exactly ======= -->
+<!-- small scoped CSS to enforce the exact footer UI and prevent site-wide overrides -->
+<style>
+  /* scoped footer styles — very specific so they override global CSS where necessary */
+  footer.footer-wrap { text-align:center; color:#d9ffe6; padding:28px 12px 40px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:28px; position:relative; z-index:10; }
+  footer.footer-wrap .footer-top { display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+  footer.footer-wrap .footer-logo{ display:inline-flex; align-items:center; gap:10px; justify-content:center; }
+  footer.footer-wrap .footer-logo img{ width:44px !important; height:44px !important; object-fit:contain; border-radius:6px; display:block; }
+  footer.footer-wrap .footer-socials{ display:flex !important; gap:10px !important; justify-content:center !important; align-items:center !important; margin-top:4px !important; flex-wrap:wrap !important; }
+  footer.footer-wrap .footer-socials a{ display:inline-flex !important; align-items:center !important; justify-content:center !important; width:36px !important; height:36px !important; border-radius:8px !important; background:rgba(0,0,0,.12) !important; border:1px solid rgba(255,255,255,.04) !important; text-decoration:none !important; transition:transform .12s ease, background .12s ease !important; overflow:hidden !important; }
+  footer.footer-wrap .footer-socials a:hover{ transform:translateY(-3px) !important; background:rgba(0,0,0,.24) !important; }
+  footer.footer-wrap .footer-socials svg{ width:18px !important; height:18px !important; fill:#eafff4 !important; display:block !important; }
+  footer.footer-wrap .footer-copy{ font-size:.95rem; margin-top:10px; color:#d9ffe6 }
+  @media (max-width:520px){ footer.footer-wrap .footer-socials a{ width:34px !important; height:34px !important } footer.footer-wrap .footer-socials svg{ width:16px !important; height:16px !important } footer.footer-wrap .footer-logo img{ width:40px !important; height:40px !important } }
+  /* final defensive rules */
+  footer.footer-wrap .footer-socials a svg{ max-width:100% !important; max-height:100% !important; }
+  footer.footer-wrap img{ display:block; image-rendering:auto !important; }
+</style>
 
-    .sf-logo-inline{ display:inline-grid; place-items:center; width:48px; height:48px; min-width:48px; min-height:48px; border-radius:8px; background: rgba(255,255,255,0.03); box-shadow:0 8px 20px rgba(0,0,0,0.44); padding:6px; }
-    .sf-logo-inline img{ display:block; width:36px; height:36px; object-fit:contain; margin:0; }
+<footer class="footer-wrap" role="contentinfo">
+  <div class="footer-top">
+    <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
+      <img src="/assets/logo.png" alt="Seechur Agro logo">
+    </div>
 
-    .sf-cent-copy{ margin-top:14px; font-size:.94rem; opacity:.95; text-align:center; color:#cfeee0; }
-
-    @media (max-width:520px){ .sf-cent-row{ gap:10px; } .sf-icon{ width:38px; height:38px; } .sf-icon svg{ width:16px; height:16px } .sf-logo-inline{ width:44px; height:44px } .sf-logo-inline img{ width:34px; height:34px } }
-
-    /* Extra defensive rule to avoid earlier overrides */
-    .sf-cent-footer .sf-icon, .sf-cent-footer .sf-logo-inline, .sf-cent-footer .sf-icon svg, .sf-cent-footer .sf-logo-inline img { box-sizing:border-box !important; }
-  </style>
-
-  <div class="sf-cent-inner" role="group" aria-label="footer brand and social">
-    <div class="sf-cent-row" role="navigation" aria-label="Seechur Agro social links and logo">
-
-      <!-- Left icons -->
-      <a class="sf-icon" href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
+    <div class="footer-socials" aria-label="Seechur Agro social links">
+      <a href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
 
-      <a class="sf-icon" href="mailto:seechu@seechuragro.in" title="Email" aria-label="Email">
+      <a href="mailto:seechu@seechuragro.in" target="_blank" rel="noopener noreferrer" title="Email" aria-label="Email">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
       </a>
 
-      <a class="sf-icon" href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+      <a href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.9 3.87 6 2.48 6S0 4.9 0 3.5 1.11 1 2.5 1 4.98 2.1 4.98 3.5zM0 8h4.96v13H0V8zm7.5 0H12v1.8h.07c.57-1.08 1.96-2.22 4.03-2.22 4.31 0 5.11 2.84 5.11 6.54V21h-4.96v-5.3c0-1.27-.02-2.9-1.77-2.9-1.78 0-2.05 1.39-2.05 2.82V21H7.5V8z"/></svg>
       </a>
 
-      <a class="sf-icon" href="https://www.instagram.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+      <a href="https://www.instagram.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 6.5A4.5 4.5 0 1016.5 13 4.5 4.5 0 0012 8.5zm6.8-3.7a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2z"/></svg>
       </a>
 
-      <!-- LOGO centered inline -->
-      <div class="sf-logo-inline" aria-hidden="false" title="Seechur Agro">
-        <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo" />
-      </div>
-
-      <!-- Right icons -->
-      <a class="sf-icon" href="https://www.facebook.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
+      <a href="https://www.facebook.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.2c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12H20l-.5 2.9h-2v7A10 10 0 0022 12z"/></svg>
       </a>
 
-      <a class="sf-icon" href="https://twitter.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
+      <a href="https://twitter.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.46 6c-.77.34-1.6.57-2.46.67a4.26 4.26 0 001.88-2.35 8.6 8.6 0 01-2.7 1.03 4.22 4.22 0 00-7.2 3.85A12 12 0 013 4.79a4.2 4.2 0 001.3 5.63c-.66-.02-1.28-.2-1.82-.5v.05a4.22 4.22 0 003.38 4.13c-.6.16-1.24.2-1.9.08a4.22 4.22 0 003.94 2.93A8.47 8.47 0 012 19.5a11.95 11.95 0 006.29 1.84c7.55 0 11.68-6.27 11.68-11.7v-.53A8.36 8.36 0 0024 5.1a8.3 8.3 0 01-2.4.66z"/></svg>
       </a>
 
-      <a class="sf-icon" href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
+      <a href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2s-.2-1.7-.8-2.4c-.7-.9-1.5-.9-1.9-1-2.7-.2-6.8-.2-6.8-.2s-4.1 0-6.8.2c-.4.1-1.2.1-1.9 1-.6.7-.8 2.4-.8 2.4S1 8 1 9.8v1.4C1 13.9 1.6 15.6 1.6 15.6s.2 1.7.8 2.4c.7.9 1.6.9 2 1 1.4.1 6.1.2 6.1.2s4.1 0 6.8-.2c.4-.1 1.2-.1 1.9-1 .6-.7.8-2.4.8-2.4s.6-1.7.6-3.5V9.8c0-1.8-.6-3.6-.6-3.6zM9.8 14.6v-5l4.8 2.5-4.8 2.5z"/></svg>
       </a>
 
-      <a class="sf-icon" href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
+      <a href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
 
-      <a class="sf-icon" href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
+      <a href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h5v5H7zM19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 14H5V9h14v9z"/></svg>
       </a>
-
     </div>
-
-    <div class="sf-cent-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
   </div>
+
+  <div class="footer-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
 </footer>
 <!-- ======= END REPLACEMENT FOOTER ======= -->
 
@@ -414,4 +314,3 @@
 </script>
 </body>
 </html>
-
