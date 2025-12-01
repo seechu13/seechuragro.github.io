@@ -1,0 +1,22 @@
+name: Trigger Article Publishing Workflow
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      # Only run when article data changes
+      - 'articles.html'
+      - 'articles/**'
+      - 'content/articles/**'
+      - 'assets/articles/**'
+      - 'article.json'
+      - 'src/articles/**'
+      - 'public/articles/**'
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Safe check
+        run: echo "Article-related change detected. Workflow will handle posting steps once added."
