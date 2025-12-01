@@ -1,11 +1,10 @@
-name: Trigger Article Publishing Workflow
+name: Post Article to Socials on Staging Merge
 
 on:
   push:
     branches:
       - staging
     paths:
-      # Only run when article data changes
       - 'articles.html'
       - 'articles/**'
       - 'content/articles/**'
@@ -14,9 +13,137 @@ on:
       - 'src/articles/**'
       - 'public/articles/**'
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
-  noop:
+  post-articles:
     runs-on: ubuntu-latest
+    env:
+      # Add these as GitHub Secrets (see list below)
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+      LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
+      META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
+      META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+      WHATSAPP_API_TOKEN: ${{ secrets.WHATSAPP_API_TOKEN }}
+      YOUTUBE_OAUTH_REFRESH_TOKEN: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
+      SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
     steps:
-      - name: Safe check
-        run: echo "Article-related change detected. Workflow will handle posting steps once added."
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Find changed article JSON files
+        id: find
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD || true)
+          echo "Changed files:"
+          echo "$CHANGED"
+          files=$(echo "$CHANGED" | tr '\n' ' ' | xargs -n1 | grep -E '^articles/.*\.json$|^content/articles/.*\.json$|^src/articles/.*\.json$|^article\.json$' || true)
+          if [ -z "$files" ]; then
+            echo "no_article_files=true" >> $GITHUB_OUTPUT
+            echo "No article JSON files changed. Exiting."
+            exit 0
+          fi
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          for f in $files; do
+            echo "$f"
+          done
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Process each article JSON and post
+        if: steps.find.outputs.no_article_files != 'true'
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            echo "Processing: $file"
+            if [ ! -f "$file" ]; then
+              echo "File $file not present; skipping."
+              continue
+            fi
+
+            title=$(jq -r '.title // .headline // empty' "$file" | sed 's/"/\\"/g')
+            excerpt=$(jq -r '.excerpt // .summary // empty' "$file" | sed 's/"/\\"/g')
+            slug=$(jq -r '.slug // empty' "$file")
+            url=$(jq -r '.url // empty' "$file")
+            cover=$(jq -r '.cover_image // .cover // .image // empty' "$file")
+
+            if [ -z "$url" ] && [ -n "${SITE_URL_BASE:-}" ] && [ -n "$slug" ]; then
+              url="${SITE_URL_BASE%/}/$slug"
+            fi
+
+            [ -z "$title" ] && title="New article"
+            [ -z "$excerpt" ] && excerpt=""
+
+            echo "Title: $title"
+            echo "URL: $url"
+            echo "Cover: $cover"
+
+            # --- Telegram ---
+            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+              caption="${title}\n\n${excerpt}\n\n${url}"
+              if [ -n "$cover" ]; then
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F photo="${cover}" \
+                  -F caption="${caption}" \
+                  -F parse_mode="HTML" || echo "Telegram photo send failed"
+              else
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                  -H "Content-Type: application/json" \
+                  -d "$(jq -nc --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$caption" '{chat_id:$chat_id, text:$text, parse_mode:"HTML"}')" || echo "Telegram message failed"
+              fi
+            else
+              echo "Telegram secrets not set — skipping."
+            fi
+
+            # --- LinkedIn Org Share ---
+            if [ -n "${LINKEDIN_ACCESS_TOKEN:-}" ] && [ -n "${LINKEDIN_ORG_URN:-}" ]; then
+              body=$(jq -n --arg owner "$LINKEDIN_ORG_URN" --arg text "$title - $excerpt" --arg url "$url" \
+                '{owner: $owner, text: { text: $text }, content: [{ contentEntities:[{ entityLocation: $url }], title: $text }]}')
+              curl -s -X POST "https://api.linkedin.com/v2/shares" \
+                -H "Authorization: Bearer ${LINKEDIN_ACCESS_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "$body" || echo "LinkedIn attempt finished"
+            else
+              echo "LinkedIn secrets not set — skipping."
+            fi
+
+            # --- Meta (Facebook Page / Instagram) ---
+            if [ -n "${META_PAGE_ACCESS_TOKEN:-}" ] && [ -n "${META_PAGE_ID:-}" ]; then
+              curl -s -X POST "https://graph.facebook.com/${META_PAGE_ID}/feed" \
+                -F "message=${title} - ${excerpt}" \
+                -F "link=${url}" \
+                -F "access_token=${META_PAGE_ACCESS_TOKEN}" || echo "Meta post attempt finished"
+            else
+              echo "Meta secrets not set — skipping Facebook/Instagram."
+            fi
+
+            # --- WhatsApp (Business API or channel) ---
+            if [ -n "${WHATSAPP_API_TOKEN:-}" ]; then
+              echo "WhatsApp token present — implement API call here if you have a Business account."
+              # Placeholder: implement your WhatsApp API POST here if you have API access.
+            else
+              echo "WhatsApp secret not set — skipping."
+            fi
+
+            # --- YouTube (upload/shorts) ---
+            if [ -n "${YOUTUBE_OAUTH_REFRESH_TOKEN:-}" ]; then
+              echo "YouTube refresh token present — implement refresh+upload flow if desired."
+              # Placeholder: use refresh token to obtain access token and call YouTube Data API to post if you need.
+            else
+              echo "YouTube secret not set — skipping."
+            fi
+
+            # Create issue reminder for manual posting to any unsupported platforms
+            body="Auto-post executed for: ${title}\n\nURL: ${url}\n\nManual posting may be needed for X/YouTube/WhatsApp if APIs are not connected."
+            gh issue create --title "Manual social post: ${title}" --body "$body" || echo "gh CLI not available - issue creation skipped"
+
+          done <<EOF
+${{ steps.find.outputs.files }}
+EOF
