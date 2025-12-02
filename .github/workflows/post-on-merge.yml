@@ -1,4 +1,4 @@
-name: Post Article to Socials on Staging Merge (Telegram only, improved)
+name: Post Article to Socials on Staging Merge (validation only)
 
 on:
   push:
@@ -17,103 +17,18 @@ permissions:
   contents: read
 
 jobs:
-  post-articles:
+  validate-changes:
     runs-on: ubuntu-latest
-    env:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Find changed article files and post to Telegram
+      - name: Show last commit and changed files (validation)
         run: |
-          set -euo pipefail
-          echo "Starting Telegram posting step"
-
-          # Get changed files in the last commit
-          CHANGED="$(git diff --name-only HEAD~1 HEAD || true)"
-          echo "Changed files:"
-          echo "$CHANGED"
-
-          # Filter only the article JSON files we care about
-          FILES="$(printf '%s\n' "$CHANGED" | grep -E '^articles/.*\.json$|^content/articles/.*\.json$|^src/articles/.*\.json$|^article\.json$' || true)"
-          if [ -z "$FILES" ]; then
-            echo "No article JSON files changed. Exiting."
-            exit 0
-          fi
-
-          # Ensure jq and curl are available
-          sudo apt-get update -y
-          sudo apt-get install -y jq curl || true
-
-          # Iterate files and post
-          while IFS= read -r file; do
-            [ -z "$file" ] && continue
-            echo "Processing: $file"
-            if [ ! -f "$file" ]; then
-              echo "File not present on disk: $file"
-              continue
-            fi
-
-            # Extract fields
-            title="$(jq -r '.title // .headline // empty' "$file")"
-            excerpt="$(jq -r '.excerpt // .summary // empty' "$file")"
-            slug="$(jq -r '.slug // empty' "$file")"
-            url="$(jq -r '.url // empty' "$file")"
-            cover="$(jq -r '.cover_image // .cover // .image // empty' "$file")"
-
-            if [ -z "$url" ] && [ -n "${SITE_URL_BASE:-}" ] && [ -n "$slug" ]; then
-              url="${SITE_URL_BASE%/}/$slug"
-            fi
-
-            # Fallbacks
-            test -n "$title" || title="New article"
-            test -n "$excerpt" || excerpt=""
-
-            # Build caption with real newlines
-            caption="${title}
-            
-${excerpt}
-
-${url}"
-
-            echo "Caption preview (first 120 chars):"
-            echo "${caption}" | sed -n '1,6p'
-
-            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-              if [ -n "$cover" ]; then
-                echo "Sending photo to Telegram: $cover"
-                # Use form upload for photo; caption includes real newlines
-                resp=$(curl -s -w "|%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto" \
-                  -F chat_id="${TELEGRAM_CHAT_ID}" \
-                  -F photo="${cover}" \
-                  -F caption="${caption}" \
-                  -F parse_mode="HTML" || echo "error|0")
-                code=$(echo "$resp" | awk -F'|' '{print $NF}')
-                echo "Telegram photo response code: $code"
-                echo "Telegram photo response body:"
-                echo "$resp" | sed -E 's/\|[0-9]{3}$//'
-              else
-                echo "Sending text message to Telegram (JSON payload)"
-                # Build a proper JSON payload with jq to ensure correct escaping and newlines
-                json_payload=$(jq -nc --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$caption" '{chat_id:$chat_id, text:$text, parse_mode:"HTML"}')
-                resp=$(curl -s -w "|%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-                  -H "Content-Type: application/json" \
-                  --data-raw "$json_payload" || echo "error|0")
-                code=$(echo "$resp" | awk -F'|' '{print $NF}')
-                echo "Telegram message response code: $code"
-                echo "Telegram message response body:"
-                echo "$resp" | sed -E 's/\|[0-9]{3}$//'
-              fi
-            else
-              echo "Telegram secrets not set — skipped"
-            fi
-
-          done <<< "$FILES"
-
-          echo "Telegram posting step complete."
+          echo "Run by: $GITHUB_ACTOR"
+          echo "Commit: $GITHUB_SHA"
+          echo "Files changed in last commit:"
+          git --no-pager diff --name-only HEAD~1 HEAD || true
+          echo "End of list."
