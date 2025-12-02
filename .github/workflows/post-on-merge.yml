@@ -1,4 +1,4 @@
-name: Post Article to Socials on Staging Merge (Telegram only)
+name: Post Article to Socials on Staging Merge (Telegram only, improved)
 
 on:
   push:
@@ -47,7 +47,7 @@ jobs:
             exit 0
           fi
 
-          # Ensure curl and jq are available
+          # Ensure jq and curl are available
           sudo apt-get update -y
           sudo apt-get install -y jq curl || true
 
@@ -75,12 +75,20 @@ jobs:
             test -n "$title" || title="New article"
             test -n "$excerpt" || excerpt=""
 
-            caption="${title}\n\n${excerpt}\n\n${url}"
-            echo "Caption length: ${#caption}"
+            # Build caption with real newlines
+            caption="${title}
+            
+${excerpt}
 
-            if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+${url}"
+
+            echo "Caption preview (first 120 chars):"
+            echo "${caption}" | sed -n '1,6p'
+
+            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
               if [ -n "$cover" ]; then
                 echo "Sending photo to Telegram: $cover"
+                # Use form upload for photo; caption includes real newlines
                 resp=$(curl -s -w "|%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto" \
                   -F chat_id="${TELEGRAM_CHAT_ID}" \
                   -F photo="${cover}" \
@@ -88,14 +96,19 @@ jobs:
                   -F parse_mode="HTML" || echo "error|0")
                 code=$(echo "$resp" | awk -F'|' '{print $NF}')
                 echo "Telegram photo response code: $code"
+                echo "Telegram photo response body:"
+                echo "$resp" | sed -E 's/\|[0-9]{3}$//'
               else
-                echo "Sending text message to Telegram"
-                body=$(jq -nc --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$caption" '{chat_id:$chat_id, text:$text, parse_mode:"HTML"}')
+                echo "Sending text message to Telegram (JSON payload)"
+                # Build a proper JSON payload with jq to ensure correct escaping and newlines
+                json_payload=$(jq -nc --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$caption" '{chat_id:$chat_id, text:$text, parse_mode:"HTML"}')
                 resp=$(curl -s -w "|%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
                   -H "Content-Type: application/json" \
-                  -d "$body" || echo "error|0")
+                  --data-raw "$json_payload" || echo "error|0")
                 code=$(echo "$resp" | awk -F'|' '{print $NF}')
                 echo "Telegram message response code: $code"
+                echo "Telegram message response body:"
+                echo "$resp" | sed -E 's/\|[0-9]{3}$//'
               fi
             else
               echo "Telegram secrets not set — skipped"
