@@ -46,7 +46,6 @@ jobs:
 
       - name: Set up runtime tools
         run: |
-          # Ensure jq and python tooling available
           sudo apt-get update -y
           sudo apt-get install -y jq python3 python3-pip || true
           python3 -m pip install --upgrade pip
@@ -63,6 +62,7 @@ jobs:
             echo "No article JSON files changed. Exiting."
             exit 0
           fi
+          # Save matched files into the step output as a newline-separated string
           echo "files<<EOF" >> $GITHUB_OUTPUT
           for f in $files; do
             echo "$f"
@@ -72,7 +72,6 @@ jobs:
       - name: Process each article JSON and post
         if: steps.find.outputs.no_article_files != 'true'
         env:
-          # propagate envs for inner run
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
@@ -90,7 +89,10 @@ jobs:
           set -euo pipefail
 
           RESULTS_SUMMARY=""
-          while IFS= read -r file; do
+
+          # Safely read the files list from the previous step output
+          FILES="${{ steps.find.outputs.files }}"
+          printf '%s\n' "$FILES" | while IFS= read -r file; do
             [ -z "$file" ] && continue
             echo "Processing: $file"
             if [ ! -f "$file" ]; then
@@ -115,7 +117,6 @@ jobs:
             echo "URL: $url"
             echo "Cover: $cover"
 
-            # Initialize per-article result block
             ARTICLE_RESULT="Article: ${title}\nURL: ${url}\n\n"
 
             # --- Telegram ---
@@ -127,20 +128,16 @@ jobs:
                   -F photo="${cover}" \
                   -F caption="${caption}" \
                   -F parse_mode="HTML" || echo "error|0")
-                TELEGRAM_BODY=$(echo "$TELEGRAM_RESP" | sed -E 's/\|[0-9]{3}$//')
                 TELEGRAM_CODE=$(echo "$TELEGRAM_RESP" | awk -F'|' '{print $NF}')
-                echo "Telegram response code: $TELEGRAM_CODE"
                 ARTICLE_RESULT="${ARTICLE_RESULT}Telegram: photo send code=${TELEGRAM_CODE}\n"
               else
                 TELEGRAM_RESP=$(curl -s -w "|%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
                   -H "Content-Type: application/json" \
                   -d "$(jq -nc --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$caption" '{chat_id:$chat_id, text:$text, parse_mode:"HTML"}')" || echo "error|0")
                 TELEGRAM_CODE=$(echo "$TELEGRAM_RESP" | awk -F'|' '{print $NF}')
-                echo "Telegram response code: $TELEGRAM_CODE"
                 ARTICLE_RESULT="${ARTICLE_RESULT}Telegram: message send code=${TELEGRAM_CODE}\n"
               fi
             else
-              echo "Telegram secrets not set — skipping."
               ARTICLE_RESULT="${ARTICLE_RESULT}Telegram: skipped (secrets not set)\n"
             fi
 
@@ -154,10 +151,8 @@ jobs:
                 -H "Content-Type: application/json" \
                 -d "$body" || echo "error|0")
               LINKEDIN_CODE=$(echo "$LINKEDIN_RESP" | awk -F'|' '{print $NF}')
-              echo "LinkedIn response code: $LINKEDIN_CODE"
               ARTICLE_RESULT="${ARTICLE_RESULT}LinkedIn: share code=${LINKEDIN_CODE}\n"
             else
-              echo "LinkedIn secrets not set — skipping."
               ARTICLE_RESULT="${ARTICLE_RESULT}LinkedIn: skipped (secrets not set)\n"
             fi
 
@@ -168,20 +163,19 @@ jobs:
                 -F "link=${url}" \
                 -F "access_token=${META_PAGE_ACCESS_TOKEN}" || echo "error|0")
               META_CODE=$(echo "$META_RESP" | awk -F'|' '{print $NF}')
-              echo "Meta post code: $META_CODE"
               ARTICLE_RESULT="${ARTICLE_RESULT}Meta(FB/IG): code=${META_CODE}\n"
             else
               ARTICLE_RESULT="${ARTICLE_RESULT}Meta(FB/IG): skipped (not configured)\n"
             fi
 
-            # --- WhatsApp (Business API or channel) ---
+            # --- WhatsApp ---
             if [ -n "${WHATSAPP_API_TOKEN:-}" ]; then
               ARTICLE_RESULT="${ARTICLE_RESULT}WhatsApp: token present (API call placeholder)\n"
             else
               ARTICLE_RESULT="${ARTICLE_RESULT}WhatsApp: skipped (not configured)\n"
             fi
 
-            # --- YouTube (placeholder) ---
+            # --- YouTube ---
             if [ -n "${YOUTUBE_OAUTH_REFRESH_TOKEN:-}" ]; then
               ARTICLE_RESULT="${ARTICLE_RESULT}YouTube: refresh token present (upload placeholder)\n"
             else
@@ -191,11 +185,13 @@ jobs:
             # --- X (Twitter) ---
             if [ -n "${X_API_KEY:-}" ] && [ -n "${X_API_SECRET:-}" ] && [ -n "${X_ACCESS_TOKEN:-}" ] && [ -n "${X_ACCESS_SECRET:-}" ]; then
               echo "Posting to X (Twitter)..."
-              # ensure python oauth lib
               python3 -m pip install --quiet requests requests_oauthlib
 
-              # Use a short python snippet to compose and post the status, capture response code
-              X_RESP=$(python3 - <<'PY' || echo "error|0"
+              export TITLE="$title"
+              export EXCERPT="$excerpt"
+              export URL="$url"
+
+              X_RESP=$(python3 - <<'PY'
 import os, sys, json
 import requests
 from requests_oauthlib import OAuth1
@@ -220,41 +216,32 @@ resp = requests.post(
     auth=auth,
     data={'status': tweet}
 )
-# Print compact: status_code|body_json_or_text
 try:
     body = resp.json()
     print(f"{resp.status_code}|{json.dumps(body)}")
 except Exception:
     print(f"{resp.status_code}|{resp.text}")
 PY
-)
-              # If python echoed "error|0" the then X_RESP will reflect that.
-              # Extract code for summary
+) || X_RESP="0|python_error"
+
               X_CODE=$(echo "$X_RESP" | awk -F'|' '{print $1}' | tr -d '\r\n' || echo "0")
-              echo "X post returned code: ${X_CODE}"
               ARTICLE_RESULT="${ARTICLE_RESULT}X(Twitter): code=${X_CODE}\n"
             else
-              echo "X API secrets not set — skipping."
               ARTICLE_RESULT="${ARTICLE_RESULT}X(Twitter): skipped (secrets not set)\n"
             fi
 
             # Append per article results to global summary
             RESULTS_SUMMARY="${RESULTS_SUMMARY}\n${ARTICLE_RESULT}\n---\n"
 
-            # Create a quick GH issue reminder for manual posting (existing behavior)
+            # Try to create a per-article issue (optional)
             body="Auto-post executed for: ${title}\n\nURL: ${url}\n\nPlatforms summary:\n${ARTICLE_RESULT}\n\nIf any platform returned a non-200 code, please check API keys or logs."
-            # Try gh CLI; if not available, this will be skipped gracefully.
             gh issue create --title "Manual social post: ${title}" --body "$body" || echo "gh CLI not available - issue creation skipped"
 
-          done <<'EOF'
-${{ steps.find.outputs.files }}
-EOF
+          done
 
           # Final: create a consolidated issue with results (use the REST API via curl)
           FINAL_ISSUE_TITLE="Auto-post summary for staging push"
           FINAL_ISSUE_BODY="Auto posting summary for changed articles on staging:\n\n${RESULTS_SUMMARY}\n\nIf you need detailed logs, open the workflow run and inspect the job logs."
-          # Create a repo issue via GitHub REST API using GITHUB_TOKEN available to actions
           curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${GITHUB_REPOSITORY}/issues \
             -d "$(jq -nc --arg title "$FINAL_ISSUE_TITLE" --arg body "$FINAL_ISSUE_BODY" '{title:$title, body:$body}')" || echo "Failed to create summary issue (maybe issue creation limit or permission)."
-
