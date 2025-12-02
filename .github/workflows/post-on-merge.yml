@@ -59,10 +59,16 @@ jobs:
             echo "No article JSON files changed. Exiting."
             exit 0
           fi
-          echo "files<<EOF" >> $GITHUB_OUTPUT
+          # export newline-separated file list
+          FILES=""
           for f in $files; do
-            echo "$f"
+            FILES="${FILES}${f}\n"
           done
+          # write to output
+          printf "%b" "$FILES" > files_list.txt
+          # store as output
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          printf "%b" "$FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Process each article JSON and post
@@ -86,8 +92,10 @@ jobs:
 
           RESULTS_SUMMARY=""
 
+          # Read matched files list from previous step output
           FILES="${{ steps.find.outputs.files }}"
-          printf '%s\n' "$FILES" | while IFS= read -r file; do
+          # Ensure we interpret \n sequences properly (printf will expand)
+          printf '%b' "$FILES" | while IFS= read -r file; do
             [ -z "$file" ] && continue
             echo "Processing: $file"
             if [ ! -f "$file" ]; then
@@ -114,7 +122,7 @@ jobs:
 
             ARTICLE_RESULT="Article: ${title}\nURL: ${url}\n\n"
 
-            # Telegram
+            # --- Telegram ---
             if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
               caption="${title}\n\n${excerpt}\n\n${url}"
               if [ -n "$cover" ]; then
@@ -136,7 +144,7 @@ jobs:
               ARTICLE_RESULT="${ARTICLE_RESULT}Telegram: skipped (secrets not set)\n"
             fi
 
-            # LinkedIn
+            # --- LinkedIn Org Share ---
             if [ -n "${LINKEDIN_ACCESS_TOKEN:-}" ] && [ -n "${LINKEDIN_ORG_URN:-}" ]; then
               LINKEDIN_TEXT="${title} - ${excerpt}"
               body=$(jq -n --arg owner "$LINKEDIN_ORG_URN" --arg text "$LINKEDIN_TEXT" --arg url "$url" \
@@ -151,7 +159,7 @@ jobs:
               ARTICLE_RESULT="${ARTICLE_RESULT}LinkedIn: skipped (secrets not set)\n"
             fi
 
-            # Meta
+            # --- Meta (Facebook Page / Instagram) ---
             if [ -n "${META_PAGE_ACCESS_TOKEN:-}" ] && [ -n "${META_PAGE_ID:-}" ]; then
               META_RESP=$(curl -s -w "|%{http_code}" -X POST "https://graph.facebook.com/${META_PAGE_ID}/feed" \
                 -F "message=${title} - ${excerpt}" \
@@ -163,19 +171,21 @@ jobs:
               ARTICLE_RESULT="${ARTICLE_RESULT}Meta(FB/IG): skipped (not configured)\n"
             fi
 
-            # WhatsApp / YouTube placeholders
+            # --- WhatsApp ---
             if [ -n "${WHATSAPP_API_TOKEN:-}" ]; then
               ARTICLE_RESULT="${ARTICLE_RESULT}WhatsApp: token present (API call placeholder)\n"
             else
               ARTICLE_RESULT="${ARTICLE_RESULT}WhatsApp: skipped (not configured)\n"
             fi
+
+            # --- YouTube ---
             if [ -n "${YOUTUBE_OAUTH_REFRESH_TOKEN:-}" ]; then
               ARTICLE_RESULT="${ARTICLE_RESULT}YouTube: refresh token present (upload placeholder)\n"
             else
               ARTICLE_RESULT="${ARTICLE_RESULT}YouTube: skipped (not configured)\n"
             fi
 
-            # X (Twitter)
+            # --- X (Twitter) ---
             if [ -n "${X_API_KEY:-}" ] && [ -n "${X_API_SECRET:-}" ] && [ -n "${X_ACCESS_TOKEN:-}" ] && [ -n "${X_ACCESS_SECRET:-}" ]; then
               echo "Posting to X (Twitter)..."
               python3 -m pip install --quiet requests requests_oauthlib
@@ -223,13 +233,16 @@ PY
               ARTICLE_RESULT="${ARTICLE_RESULT}X(Twitter): skipped (secrets not set)\n"
             fi
 
+            # Append per article results to global summary
             RESULTS_SUMMARY="${RESULTS_SUMMARY}\n${ARTICLE_RESULT}\n---\n"
 
+            # Create a per-article issue (optional)
             body="Auto-post executed for: ${title}\n\nURL: ${url}\n\nPlatforms summary:\n${ARTICLE_RESULT}\n\nIf any platform returned a non-200 code, please check API keys or logs."
             gh issue create --title "Manual social post: ${title}" --body "$body" || echo "gh CLI not available - issue creation skipped"
 
           done
 
+          # Final: create consolidated issue with results
           FINAL_ISSUE_TITLE="Auto-post summary for staging push"
           FINAL_ISSUE_BODY="Auto posting summary for changed articles on staging:\n\n${RESULTS_SUMMARY}\n\nIf you need detailed logs, open the workflow run and inspect the job logs."
           curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" \
