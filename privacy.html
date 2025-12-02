@@ -7,77 +7,83 @@
   <meta name="description" content="Privacy Policy for Seechur Agro — collection, use and protection of data relating to our agricultural projects and website (India-centric)." />
   <link rel="canonical" href="https://seechuragro.in/privacy.html" />
   <link rel="stylesheet" href="/assets/css/site.css" />
-<meta name="robots" content="index,follow" />
+  <meta name="robots" content="index,follow" />
 
-<!-- START: page-scoped site styles (copied from index.html to match full site UI) -->
-<style>
-  :root{
-    --text:#f3fff6;
-    --muted:#cfe9d8;
-    --accent:#1f7a4d;
-    --nav-bg:rgba(10,25,10,0.7);
-    --nav-solid:#1b4332;
-    --max:1100px;
-    --card-bg:#ffffff;
-    --card-text:#1d2a21;
-    --card-sub:#495a50;
-    --card-meta:#0f7a52;
-    --card-border:rgba(5,26,15,.12);
-    --shadow:0 12px 24px rgba(0,0,0,.18);
-    --shadow-hover:0 18px 36px rgba(0,0,0,.26);
-  }
+  <!-- Page-scoped site styles (copied from index + translucent panel) -->
+  <style>
+    :root{
+      --text:#f3fff6;
+      --muted:#cfe9d8;
+      --accent:#1f7a4d;
+      --nav-bg:rgba(10,25,10,0.7);
+      --nav-solid:#1b4332;
+      --max:1100px;
+      --panel-bg: rgba(255,255,255,0.06);
+      --panel-border: rgba(255,255,255,0.06);
+    }
 
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
-    color:var(--text);
-    min-height:100vh;
-    scroll-padding-top:70px;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
-      url('/hydroponic-bg.jpg?v=7') center/cover no-repeat fixed;
-    filter:saturate(1.05) brightness(0.96);
-  }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+      color:var(--text);
+      min-height:100vh;
+      scroll-padding-top:70px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.4)),
+        url('/hydroponic-bg.jpg?v=7') center/cover no-repeat fixed;
+      filter:saturate(1.05) brightness(0.96);
+    }
 
-  main{padding-top:70px;}
-  .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
+    main{padding-top:70px;}
+    .container{max-width:var(--max);margin:0 auto;padding:32px 18px;}
 
-  /* Footer (exact copy from index.html) */
-  .footer-wrap{ text-align:center; color:#d9ffe6; padding:28px 12px 40px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:28px; }
-  .footer-top{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
-  .footer-logo{ display:inline-flex; align-items:center; gap:10px; justify-content:center; }
-  .footer-logo img{ width:44px; height:44px; object-fit:contain; border-radius:6px; }
-  .footer-socials{ display:flex; gap:10px; justify-content:center; align-items:center; margin-top:4px; flex-wrap:wrap; }
-  .footer-socials a{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-                     border-radius:8px; background:rgba(0,0,0,.12); border:1px solid rgba(255,255,255,.04);
-                     text-decoration:none; transition:transform .12s ease, background .12s ease; }
-  .footer-socials a:hover{ transform:translateY(-3px); background:rgba(0,0,0,.24) }
-  .footer-socials svg{ width:18px; height:18px; fill:#eafff4; display:block; }
-  .footer-copy{ font-size:.95rem; margin-top:10px; color:#d9ffe6 }
-  @media (max-width:520px){
-    .footer-socials a{ width:34px; height:34px }
-    .footer-socials svg{ width:16px; height:16px }
-  }
-</style>
-<!-- END page-scoped site styles -->
+    /* translucent panel that mirrors your portfolio table style */
+    .trans-panel{
+      background:var(--panel-bg);
+      border:1px solid var(--panel-border);
+      border-radius:14px;
+      padding:26px;
+      backdrop-filter: blur(6px) saturate(1.05);
+      box-shadow: 0 10px 30px rgba(2,18,12,.06);
+      color: #eaf7ee;
+      margin:28px auto;
+    }
 
-<!-- KEEP your existing policy-wrap block below -->
-<style>
-    /* Small, scoped styles only for the policy content box — won't touch global CSS */
-    .policy-wrap{ max-width:1000px; margin:40px auto; background:#fff; color:#0b2416; padding:28px; border-radius:12px;
-                  box-shadow:0 10px 30px rgba(2,18,12,.06); }
-    .policy-wrap h1{ font-size:1.5rem; margin-bottom:6px; color:var(--nav-solid); }
-    .policy-wrap h2{ font-size:1.02rem; margin-top:18px; color:var(--nav-solid); }
-    .policy-wrap p, .policy-wrap li{ line-height:1.6; color:#213; }
-    .policy-wrap a{ color:var(--accent); text-decoration:underline; }
-    .muted{ color:#556; font-size:0.95rem; }
-    footer.policy-footer{ margin-top:20px; }
-</style>
+    /* inner white readable card overlay (like subtle sheet inside panel) */
+    .policy-sheet{
+      background: rgba(255,255,255,0.96);
+      color:#082616;
+      border-radius:10px;
+      padding:24px;
+      max-width:980px;
+      margin:0 auto;
+      box-shadow: 0 8px 26px rgba(2,18,12,.06);
+    }
 
+    .policy-sheet h1{ font-size:1.6rem; margin-bottom:6px; color:var(--nav-solid); }
+    .policy-sheet h2{ font-size:1.02rem; margin-top:18px; color:var(--nav-solid); }
+    .policy-sheet p, .policy-sheet li{ line-height:1.6; color:#213; }
+    .policy-sheet a{ color:var(--accent); text-decoration:underline; }
+
+    /* Footer (copied exact small-scope styles from index.html) */
+    .footer-wrap{ text-align:center; color:#d9ffe6; padding:28px 12px 40px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:28px; }
+    .footer-top{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+    .footer-logo{ display:inline-flex; align-items:center; gap:10px; justify-content:center; }
+    .footer-logo img{ width:44px; height:44px; object-fit:contain; border-radius:6px; }
+    .footer-socials{ display:flex; gap:10px; justify-content:center; align-items:center; margin-top:4px; flex-wrap:wrap; }
+    .footer-socials a{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+                       border-radius:8px; background:rgba(0,0,0,.12); border:1px solid rgba(255,255,255,.04);
+                       text-decoration:none; transition:transform .12s ease, background .12s ease; }
+    .footer-socials a:hover{ transform:translateY(-3px); background:rgba(0,0,0,.24) }
+    .footer-socials svg{ width:18px; height:18px; fill:#eafff4; display:block; }
+    .footer-copy{ font-size:.95rem; margin-top:10px; color:#d9ffe6 }
+    @media (max-width:520px){ .footer-socials a{ width:34px; height:34px } .footer-socials svg{ width:16px; height:16px } }
+  </style>
 </head>
 <body>
 
-<!-- Load the same navbar include as index.html (safe, non-invasive) -->
+<!-- Navbar loader (same as index.html) -->
 <div id="navbar-placeholder"></div>
 <script>
   (function loadNavbar(){
@@ -100,116 +106,105 @@
   })();
 </script>
 
-<main class="container">
-  <div class="policy-wrap" role="main" aria-labelledby="pp-title">
-    <h1 id="pp-title">Privacy Policy</h1>
-    <p class="muted"><strong>Effective date:</strong> December 2, 2025</p>
+<main class="container" role="main">
+  <!-- translucent panel like your portfolio table -->
+  <div class="trans-panel" aria-label="Policy panel">
+    <div class="policy-sheet" aria-labelledby="pp-title">
+      <h1 id="pp-title">Privacy Policy</h1>
+      <p style="color:#445; margin-bottom:6px;"><strong>Effective date:</strong> December 2, 2025</p>
 
-    <section>
-      <h2>Introduction</h2>
-      <p>
-        Seechur Agro Private Limited ("Seechur", "we", "us") operates <a href="https://seechuragro.in">seechuragro.in</a>.
-        We design and implement protected cultivation and hydroponic projects and provide B2B agricultural services.
-        This policy explains how we collect, use, disclose and protect personal and farm-related data in India.
-      </p>
-    </section>
+      <section>
+        <h2>Introduction</h2>
+        <p>
+          Seechur Agro Private Limited ("Seechur", "we", "us") operates <a href="https://seechuragro.in">seechuragro.in</a>.
+          We design and implement protected cultivation and hydroponic projects and provide B2B agricultural services.
+          This policy explains how we collect, use, disclose and protect personal and farm-related data in India.
+        </p>
+      </section>
 
-    <section>
-      <h2>Scope — who this covers</h2>
-      <p>This policy applies to:</p>
-      <ul>
-        <li>Visitors to our website;</li>
-        <li>Farmers and enterprise clients who request project quotes or services;</li>
-        <li>Suppliers and service providers who interact with us for operational purposes.</li>
-      </ul>
-    </section>
+      <section>
+        <h2>Scope — who this covers</h2>
+        <p>This policy applies to:</p>
+        <ul>
+          <li>Visitors to our website;</li>
+          <li>Farmers and enterprise clients who request project quotes or services;</li>
+          <li>Suppliers and service providers who interact with us for operational purposes.</li>
+        </ul>
+      </section>
 
-    <section>
-      <h2>Data we collect</h2>
-      <p>Depending on your interaction, we may collect:</p>
-      <ul>
-        <li><strong>Contact & identification:</strong> name, company name, email, phone.</li>
-        <li><strong>Project & farm data:</strong> farm location (village/district), farm size, crop preferences, soil/irrigation details, photos, yield estimates provided by you for project planning.</li>
-        <li><strong>Commercial data:</strong> quotations, orders, invoices and transaction metadata where applicable.</li>
-        <li><strong>Technical data:</strong> IP address, browser, device, analytics and server logs.</li>
-        <li><strong>Cookies:</strong> small tracking files used for analytics and session management.</li>
-      </ul>
-    </section>
+      <section>
+        <h2>Data we collect</h2>
+        <p>Depending on your interaction, we may collect:</p>
+        <ul>
+          <li><strong>Contact & identification:</strong> name, company name, email, phone.</li>
+          <li><strong>Project & farm data:</strong> farm location (village/district), farm size, crop preferences, soil/irrigation details, photos, yield estimates provided by you for project planning.</li>
+          <li><strong>Commercial data:</strong> quotations, orders, invoices and transaction metadata where applicable.</li>
+          <li><strong>Technical data:</strong> IP address, browser, device, analytics and server logs.</li>
+          <li><strong>Cookies:</strong> small tracking files used for analytics and session management.</li>
+        </ul>
+      </section>
 
-    <section>
-      <h2>How we use data</h2>
-      <p>We use data to:</p>
-      <ul>
-        <li>Respond to enquiries and provide quotes, proposals and project delivery;</li>
-        <li>Arrange sampling, site visits and logistics for cultivation projects;</li>
-        <li>Operate and improve our website and business systems (analytics, security, communications);</li>
-        <li>Comply with accounting, tax and regulatory obligations in India.</li>
-      </ul>
-    </section>
+      <section>
+        <h2>How we use data</h2>
+        <p>We use data to:</p>
+        <ul>
+          <li>Respond to enquiries and provide quotes, proposals and project delivery;</li>
+          <li>Arrange sampling, site visits and logistics for cultivation projects;</li>
+          <li>Operate and improve our website and business systems (analytics, security, communications);</li>
+          <li>Comply with accounting, tax and regulatory obligations in India.</li>
+        </ul>
+      </section>
 
-    <section>
-      <h2>Legal basis & Indian context</h2>
-      <p>We process personal data where necessary to perform contracts with you, to comply with legal obligations, or on the basis of your consent. We follow industry best practices and will adopt applicable legal requirements as they become effective in India.</p>
-    </section>
+      <section>
+        <h2>Legal basis & Indian context</h2>
+        <p>We process personal data where necessary to perform contracts with you, to comply with legal obligations, or on the basis of your consent. We follow industry best practices and will adopt applicable legal requirements as they become effective in India.</p>
+      </section>
 
-    <section>
-      <h2>Sharing & third parties</h2>
-      <p>We may share data with trusted service providers (hosting, analytics, accounting, logistics and supplier partners) under contract, with authorities where required by law, or with third parties where you provide consent. We do not sell personal data to marketing lists or data brokers.</p>
-    </section>
+      <section>
+        <h2>Sharing & third parties</h2>
+        <p>We may share data with trusted service providers (hosting, analytics, accounting, logistics and supplier partners) under contract, with authorities where required by law, or with third parties where you provide consent. We do not sell personal data to marketing lists or data brokers.</p>
+      </section>
 
-    <section>
-      <h2>Cross-border transfers</h2>
-      <p>If we transfer data outside India (for example to a cloud host region), we will maintain contractual safeguards and only transfer what is necessary for the service.</p>
-    </section>
+      <section>
+        <h2>Cross-border transfers</h2>
+        <p>If we transfer data outside India (for example to a cloud host region), we will maintain contractual safeguards and only transfer what is necessary for the service.</p>
+      </section>
 
-    <section>
-      <h2>Data retention</h2>
-      <p>Typical retention timelines:</p>
-      <ul>
-        <li>Enquiry & contact records: up to 3 years after last contact;</li>
-        <li>Project and commercial records: up to 7 years (to meet tax and accounting needs);</li>
-        <li>Analytics and logs: retained in aggregated/anonymised form as needed for site health and improvements.</li>
-      </ul>
-    </section>
+      <section>
+        <h2>Data retention</h2>
+        <p>Typical retention timelines:</p>
+        <ul>
+          <li>Enquiry & contact records: up to 3 years after last contact;</li>
+          <li>Project and commercial records: up to 7 years (to meet tax and accounting needs);</li>
+          <li>Analytics and logs: retained in aggregated/anonymised form as needed for site health and improvements.</li>
+        </ul>
+      </section>
 
-    <section>
-      <h2>Cookies & analytics</h2>
-      <p>We use cookies and analytics (e.g., Google Analytics) to measure site traffic and improve user experience. You can disable cookies in your browser or use any opt-out provided by service providers.</p>
-    </section>
+      <section>
+        <h2>Cookies & analytics</h2>
+        <p>We use cookies and analytics (e.g., Google Analytics) to measure site traffic and improve user experience. You can disable cookies in your browser or use any opt-out provided by service providers.</p>
+      </section>
 
-    <section>
-      <h2>Security</h2>
-      <p>We use administrative, technical and physical safeguards appropriate to the sensitivity of the data. No system is 100% secure — please avoid sharing highly sensitive personal information via unencrypted email.</p>
-    </section>
+      <section>
+        <h2>Security</h2>
+        <p>We use administrative, technical and physical safeguards appropriate to the sensitivity of the data. No system is 100% secure — please avoid sharing highly sensitive personal information via unencrypted email.</p>
+      </section>
 
-    <section>
-      <h2>Your rights</h2>
-      <p>You may request access, correction, deletion, restriction of processing or export of your data where legally permitted. To exercise your rights contact: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>. We may request identity verification before processing such requests.</p>
-    </section>
+      <section>
+        <h2>Your rights</h2>
+        <p>You may request access, correction, deletion, restriction of processing or export of your data where legally permitted. To exercise your rights contact: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>. We may request identity verification before processing such requests.</p>
+      </section>
 
-    <section>
-      <h2>Children</h2>
-      <p>Our services are intended for business users and adults. We do not knowingly collect personal data of children. If you believe we have collected data about a minor, please contact us to request removal.</p>
-    </section>
-
-    <section>
-      <h2>Changes to this policy</h2>
-      <p>We may update this policy. Material changes will be signalled by revising the effective date above. Please check this page periodically for updates.</p>
-    </section>
-
-    <section>
-      <h2>Contact</h2>
-      <p>For privacy-related requests or questions: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>.</p>
-      <p class="muted">Company: Seechur Agro Private Limited • [Registered address: replace with your address] • [CIN/Reg. no: replace if desired]</p>
-    </section>
-
-    <footer class="policy-footer">
-      <a href="/disclaimer.html">Disclaimer</a> • <a href="/">Home</a>
-    </footer>
+      <section>
+        <h2>Contact</h2>
+        <p>For privacy-related requests or questions: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>.</p>
+        <p class="muted">Company: Seechur Agro Private Limited • [Registered address: replace with your address]</p>
+      </section>
+    </div>
   </div>
 </main>
 
-<!-- ---------- Footer copied exactly from index.html (keeps social icons & layout identical) ---------- -->
+<!-- Footer (copied exactly from index.html) -->
 <footer class="footer-wrap" role="contentinfo">
   <div class="footer-top">
     <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
@@ -266,9 +261,6 @@
   <div class="footer-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
 </footer>
 
-<script>
-  // Set year and keep articles behavior out of this page
-  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
-</script>
+<script>const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();</script>
 </body>
 </html>
