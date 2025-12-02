@@ -21,6 +21,7 @@ jobs:
   post-articles:
     runs-on: ubuntu-latest
     env:
+      # Platform secrets (set in your repo Settings → Secrets)
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
@@ -30,6 +31,8 @@ jobs:
       WHATSAPP_API_TOKEN: ${{ secrets.WHATSAPP_API_TOKEN }}
       YOUTUBE_OAUTH_REFRESH_TOKEN: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
       SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
+
+      # X (Twitter) secrets
       X_API_KEY: ${{ secrets.X_API_KEY }}
       X_API_SECRET: ${{ secrets.X_API_SECRET }}
       X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
@@ -41,57 +44,37 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Install tools
+      - name: Process changed article JSON files and post to socials
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq python3 python3-pip || true
-          python3 -m pip install --upgrade pip requests requests_oauthlib || true
+          set -euo pipefail
+          echo "Starting article social-post process"
 
-      - name: Find changed article JSON files
-        id: find
-        run: |
+          # Find changed files in the last commit
           CHANGED=$(git diff --name-only HEAD~1 HEAD || true)
           echo "Changed files:"
           echo "$CHANGED"
-          files=$(echo "$CHANGED" | tr '\n' ' ' | xargs -n1 | grep -E '^articles/.*\.json$|^content/articles/.*\.json$|^src/articles/.*\.json$|^article\.json$' || true)
+
+          # Filter only article JSON files we care about
+          files=$(echo "$CHANGED" | tr '\n' ' ' | xargs -n1 2>/dev/null | grep -E '^articles/.*\.json$|^content/articles/.*\.json$|^src/articles/.*\.json$|^article\.json$' || true)
           if [ -z "$files" ]; then
-            echo "no_article_files=true" >> $GITHUB_OUTPUT
             echo "No article JSON files changed. Exiting."
             exit 0
           fi
-          # produce newline separated list and write to output
-          FILES=""
-          for f in $files; do
-            FILES="${FILES}${f}\n"
-          done
-          echo "files<<EOF" >> $GITHUB_OUTPUT
-          printf "%b" "$FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Process each article JSON and post
-        if: steps.find.outputs.no_article_files != 'true'
-        env:
-          FILES: ${{ steps.find.outputs.files }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-          LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
-          X_API_KEY: ${{ secrets.X_API_KEY }}
-          X_API_SECRET: ${{ secrets.X_API_SECRET }}
-          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
-          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
-          SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
-        run: |
-          set -euo pipefail
+          # Install small deps for X posting (requests & requests_oauthlib)
+          sudo apt-get update -y
+          sudo apt-get install -y python3 python3-pip jq || true
+          python3 -m pip install --upgrade pip requests requests_oauthlib || true
 
           RESULTS_SUMMARY=""
 
-          # iterate files from FILES env variable (newline separated)
-          printf '%b' "$FILES" | while IFS= read -r file; do
+          # Loop through each matched file
+          for file in $files; do
             [ -z "$file" ] && continue
-            echo "Processing: $file"
+            echo "Processing file: $file"
+
             if [ ! -f "$file" ]; then
-              echo "File $file not present; skipping."
+              echo "File $file missing on disk; skipping."
               continue
             fi
 
@@ -114,7 +97,7 @@ jobs:
 
             ARTICLE_RESULT="Article: ${title}\nURL: ${url}\n\n"
 
-            # Telegram (simple)
+            # --- Telegram ---
             if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
               caption="${title}\n\n${excerpt}\n\n${url}"
               if [ -n "$cover" ]; then
@@ -136,7 +119,7 @@ jobs:
               ARTICLE_RESULT="${ARTICLE_RESULT}Telegram: skipped (secrets not set)\n"
             fi
 
-            # LinkedIn (simple org share)
+            # --- LinkedIn Org Share ---
             if [ -n "${LINKEDIN_ACCESS_TOKEN:-}" ] && [ -n "${LINKEDIN_ORG_URN:-}" ]; then
               LINKEDIN_TEXT="${title} - ${excerpt}"
               body=$(jq -n --arg owner "$LINKEDIN_ORG_URN" --arg text "$LINKEDIN_TEXT" --arg url "$url" \
@@ -151,12 +134,12 @@ jobs:
               ARTICLE_RESULT="${ARTICLE_RESULT}LinkedIn: skipped (secrets not set)\n"
             fi
 
-            # X (Twitter) post using a compact python one-liner (safe for YAML)
+            # --- X (Twitter) ---
             if [ -n "${X_API_KEY:-}" ] && [ -n "${X_API_SECRET:-}" ] && [ -n "${X_ACCESS_TOKEN:-}" ] && [ -n "${X_ACCESS_SECRET:-}" ]; then
+              echo "Posting to X..."
               export _TITLE="$title"
               export _EXCERPT="$excerpt"
               export _URL="$url"
-              echo "Posting to X..."
               PY_RESP=$(python3 - <<'PY' || echo "0|python_err"
 import os, json, requests
 from requests_oauthlib import OAuth1
@@ -170,9 +153,9 @@ if len(tweet) > 275:
     tweet = tweet[:275] + "..."
 r = requests.post("https://api.twitter.com/1.1/statuses/update.json", auth=auth, data={'status':tweet})
 try:
-    print(f\"{r.status_code}|{json.dumps(r.json())}\")
+    print(f"{r.status_code}|{json.dumps(r.json())}")
 except Exception:
-    print(f\"{r.status_code}|{r.text}\")
+    print(f"{r.status_code}|{r.text}")
 PY
 )
               X_CODE=$(echo "$PY_RESP" | awk -F'|' '{print $1}' | tr -d '\r\n' || echo "0")
@@ -185,9 +168,11 @@ PY
 
           done
 
-          # create a summary issue
+          # Create a repo issue with the results (summary)
           FINAL_ISSUE_TITLE="Auto-post summary for staging push"
-          FINAL_ISSUE_BODY="Auto posting summary for changed articles on staging:\n\n${RESULTS_SUMMARY}\n\nCheck the workflow logs for full HTTP responses."
+          FINAL_ISSUE_BODY="Auto posting summary for changed articles on staging:\n\n${RESULTS_SUMMARY}\n\nInspect workflow logs for full HTTP responses."
           curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${GITHUB_REPOSITORY}/issues \
             -d "$(jq -nc --arg title "$FINAL_ISSUE_TITLE" --arg body "$FINAL_ISSUE_BODY" '{title:$title, body:$body}')" || true
+
+          echo "Done."
