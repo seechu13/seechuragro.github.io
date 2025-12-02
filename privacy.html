@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Seechur Agro Private Limited</title>
+  <meta name="description" content="Privacy Policy for Seechur Agro — collection, use and protection of data relating to our agricultural projects and website (India-centric)." />
+  <link rel="canonical" href="https://seechuragro.in/privacy.html" />
+  <link rel="stylesheet" href="/assets/css/site.css" />
+  <meta name="robots" content="index,follow" />
+  <style>
+    /* Small, scoped styles only for the policy content box — won't touch global CSS */
+    .policy-wrap{ max-width:1000px; margin:40px auto; background:#fff; color:#0b2416; padding:28px; border-radius:12px;
+                  box-shadow:0 10px 30px rgba(2,18,12,.06); }
+    .policy-wrap h1{ font-size:1.5rem; margin-bottom:6px; color:var(--nav-solid); }
+    .policy-wrap h2{ font-size:1.02rem; margin-top:18px; color:var(--nav-solid); }
+    .policy-wrap p, .policy-wrap li{ line-height:1.6; color:#213; }
+    .policy-wrap a{ color:var(--accent); text-decoration:underline; }
+    .muted{ color:#556; font-size:0.95rem; }
+    footer.policy-footer{ margin-top:20px; }
+  </style>
+</head>
+<body>
+
+<!-- Load the same navbar include as index.html (safe, non-invasive) -->
+<div id="navbar-placeholder"></div>
+<script>
+  (function loadNavbar(){
+    fetch('navbar.html', {cache:'no-cache'})
+      .then(r=>r.text())
+      .then(html=>{
+        const host = document.getElementById('navbar-placeholder');
+        host.innerHTML = html;
+        host.querySelectorAll('script').forEach(s=>{
+          const n=document.createElement('script');
+          if(s.src){ n.src=s.src; } else { n.textContent=s.textContent; }
+          document.body.appendChild(n);
+        });
+        const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+        document.querySelectorAll('.menu a').forEach(a=>{
+          if(a.getAttribute('href')?.toLowerCase()===current){ a.classList.add('active'); }
+        });
+      })
+      .catch(()=>{/* silent fallback */});
+  })();
+</script>
+
+<main class="container">
+  <div class="policy-wrap" role="main" aria-labelledby="pp-title">
+    <h1 id="pp-title">Privacy Policy</h1>
+    <p class="muted"><strong>Effective date:</strong> December 2, 2025</p>
+
+    <section>
+      <h2>Introduction</h2>
+      <p>
+        Seechur Agro Private Limited ("Seechur", "we", "us") operates <a href="https://seechuragro.in">seechuragro.in</a>.
+        We design and implement protected cultivation and hydroponic projects and provide B2B agricultural services.
+        This policy explains how we collect, use, disclose and protect personal and farm-related data in India.
+      </p>
+    </section>
+
+    <section>
+      <h2>Scope — who this covers</h2>
+      <p>This policy applies to:</p>
+      <ul>
+        <li>Visitors to our website;</li>
+        <li>Farmers and enterprise clients who request project quotes or services;</li>
+        <li>Suppliers and service providers who interact with us for operational purposes.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Data we collect</h2>
+      <p>Depending on your interaction, we may collect:</p>
+      <ul>
+        <li><strong>Contact & identification:</strong> name, company name, email, phone.</li>
+        <li><strong>Project & farm data:</strong> farm location (village/district), farm size, crop preferences, soil/irrigation details, photos, yield estimates provided by you for project planning.</li>
+        <li><strong>Commercial data:</strong> quotations, orders, invoices and transaction metadata where applicable.</li>
+        <li><strong>Technical data:</strong> IP address, browser, device, analytics and server logs.</li>
+        <li><strong>Cookies:</strong> small tracking files used for analytics and session management.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>How we use data</h2>
+      <p>We use data to:</p>
+      <ul>
+        <li>Respond to enquiries and provide quotes, proposals and project delivery;</li>
+        <li>Arrange sampling, site visits and logistics for cultivation projects;</li>
+        <li>Operate and improve our website and business systems (analytics, security, communications);</li>
+        <li>Comply with accounting, tax and regulatory obligations in India.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Legal basis & Indian context</h2>
+      <p>We process personal data where necessary to perform contracts with you, to comply with legal obligations, or on the basis of your consent. We follow industry best practices and will adopt applicable legal requirements as they become effective in India.</p>
+    </section>
+
+    <section>
+      <h2>Sharing & third parties</h2>
+      <p>We may share data with trusted service providers (hosting, analytics, accounting, logistics and supplier partners) under contract, with authorities where required by law, or with third parties where you provide consent. We do not sell personal data to marketing lists or data brokers.</p>
+    </section>
+
+    <section>
+      <h2>Cross-border transfers</h2>
+      <p>If we transfer data outside India (for example to a cloud host region), we will maintain contractual safeguards and only transfer what is necessary for the service.</p>
+    </section>
+
+    <section>
+      <h2>Data retention</h2>
+      <p>Typical retention timelines:</p>
+      <ul>
+        <li>Enquiry & contact records: up to 3 years after last contact;</li>
+        <li>Project and commercial records: up to 7 years (to meet tax and accounting needs);</li>
+        <li>Analytics and logs: retained in aggregated/anonymised form as needed for site health and improvements.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Cookies & analytics</h2>
+      <p>We use cookies and analytics (e.g., Google Analytics) to measure site traffic and improve user experience. You can disable cookies in your browser or use any opt-out provided by service providers.</p>
+    </section>
+
+    <section>
+      <h2>Security</h2>
+      <p>We use administrative, technical and physical safeguards appropriate to the sensitivity of the data. No system is 100% secure — please avoid sharing highly sensitive personal information via unencrypted email.</p>
+    </section>
+
+    <section>
+      <h2>Your rights</h2>
+      <p>You may request access, correction, deletion, restriction of processing or export of your data where legally permitted. To exercise your rights contact: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>. We may request identity verification before processing such requests.</p>
+    </section>
+
+    <section>
+      <h2>Children</h2>
+      <p>Our services are intended for business users and adults. We do not knowingly collect personal data of children. If you believe we have collected data about a minor, please contact us to request removal.</p>
+    </section>
+
+    <section>
+      <h2>Changes to this policy</h2>
+      <p>We may update this policy. Material changes will be signalled by revising the effective date above. Please check this page periodically for updates.</p>
+    </section>
+
+    <section>
+      <h2>Contact</h2>
+      <p>For privacy-related requests or questions: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>.</p>
+      <p class="muted">Company: Seechur Agro Private Limited • [Registered address: replace with your address] • [CIN/Reg. no: replace if desired]</p>
+    </section>
+
+    <footer class="policy-footer">
+      <a href="/disclaimer.html">Disclaimer</a> • <a href="/">Home</a>
+    </footer>
+  </div>
+</main>
+
+<!-- ---------- Footer copied exactly from index.html (keeps social icons & layout identical) ---------- -->
+<footer class="footer-wrap" role="contentinfo">
+  <div class="footer-top">
+    <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
+      <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo" />
+    </div>
+
+    <div class="footer-socials" aria-label="Seechur Agro social links">
+      <a href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
+      </a>
+
+      <a href="mailto:seechu@seechuragro.in" title="Email" aria-label="Email">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      </a>
+
+      <a href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.9 3.87 6 2.48 6S0 4.9 0 3.5 1.11 1 2.5 1 4.98 2.1 4.98 3.5zM0 8h4.96v13H0V8zm7.5 0H12v1.8h.07c.57-1.08 1.96-2.22 4.03-2.22 4.31 0 5.11 2.84 5.11 6.54V21h-4.96v-5.3c0-1.27-.02-2.9-1.77-2.9-1.78 0-2.05 1.39-2.05 2.82V21H7.5V8z"/></svg>
+      </a>
+
+      <a href="https://www.instagram.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 6.5A4.5 4.5 0 1016.5 13 4.5 4.5 0 0012 8.5zm6.8-3.7a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2z"/></svg>
+      </a>
+
+      <a href="https://www.facebook.com/seechuragro" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.2c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12H20l-.5 2.9h-2v7A10 10 0 0022 12z"/></svg>
+      </a>
+
+      <a href="https://twitter.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.46 6c-.77.34-1.6.57-2.46.67a4.26 4.26 0 001.88-2.35 8.6 8.6 0 01-2.7 1.03 4.22 4.22 0 00-7.2 3.85A12 12 0 013 4.79a4.2 4.2 0 001.3 5.63c-.66-.02-1.28-.2-1.82-.5v.05a4.22 4.22 0 003.38 4.13c-.6.16-1.24.2-1.9.08a4.22 4.22 0 003.94 2.93A8.47 8.47 0 012 19.5a11.95 11.95 0 006.29 1.84c7.55 0 11.68-6.27 11.68-11.7v-.53A8.36 8.36 0 0024 5.1a8.3 8.3 0 01-2.4.66z"/></svg>
+      </a>
+
+      <a href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2s-.2-1.7-.8-2.4c-.7-.9-1.5-.9-1.9-1-2.7-.2-6.8-.2-6.8-.2s-4.1 0-6.8.2c-.4.1-1.2.1-1.9 1-.6.7-.8 2.4-.8 2.4S1 8 1 9.8v1.4C1 13.9 1.6 15.6 1.6 15.6s.2 1.7.8 2.4c.7.9 1.6.9 2 1 1.4.1 6.1.2 6.1.2s4.1 0 6.8-.2c.4-.1 1.2-.1 1.9-1 .6-.7.8-2.4.8-2.4s.6-1.7.6-3.5V9.8c0-1.8-.6-3.6-.6-3.6zM9.8 14.6v-5l4.8 2.5-4.8 2.5z"/></svg>
+      </a>
+
+      <a href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
+      </a>
+
+      <a href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h5v5H7zM19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 14H5V9h14v9z"/></svg>
+      </a>
+
+      <a href="https://www.threads.net/@seechuragro" target="_blank" rel="noopener noreferrer" title="Threads" aria-label="Threads (@seechuragro)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-4 0-7.25 3.25-7.25 7.25 0 3.68 2.63 6.73 6.16 7.15.2.03.36.2.36.4v1.2c0 .28.22.5.5.5s.5-.22.5-.5v-1.2c0-.2.16-.37.36-.4 3.53-.42 6.16-3.47 6.16-7.15C19.25 5.75 16 2.5 12 2.5zM11 7.5h2v6.5h-2V7.5z" /></svg>
+      </a>
+
+      <a href="https://t.me/seechuragro" target="_blank" rel="noopener noreferrer" title="Telegram" aria-label="Telegram (@seechuragro)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2L2 9l6.5 2.3L10 21l3.2-3.1L19.6 22 22 2zM7.5 11.3L20 4 11.3 12.1 7.5 11.3z"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
+</footer>
+
+<script>
+  // Set year and keep articles behavior out of this page
+  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
