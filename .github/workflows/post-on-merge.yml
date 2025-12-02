@@ -1,4 +1,4 @@
-name: Post Article to Socials on Staging Merge
+name: Post Article to Socials on Staging Merge (validation only)
 
 on:
   push:
@@ -15,145 +15,20 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
-  post-articles:
+  validate-changes:
     runs-on: ubuntu-latest
-    env:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-      LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
-      X_API_KEY: ${{ secrets.X_API_KEY }}
-      X_API_SECRET: ${{ secrets.X_API_SECRET }}
-      X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
-      X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
-      SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Find changed article files and post
+      - name: Show last commit and changed files (validation)
         run: |
-          set -euo pipefail
-          echo "Starting social post step"
-
-          # Get changed files in the last commit
-          CHANGED="$(git diff --name-only HEAD~1 HEAD || true)"
-          echo "Changed files:"
-          echo "$CHANGED"
-
-          # Filter for article JSON files
-          FILES="$(printf '%s\n' "$CHANGED" | grep -E '^articles/.*\.json$|^content/articles/.*\.json$|^src/articles/.*\.json$|^article\.json$' || true)"
-          if [ -z "$FILES" ]; then
-            echo "No article JSON files changed. Exiting."
-            exit 0
-          fi
-
-          # Install small dependencies
-          sudo apt-get update -y
-          sudo apt-get install -y python3 python3-pip jq curl || true
-          python3 -m pip install --upgrade pip requests requests_oauthlib || true
-
-          SUMMARY=""
-
-          while IFS= read -r file; do
-            [ -z "$file" ] && continue
-            echo "Processing file: $file"
-            if [ ! -f "$file" ]; then
-              echo "File not found on disk: $file"
-              continue
-            fi
-
-            title="$(jq -r '.title // .headline // empty' "$file" | sed 's/"/\\"/g')"
-            excerpt="$(jq -r '.excerpt // .summary // empty' "$file" | sed 's/"/\\"/g')"
-            slug="$(jq -r '.slug // empty' "$file")"
-            url="$(jq -r '.url // empty' "$file")"
-            cover="$(jq -r '.cover_image // .cover // .image // empty' "$file")"
-
-            if [ -z "$url" ] && [ -n "${SITE_URL_BASE:-}" ] && [ -n "$slug" ]; then
-              url="${SITE_URL_BASE%/}/$slug"
-            fi
-
-            [ -z "$title" ] && title="New article"
-            [ -z "$excerpt" ] && excerpt=""
-
-            echo "Title: $title"
-            echo "URL: $url"
-            echo "Cover: $cover"
-
-            RESULT_LINE="Article: ${title} | URL: ${url}"
-
-            # Telegram (simple)
-            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-              caption="${title}\n\n${excerpt}\n\n${url}"
-              if [ -n "$cover" ]; then
-                TELE_RESP=$(curl -s -w "|%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto" \
-                  -F chat_id="${TELEGRAM_CHAT_ID}" -F photo="${cover}" -F caption="${caption}" -F parse_mode="HTML" || echo "error|0")
-                TELE_CODE=$(echo "$TELE_RESP" | awk -F'|' '{print $NF}')
-                RESULT_LINE="${RESULT_LINE} | Telegram:${TELE_CODE}"
-              else
-                TELE_RESP=$(curl -s -w "|%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-                  -H "Content-Type: application/json" \
-                  -d "$(jq -nc --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$caption" '{chat_id:$chat_id, text:$text, parse_mode:"HTML"}')" || echo "error|0")
-                TELE_CODE=$(echo "$TELE_RESP" | awk -F'|' '{print $NF}')
-                RESULT_LINE="${RESULT_LINE} | Telegram:${TELE_CODE}"
-              fi
-            else
-              RESULT_LINE="${RESULT_LINE} | Telegram:skipped"
-            fi
-
-            # LinkedIn (simple org share)
-            if [ -n "${LINKEDIN_ACCESS_TOKEN:-}" ] && [ -n "${LINKEDIN_ORG_URN:-}" ]; then
-              LINK_TEXT="${title} - ${excerpt}"
-              BODY=$(jq -n --arg owner "$LINKEDIN_ORG_URN" --arg text "$LINK_TEXT" --arg url "$url" '{owner:$owner, text:{text:$text}, content:[{contentEntities:[{entityLocation:$url}], title:$text}]}')
-              LI_RESP=$(curl -s -w "|%{http_code}" -X POST "https://api.linkedin.com/v2/shares" -H "Authorization: Bearer ${LINKEDIN_ACCESS_TOKEN}" -H "Content-Type: application/json" -d "$BODY" || echo "error|0")
-              LI_CODE=$(echo "$LI_RESP" | awk -F'|' '{print $NF}')
-              RESULT_LINE="${RESULT_LINE} | LinkedIn:${LI_CODE}"
-            else
-              RESULT_LINE="${RESULT_LINE} | LinkedIn:skipped"
-            fi
-
-            # X (Twitter) - simple text post via Python
-            if [ -n "${X_API_KEY:-}" ] && [ -n "${X_API_SECRET:-}" ] && [ -n "${X_ACCESS_TOKEN:-}" ] && [ -n "${X_ACCESS_SECRET:-}" ]; then
-              export _TITLE="$title"
-              export _EXCERPT="$excerpt"
-              export _URL="$url"
-              PYOUT=$(python3 - <<'PY' || echo "0|python_err"
-import os, json, requests
-from requests_oauthlib import OAuth1
-api_key = os.getenv('X_API_KEY'); api_secret = os.getenv('X_API_SECRET')
-access_token = os.getenv('X_ACCESS_TOKEN'); access_secret = os.getenv('X_ACCESS_SECRET')
-auth = OAuth1(api_key, api_secret, access_token, access_secret)
-tweet = f"{os.getenv('_TITLE','')}\n\n{os.getenv('_EXCERPT','')}\n\n{os.getenv('_URL','')}"
-if len(tweet) > 275:
-  tweet = tweet[:275] + "..."
-r = requests.post("https://api.twitter.com/1.1/statuses/update.json", auth=auth, data={'status':tweet})
-try:
-  print(f\"{r.status_code}|{json.dumps(r.json())}\")
-except Exception:
-  print(f\"{r.status_code}|{r.text}\")
-PY
-)
-              TCODE=$(echo "$PYOUT" | awk -F'|' '{print $1}' | tr -d '\r\n' || echo "0")
-              RESULT_LINE="${RESULT_LINE} | X:${TCODE}"
-            else
-              RESULT_LINE="${RESULT_LINE} | X:skipped"
-            fi
-
-            echo "$RESULT_LINE"
-            SUMMARY="${SUMMARY}\n${RESULT_LINE}"
-          done <<< "$FILES"
-
-          # Create a GitHub issue with the summary (best-effort)
-          ISSUE_TITLE="Auto-post summary for staging push"
-          ISSUE_BODY="Auto posting summary for changed articles on staging:\n\n${SUMMARY}\n\nCheck workflow logs for details."
-          curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/issues \
-            -d "$(jq -nc --arg title "$ISSUE_TITLE" --arg body "$ISSUE_BODY" '{title:$title, body:$body}')" || true
-
-          echo "Done."
+          echo "Run by: $GITHUB_ACTOR"
+          echo "Commit: $GITHUB_SHA"
+          echo "Files changed in last commit:"
+          git --no-pager diff --name-only HEAD~1 HEAD || true
+          echo "End of list."
