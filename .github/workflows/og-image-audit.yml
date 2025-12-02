@@ -1,10 +1,8 @@
 name: OG Image Audit
 
+# Manual only: will NOT run automatically on push
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - staging
 
 jobs:
   scan:
@@ -19,6 +17,7 @@ jobs:
 
       - name: Find HTML files
         run: |
+          # list all .html files under the repo
           find . -type f -name "*.html" > og-audit/html-files.txt || true
           echo "Found HTML files:" > og-audit/og-audit-report.txt
           wc -l og-audit/html-files.txt >> og-audit/og-audit-report.txt
@@ -27,9 +26,11 @@ jobs:
       - name: Scan for og:image lines
         run: |
           echo "=== Files with og:image ===" >> og-audit/og-audit-report.txt
-          # List files and the og:image lines
           while IFS= read -r file; do
-            grep -i "og:image" "$file" >/dev/null 2>&1 && echo "---- $file" >> og-audit/og-audit-report.txt && grep -n --color=never -i "og:image" "$file" >> og-audit/og-audit-report.txt || true
+            if grep -i "og:image" "$file" >/dev/null 2>&1; then
+              echo "---- $file" >> og-audit/og-audit-report.txt
+              grep -n --color=never -i "og:image" "$file" >> og-audit/og-audit-report.txt || true
+            fi
           done < og-audit/html-files.txt
           echo "" >> og-audit/og-audit-report.txt
 
@@ -48,10 +49,9 @@ jobs:
           echo "=== Files with og:image NOT using https://seechuragro.in/assets/og- prefix ===" >> og-audit/og-audit-report.txt
           while IFS= read -r file; do
             if grep -qi "og:image" "$file"; then
-              # extract content value
-              lines=$(grep -n -i "og:image" "$file")
+              lines=$(grep -n -i "og:image" "$file" || true)
               echo "$lines" | while IFS= read -r line; do
-                # grab content="..."; tolerant to single/double quotes and property/name usage
+                # tolerant extraction of content="..."
                 content=$(echo "$line" | sed -n -E 's/.*content=[\"\x27]([^\"\x27]+)[\"\x27].*/\1/p' || true)
                 if [ -z "$content" ]; then
                   echo "Could not extract content from line: $line" >> og-audit/og-audit-report.txt
