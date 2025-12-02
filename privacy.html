@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/assets/css/site.css" />
   <meta name="robots" content="index,follow" />
 
-  <!-- Page-scoped site styles (copied from index + translucent panel) -->
+  <!-- Page-scoped site styles (copied from index + translucent panel; text sits directly on panel) -->
   <style>
     :root{
       --text:#f3fff6;
@@ -46,25 +46,18 @@
       padding:26px;
       backdrop-filter: blur(6px) saturate(1.05);
       box-shadow: 0 10px 30px rgba(2,18,12,.06);
-      color: #eaf7ee;
+      color: var(--text);
       margin:28px auto;
     }
 
-    /* inner white readable card overlay (like subtle sheet inside panel) */
-    .policy-sheet{
-      background: rgba(255,255,255,0.96);
-      color:#082616;
-      border-radius:10px;
-      padding:24px;
-      max-width:980px;
-      margin:0 auto;
-      box-shadow: 0 8px 26px rgba(2,18,12,.06);
-    }
-
-    .policy-sheet h1{ font-size:1.6rem; margin-bottom:6px; color:var(--nav-solid); }
-    .policy-sheet h2{ font-size:1.02rem; margin-top:18px; color:var(--nav-solid); }
-    .policy-sheet p, .policy-sheet li{ line-height:1.6; color:#213; }
-    .policy-sheet a{ color:var(--accent); text-decoration:underline; }
+    /* typography on the translucent panel (no white inner sheet) */
+    .trans-panel h1{ font-size:1.6rem; margin-bottom:6px; color:var(--text); font-weight:700; }
+    .trans-panel .muted-line{ color:var(--muted); margin-bottom:18px; font-weight:600; }
+    .trans-panel h2{ font-size:1.02rem; margin-top:18px; color:var(--text); font-weight:700; }
+    .trans-panel p, .trans-panel li{ line-height:1.65; color:var(--muted); }
+    .trans-panel a{ color:var(--text); text-decoration:underline; text-underline-offset:2px; }
+    .trans-panel ul{ margin-left:20px; padding-left:0; }
+    .trans-panel li{ margin-bottom:8px; list-style: disc inside; }
 
     /* Footer (copied exact small-scope styles from index.html) */
     .footer-wrap{ text-align:center; color:#d9ffe6; padding:28px 12px 40px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:28px; }
@@ -107,100 +100,97 @@
 </script>
 
 <main class="container" role="main">
-  <!-- translucent panel like your portfolio table -->
-  <div class="trans-panel" aria-label="Policy panel">
-    <div class="policy-sheet" aria-labelledby="pp-title">
-      <h1 id="pp-title">Privacy Policy</h1>
-      <p style="color:#445; margin-bottom:6px;"><strong>Effective date:</strong> December 2, 2025</p>
+  <div class="trans-panel" aria-label="Privacy policy panel">
+    <h1>Privacy Policy</h1>
+    <div class="muted-line"><strong>Effective date:</strong> December 2, 2025</div>
 
-      <section>
-        <h2>Introduction</h2>
-        <p>
-          Seechur Agro Private Limited ("Seechur", "we", "us") operates <a href="https://seechuragro.in">seechuragro.in</a>.
-          We design and implement protected cultivation and hydroponic projects and provide B2B agricultural services.
-          This policy explains how we collect, use, disclose and protect personal and farm-related data in India.
-        </p>
-      </section>
+    <section>
+      <h2>Introduction</h2>
+      <p>
+        Seechur Agro Private Limited ("Seechur", "we", "us") operates <a href="https://seechuragro.in">seechuragro.in</a>.
+        We design and implement protected cultivation and hydroponic projects and provide B2B agricultural services.
+        This policy explains how we collect, use, disclose and protect personal and farm-related data in India.
+      </p>
+    </section>
 
-      <section>
-        <h2>Scope — who this covers</h2>
-        <p>This policy applies to:</p>
-        <ul>
-          <li>Visitors to our website;</li>
-          <li>Farmers and enterprise clients who request project quotes or services;</li>
-          <li>Suppliers and service providers who interact with us for operational purposes.</li>
-        </ul>
-      </section>
+    <section>
+      <h2>Scope — who this covers</h2>
+      <p>This policy applies to:</p>
+      <ul>
+        <li>Visitors to our website;</li>
+        <li>Farmers and enterprise clients who request project quotes or services;</li>
+        <li>Suppliers and service providers who interact with us for operational purposes.</li>
+      </ul>
+    </section>
 
-      <section>
-        <h2>Data we collect</h2>
-        <p>Depending on your interaction, we may collect:</p>
-        <ul>
-          <li><strong>Contact & identification:</strong> name, company name, email, phone.</li>
-          <li><strong>Project & farm data:</strong> farm location (village/district), farm size, crop preferences, soil/irrigation details, photos, yield estimates provided by you for project planning.</li>
-          <li><strong>Commercial data:</strong> quotations, orders, invoices and transaction metadata where applicable.</li>
-          <li><strong>Technical data:</strong> IP address, browser, device, analytics and server logs.</li>
-          <li><strong>Cookies:</strong> small tracking files used for analytics and session management.</li>
-        </ul>
-      </section>
+    <section>
+      <h2>Data we collect</h2>
+      <p>Depending on your interaction, we may collect:</p>
+      <ul>
+        <li><strong>Contact & identification:</strong> name, company name, email, phone.</li>
+        <li><strong>Project & farm data:</strong> farm location (village/district), farm size, crop preferences, soil/irrigation details, photos, yield estimates provided by you for project planning.</li>
+        <li><strong>Commercial data:</strong> quotations, orders, invoices and transaction metadata where applicable.</li>
+        <li><strong>Technical data:</strong> IP address, browser, device, analytics and server logs.</li>
+        <li><strong>Cookies:</strong> small tracking files used for analytics and session management.</li>
+      </ul>
+    </section>
 
-      <section>
-        <h2>How we use data</h2>
-        <p>We use data to:</p>
-        <ul>
-          <li>Respond to enquiries and provide quotes, proposals and project delivery;</li>
-          <li>Arrange sampling, site visits and logistics for cultivation projects;</li>
-          <li>Operate and improve our website and business systems (analytics, security, communications);</li>
-          <li>Comply with accounting, tax and regulatory obligations in India.</li>
-        </ul>
-      </section>
+    <section>
+      <h2>How we use data</h2>
+      <p>We use data to:</p>
+      <ul>
+        <li>Respond to enquiries and provide quotes, proposals and project delivery;</li>
+        <li>Arrange sampling, site visits and logistics for cultivation projects;</li>
+        <li>Operate and improve our website and business systems (analytics, security, communications);</li>
+        <li>Comply with accounting, tax and regulatory obligations in India.</li>
+      </ul>
+    </section>
 
-      <section>
-        <h2>Legal basis & Indian context</h2>
-        <p>We process personal data where necessary to perform contracts with you, to comply with legal obligations, or on the basis of your consent. We follow industry best practices and will adopt applicable legal requirements as they become effective in India.</p>
-      </section>
+    <section>
+      <h2>Legal basis & Indian context</h2>
+      <p>We process personal data where necessary to perform contracts with you, to comply with legal obligations, or on the basis of your consent. We follow industry best practices and will adopt applicable legal requirements as they become effective in India.</p>
+    </section>
 
-      <section>
-        <h2>Sharing & third parties</h2>
-        <p>We may share data with trusted service providers (hosting, analytics, accounting, logistics and supplier partners) under contract, with authorities where required by law, or with third parties where you provide consent. We do not sell personal data to marketing lists or data brokers.</p>
-      </section>
+    <section>
+      <h2>Sharing & third parties</h2>
+      <p>We may share data with trusted service providers (hosting, analytics, accounting, logistics and supplier partners) under contract, with authorities where required by law, or with third parties where you provide consent. We do not sell personal data to marketing lists or data brokers.</p>
+    </section>
 
-      <section>
-        <h2>Cross-border transfers</h2>
-        <p>If we transfer data outside India (for example to a cloud host region), we will maintain contractual safeguards and only transfer what is necessary for the service.</p>
-      </section>
+    <section>
+      <h2>Cross-border transfers</h2>
+      <p>If we transfer data outside India (for example to a cloud host region), we will maintain contractual safeguards and only transfer what is necessary for the service.</p>
+    </section>
 
-      <section>
-        <h2>Data retention</h2>
-        <p>Typical retention timelines:</p>
-        <ul>
-          <li>Enquiry & contact records: up to 3 years after last contact;</li>
-          <li>Project and commercial records: up to 7 years (to meet tax and accounting needs);</li>
-          <li>Analytics and logs: retained in aggregated/anonymised form as needed for site health and improvements.</li>
-        </ul>
-      </section>
+    <section>
+      <h2>Data retention</h2>
+      <p>Typical retention timelines:</p>
+      <ul>
+        <li>Enquiry & contact records: up to 3 years after last contact;</li>
+        <li>Project and commercial records: up to 7 years (to meet tax and accounting needs);</li>
+        <li>Analytics and logs: retained in aggregated/anonymised form as needed for site health and improvements.</li>
+      </ul>
+    </section>
 
-      <section>
-        <h2>Cookies & analytics</h2>
-        <p>We use cookies and analytics (e.g., Google Analytics) to measure site traffic and improve user experience. You can disable cookies in your browser or use any opt-out provided by service providers.</p>
-      </section>
+    <section>
+      <h2>Cookies & analytics</h2>
+      <p>We use cookies and analytics (e.g., Google Analytics) to measure site traffic and improve user experience. You can disable cookies in your browser or use any opt-out provided by service providers.</p>
+    </section>
 
-      <section>
-        <h2>Security</h2>
-        <p>We use administrative, technical and physical safeguards appropriate to the sensitivity of the data. No system is 100% secure — please avoid sharing highly sensitive personal information via unencrypted email.</p>
-      </section>
+    <section>
+      <h2>Security</h2>
+      <p>We use administrative, technical and physical safeguards appropriate to the sensitivity of the data. No system is 100% secure — please avoid sharing highly sensitive personal information via unencrypted email.</p>
+    </section>
 
-      <section>
-        <h2>Your rights</h2>
-        <p>You may request access, correction, deletion, restriction of processing or export of your data where legally permitted. To exercise your rights contact: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>. We may request identity verification before processing such requests.</p>
-      </section>
+    <section>
+      <h2>Your rights</h2>
+      <p>You may request access, correction, deletion, restriction of processing or export of your data where legally permitted. To exercise your rights contact: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>. We may request identity verification before processing such requests.</p>
+    </section>
 
-      <section>
-        <h2>Contact</h2>
-        <p>For privacy-related requests or questions: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>.</p>
-        <p class="muted">Company: Seechur Agro Private Limited • [Registered address: replace with your address]</p>
-      </section>
-    </div>
+    <section>
+      <h2>Contact</h2>
+      <p>For privacy-related requests or questions: <a href="mailto:privacy@seechuragro.in">privacy@seechuragro.in</a>.</p>
+      <p style="color:var(--muted); margin-top:12px;">Company: Seechur Agro Private Limited • [Registered address: replace with your address]</p>
+    </section>
   </div>
 </main>
 
