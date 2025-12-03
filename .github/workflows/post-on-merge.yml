@@ -10,7 +10,7 @@ on:
       - 'content/articles/**'
       - 'images/**'
 
-# top-level env: jobs inherit this automatically
+# Top-level env: inherited by jobs
 env:
   SITE_URL: https://seechuragro.github.io
 
@@ -18,11 +18,9 @@ jobs:
   post-to-telegram:
     name: Post changed article to Telegram
     runs-on: ubuntu-latest
-    # job-level env: only include secrets or overrides; do NOT attempt to reference env.SITE_URL here
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      # do NOT use: SITE_URL: ${{ env.SITE_URL }}  <-- this caused the error
 
     steps:
       - name: Checkout
@@ -35,113 +33,7 @@ jobs:
         run: |
           echo "GITHUB_EVENT_BEFORE = $GITHUB_EVENT_BEFORE"
           echo "GITHUB_SHA = $GITHUB_SHA"
-          changed="$(git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" || true)"
-          echo "Changed files:"
-          printf "%s\n" "$changed"
-          article="$(printf "%s\n" "$changed" | grep -E '(^articles/.*\.json$|^content/articles/.*\.json$|^articles.json$)' | head -n1 || true)"
-          if [ -z "$article" ]; then
-            echo "no_article=true" >> "$GITHUB_OUTPUT"
-            echo "No article JSON changed."
-            exit 0
-          fi
-          echo "article=$article" >> "$GITHUB_OUTPUT"
-          echo "Detected article: $article"
 
-      - name: Install jq
-        if: steps.detect.outputs.no_article != 'true'
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq
-
-      - name: Parse article JSON and prepare caption
-        id: prepare
-        if: steps.detect.outputs.no_article != 'true'
-        run: |
-          ARTICLE_FILE="${{ steps.detect.outputs.article }}"
-          echo "ARTICLE_FILE=$ARTICLE_FILE"
-          if [ -z "$ARTICLE_FILE" ] || [ ! -f "$ARTICLE_FILE" ]; then
-            echo "::error::Article file not found: $ARTICLE_FILE"
-            echo "no_article=true" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-
-          TITLE=$(jq -r '.title // .name // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
-          SUMMARY=$(jq -r '.summary // .description // .excerpt // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
-          IMAGE=$(jq -r '.image // .hero_image // .cover // .thumbnail // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
-          IMAGE="${IMAGE#./}"
-
-          URL=$(jq -r '.url // .permalink // ""' "$ARTICLE_FILE" || true)
-          if [ -z "$URL" ]; then
-            BASENAME=$(basename "$ARTICLE_FILE" .json)
-            URL="${SITE_URL%/}/${BASENAME}.html"
-          fi
-
-          CAPTION="${TITLE}"
-          if [ -n "$SUMMARY" ]; then
-            CAPTION="${CAPTION}\n\n${SUMMARY}"
-          fi
-          CAPTION="${CAPTION}\n\n${URL}"
-
-          echo "caption<<EOF" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "$CAPTION" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
-          echo "article_url=${URL}" >> "$GITHUB_OUTPUT"
-
-      - name: Debug prepared variables
-        if: steps.detect.outputs.no_article != 'true'
-        run: |
-          echo "ARTICLE_FILE: ${{ steps.detect.outputs.article }}"
-          echo "CAPTION (first 1000 chars):"
-          printf "%s\n" "${{ steps.prepare.outputs.caption }}" | head -c 1000
-          echo
-          echo "IMAGE: '${{ steps.prepare.outputs.image }}'"
-          echo "ARTICLE_URL: '${{ steps.prepare.outputs.article_url }}'"
-
-      - name: Post to Telegram (photo if image present, else text)
-        if: steps.detect.outputs.no_article != 'true'
-        run: |
-          BOT_API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
-          CAPTION="${{ steps.prepare.outputs.caption }}"
-          IMG_FIELD="${{ steps.prepare.outputs.image }}"
-          ARTICLE_URL="${{ steps.prepare.outputs.article_url }}"
-
-          if [ -n "$IMG_FIELD" ] && [[ "$IMG_FIELD" != http* ]]; then
-            PHOTO_URL="${SITE_URL%/}/${IMG_FIELD}"
-          else
-            PHOTO_URL="$IMG_FIELD"
-          fi
-
-          echo "PHOTO_URL='$PHOTO_URL' (empty means no image)"
-          if [ -n "$PHOTO_URL" ]; then
-            echo "Posting photo..."
-            curl -sS --fail -X POST "${BOT_API}/sendPhoto" \
-              -F chat_id="${TELEGRAM_CHAT_ID}" \
-              -F photo="${PHOTO_URL}" \
-              -F caption="${CAPTION}" \
-              -F parse_mode=HTML \
-              -o telegram-photo.json \
-            || (echo "::error::sendPhoto failed" && cat telegram-photo.json && exit 5)
-            echo "sendPhoto response:"
-            cat telegram-photo.json
-          else
-            echo "Posting text message..."
-            curl -sS --fail -X POST "${BOT_API}/sendMessage" \
-              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-              --data-urlencode "text=${CAPTION}" \
-              --data-urlencode "parse_mode=HTML" \
-              -o telegram-send.json \
-            || (echo "::error::sendMessage failed" && cat telegram-send.json && exit 6)
-            echo "sendMessage response:"
-            cat telegram-send.json
-          fi
-                - name: Detect changed article JSON
-        id: detect
-        run: |
-          echo "GITHUB_EVENT_BEFORE = $GITHUB_EVENT_BEFORE"
-          echo "GITHUB_SHA = $GITHUB_SHA"
-
-          # Determine changed files robustly
           changed=""
 
           if [ -n "$GITHUB_EVENT_BEFORE" ]; then
@@ -174,3 +66,97 @@ jobs:
           echo "article=$article" >> "$GITHUB_OUTPUT"
           echo "Detected article: $article"
 
+      - name: Install jq
+        if: steps.detect.outputs.no_article != 'true'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+      - name: Parse article JSON and prepare caption
+        id: prepare
+        if: steps.detect.outputs.no_article != 'true'
+        run: |
+          ARTICLE_FILE="${{ steps.detect.outputs.article }}"
+          echo "ARTICLE_FILE=$ARTICLE_FILE"
+
+          if [ -z "$ARTICLE_FILE" ] || [ ! -f "$ARTICLE_FILE" ]; then
+            echo "::error::Article file not found: $ARTICLE_FILE"
+            echo "no_article=true" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          # Extract fields with jq and normalize
+          TITLE=$(jq -r '.title // .name // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
+          SUMMARY=$(jq -r '.summary // .description // .excerpt // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
+          IMAGE=$(jq -r '.image // .hero_image // .cover // .thumbnail // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
+          IMAGE="${IMAGE#./}"
+
+          # prefer explicit url field; else build from file name
+          URL=$(jq -r '.url // .permalink // ""' "$ARTICLE_FILE" || true)
+          if [ -z "$URL" ]; then
+            BASENAME=$(basename "$ARTICLE_FILE" .json)
+            URL="${SITE_URL%/}/${BASENAME}.html"
+          fi
+
+          # build caption (simple safe concatenation)
+          CAPTION="${TITLE}"
+          if [ -n "$SUMMARY" ]; then
+            CAPTION="${CAPTION}\n\n${SUMMARY}"
+          fi
+          CAPTION="${CAPTION}\n\n${URL}"
+
+          # write outputs with GITHUB_OUTPUT (multi-line safe)
+          echo "caption<<EOF" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "$CAPTION" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "article_url=${URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Debug prepared variables
+        if: steps.detect.outputs.no_article != 'true'
+        run: |
+          echo "ARTICLE_FILE: ${{ steps.detect.outputs.article }}"
+          echo "CAPTION (first 1000 chars):"
+          printf "%s\n" "${{ steps.prepare.outputs.caption }}" | head -c 1000
+          echo
+          echo "IMAGE: '${{ steps.prepare.outputs.image }}'"
+          echo "ARTICLE_URL: '${{ steps.prepare.outputs.article_url }}'"
+
+      - name: Post to Telegram (photo if image present, else text)
+        if: steps.detect.outputs.no_article != 'true'
+        run: |
+          BOT_API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
+          CAPTION="${{ steps.prepare.outputs.caption }}"
+          IMG_FIELD="${{ steps.prepare.outputs.image }}"
+          ARTICLE_URL="${{ steps.prepare.outputs.article_url }}"
+
+          # compute final photo URL if image is a relative path
+          if [ -n "$IMG_FIELD" ] && [[ "$IMG_FIELD" != http* ]]; then
+            PHOTO_URL="${SITE_URL%/}/${IMG_FIELD}"
+          else
+            PHOTO_URL="$IMG_FIELD"
+          fi
+
+          echo "PHOTO_URL='$PHOTO_URL' (empty means no image)"
+          if [ -n "$PHOTO_URL" ]; then
+            echo "Posting photo..."
+            curl -sS --fail -X POST "${BOT_API}/sendPhoto" \
+              -F chat_id="${TELEGRAM_CHAT_ID}" \
+              -F photo="${PHOTO_URL}" \
+              -F caption="${CAPTION}" \
+              -F parse_mode=HTML \
+              -o telegram-photo.json \
+            || (echo "::error::sendPhoto failed" && cat telegram-photo.json && exit 5)
+            echo "sendPhoto response:"
+            cat telegram-photo.json
+          else
+            echo "Posting text message..."
+            curl -sS --fail -X POST "${BOT_API}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=${CAPTION}" \
+              --data-urlencode "parse_mode=HTML" \
+              -o telegram-send.json \
+            || (echo "::error::sendMessage failed" && cat telegram-send.json && exit 6)
+            echo "sendMessage response:"
+            cat telegram-send.json
+          fi
