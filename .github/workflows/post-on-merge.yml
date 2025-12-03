@@ -135,3 +135,42 @@ jobs:
             echo "sendMessage response:"
             cat telegram-send.json
           fi
+                - name: Detect changed article JSON
+        id: detect
+        run: |
+          echo "GITHUB_EVENT_BEFORE = $GITHUB_EVENT_BEFORE"
+          echo "GITHUB_SHA = $GITHUB_SHA"
+
+          # Determine changed files robustly
+          changed=""
+
+          if [ -n "$GITHUB_EVENT_BEFORE" ]; then
+            echo "Using GITHUB_EVENT_BEFORE -> git diff --name-only $GITHUB_EVENT_BEFORE $GITHUB_SHA"
+            changed="$(git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" || true)"
+          else
+            # Try using parent commit of HEAD
+            if git rev-parse "${GITHUB_SHA}^" >/dev/null 2>&1; then
+              echo "GITHUB_EVENT_BEFORE empty but parent exists -> git diff --name-only ${GITHUB_SHA}^ ${GITHUB_SHA}"
+              changed="$(git diff --name-only "${GITHUB_SHA}^" "${GITHUB_SHA}" || true)"
+            else
+              # No parent (initial commit) — list files in this commit
+              echo "No parent commit found; listing files in commit ${GITHUB_SHA}"
+              changed="$(git ls-tree -r --name-only "${GITHUB_SHA}" || true)"
+            fi
+          fi
+
+          echo "Changed files:"
+          printf "%s\n" "$changed"
+
+          # find first matching article JSON path
+          article="$(printf "%s\n" "$changed" | grep -E '(^articles/.*\.json$|^content/articles/.*\.json$|^articles.json$)' | head -n1 || true)"
+
+          if [ -z "$article" ]; then
+            echo "no_article=true" >> "$GITHUB_OUTPUT"
+            echo "No article JSON changed."
+            exit 0
+          fi
+
+          echo "article=$article" >> "$GITHUB_OUTPUT"
+          echo "Detected article: $article"
+
