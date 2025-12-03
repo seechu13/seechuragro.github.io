@@ -29,38 +29,22 @@ jobs:
         id: changes
         run: |
           set -euo pipefail
-
-          # Try git diff between this commit and parent to list changed files
           CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
           if [ -z "$CHANGED" ]; then
             CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
           fi
-
-          echo "Raw changed files:"
-          echo "$CHANGED"
-
-          # Filter only JSON files
           JSON_FILES=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
-
-          # If none detected, attempt fallback search in common article folders
           if [ -z "$JSON_FILES" ]; then
-            echo "No .json changed files detected by diff. Attempting fallback search in common folders..."
             JSON_FILES=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
           fi
-
           JSON_FILES_CLEAN=$(printf "%s\n" "$JSON_FILES" | sed '/^\s*$/d' || true)
-
-          echo "Detected JSON files:"
-          printf "%s\n" "$JSON_FILES_CLEAN"
-
-          # Encode newlines as <<NL>> for step output (safe transport)
           if [ -z "$JSON_FILES_CLEAN" ]; then
             echo "::set-output name=json_files::"
           else
             echo "::set-output name=json_files::$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')"
           fi
 
-      - name: Post each changed JSON to Telegram (caption sanitizer + image fallback)
+      - name: Post each changed JSON to Telegram (caption sanitizer + robust image fallback)
         if: steps.changes.outputs.json_files != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -73,6 +57,7 @@ jobs:
 
           TELEGRAM_API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           SEND_PHOTO="${TELEGRAM_API}/sendPhoto"
+          SEND_DOCUMENT="${TELEGRAM_API}/sendDocument"
           SEND_MESSAGE="${TELEGRAM_API}/sendMessage"
 
           collapse_blank_lines() {
@@ -109,20 +94,16 @@ jobs:
             printf "%s\n" "$CLEANED"
             echo "----- CAPTION PREVIEW END -----"
 
-            # -----------------------
-            # Image-finding (normalized)
-            # -----------------------
+            # Normalize and find image
             IMAGE_PATH=""
 
             if [ -n "$RAW_COVER" ]; then
-              # remove site prefix, leading ./ or leading /
               COV="$(printf "%s" "$RAW_COVER" | sed -E 's@^https?://[^/]+@@; s@^\./@@; s@^/@@')"
               echo "Normalized cover image value: '$COV' (from raw '$RAW_COVER')"
             else
               COV=""
             fi
 
-            # If COV contains a folder path, try that first as exact path
             if [ -n "$COV" ]; then
               if [ -f "./${COV}" ]; then
                 IMAGE_PATH="./${COV}"
@@ -132,7 +113,6 @@ jobs:
               fi
             fi
 
-            # If still empty, attempt by basename in common locations
             if [ -z "$IMAGE_PATH" ]; then
               BASENAME_JSON="$(basename "$jf" .json)"
               if [ -n "$COV" ]; then
@@ -164,57 +144,84 @@ jobs:
               fi
             fi
 
-            # -----------------------
-            # Upload attempts
-            # -----------------------
             UPLOADED=0
 
-            try_send_local() {
+            # Try sendPhoto, capture HTTP code and body. If it fails, try sendDocument automatically.
+            try_send_local_resilient() {
               local file="$1"
-              echo "Trying local upload: $file"
-              for i in 1 2 3; do
-                echo "Local upload attempt #$i"
-                RESP=$(curl -sS --show-error --fail --retry 2 --retry-delay 2 \
-                  -F chat_id="${TELEGRAM_CHAT_ID}" \
-                  -F "photo=@${file}" \
-                  -F "caption=${CLEANED}" \
-                  -F "parse_mode=HTML" \
-                  "${SEND_PHOTO}" || true)
-                echo "Response: $RESP"
-                if printf "%s" "$RESP" | grep -q '"ok":true'; then
-                  echo "Local photo upload OK"
-                  return 0
-                fi
-                sleep 1
-              done
+              echo "Trying sendPhoto for local file: $file"
+              # write body to temp and capture http code
+              body=$(mktemp)
+              http_code=$(curl -sS -w "%{http_code}" --show-error --fail --retry 2 --retry-delay 2 \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
+                -F "photo=@${file}" \
+                -F "caption=${CLEANED}" \
+                -F "parse_mode=HTML" \
+                "${SEND_PHOTO}" -o "$body" 2>/dev/null || true)
+
+              echo "sendPhoto HTTP code: ${http_code}"
+              echo "sendPhoto body:"
+              cat "$body" || true
+
+              if [ "$http_code" = "200" ] && grep -q '"ok":true' "$body" 2>/dev/null; then
+                rm -f "$body"
+                echo "sendPhoto success"
+                return 0
+              fi
+
+              echo "sendPhoto failed or returned non-200. Trying sendDocument as fallback."
+
+              # Now try sendDocument (same file) and capture response
+              body2=$(mktemp)
+              http_code2=$(curl -sS -w "%{http_code}" --show-error --fail --retry 2 --retry-delay 2 \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
+                -F "document=@${file}" \
+                -F "caption=${CLEANED}" \
+                -F "parse_mode=HTML" \
+                "${SEND_DOCUMENT}" -o "$body2" 2>/dev/null || true)
+
+              echo "sendDocument HTTP code: ${http_code2}"
+              echo "sendDocument body:"
+              cat "$body2" || true
+
+              if [ "$http_code2" = "200" ] && grep -q '"ok":true' "$body2" 2>/dev/null; then
+                rm -f "$body" "$body2"
+                echo "sendDocument success"
+                return 0
+              fi
+
+              # cleanup
+              rm -f "$body" "$body2"
               return 1
             }
 
             try_send_url() {
               local url="$1"
               echo "Trying remote URL upload: $url"
-              RESP=$(curl -sS --show-error --fail --data chat_id="${TELEGRAM_CHAT_ID}" \
+              body=$(mktemp)
+              http_code=$(curl -sS -w "%{http_code}" --show-error --fail --data chat_id="${TELEGRAM_CHAT_ID}" \
                 --data "photo=${url}" \
                 --data "caption=${CLEANED}" \
                 --data "parse_mode=HTML" \
-                "${SEND_PHOTO}" || true)
-              echo "Response: $RESP"
-              if printf "%s" "$RESP" | grep -q '"ok":true'; then
-                echo "Remote URL photo upload OK"
+                "${SEND_PHOTO}" -o "$body" 2>/dev/null || true)
+              echo "sendPhoto (URL) HTTP code: ${http_code}"
+              cat "$body" || true
+              if [ "$http_code" = "200" ] && grep -q '"ok":true' "$body" 2>/dev/null; then
+                rm -f "$body"
                 return 0
               fi
+              rm -f "$body"
               return 1
             }
 
             if [ -n "$IMAGE_PATH" ] && [ -f "$IMAGE_PATH" ]; then
-              if try_send_local "$IMAGE_PATH"; then
+              if try_send_local_resilient "$IMAGE_PATH"; then
                 UPLOADED=1
               else
-                echo "Local upload attempts failed for $IMAGE_PATH"
+                echo "Local upload attempts (photo/document) failed for $IMAGE_PATH"
               fi
             fi
 
-            # If not uploaded and RAW_COVER is an http(s) url, try URL upload
             if [ "$UPLOADED" -eq 0 ] && printf "%s" "$RAW_COVER" | grep -qE '^https?://'; then
               if try_send_url "$RAW_COVER"; then
                 UPLOADED=1
@@ -223,7 +230,6 @@ jobs:
               fi
             fi
 
-            # Fallback to text-only
             if [ "$UPLOADED" -eq 0 ]; then
               echo "Falling back to send text-only message."
               RESP=$(curl -sS --show-error --fail --data chat_id="${TELEGRAM_CHAT_ID}" \
