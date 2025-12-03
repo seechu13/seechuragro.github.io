@@ -1,231 +1,244 @@
-name: Post article to Telegram (staging)
+name: Post changed article JSONs to Telegram (staging)
 
+# Trigger on pushes to staging branch (adjust if you use a different branch)
 on:
   push:
-    branches: [staging]
-    paths:
-      - "articles/**"
-      - "articles.json"
-      - "content/articles/**"
-      - "assets/**"
-      - "images/**"
+    branches:
+      - staging
 
-env:
-  SITE_URL: https://seechuragro.in
+permissions:
+  contents: read
 
 jobs:
-  telegram:
+  notify-telegram:
     runs-on: ubuntu-latest
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
     steps:
-      - name: Checkout
+      - name: Checkout code (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect changed article JSON
-        id: detect
+      - name: Setup tools
         run: |
-          BEFORE="${GITHUB_EVENT_BEFORE}"
-          AFTER="${GITHUB_SHA}"
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl
 
-          if [ -n "$BEFORE" ]; then
-            CHANGED=$(git diff --name-only "$BEFORE" "$AFTER" || true)
-          else
-            if git rev-parse "${AFTER}^" >/dev/null 2>&1; then
-              CHANGED=$(git diff --name-only "${AFTER}^" "$AFTER" || true)
-            else
-              CHANGED=$(git ls-tree -r --name-only "$AFTER" || true)
-            fi
+      - name: Determine changed files in this push
+        id: changes
+        run: |
+          set -euo pipefail
+
+          # Robust changed-file detection: try git diff between HEAD and its parent.
+          # If that fails (first commit), fall back to listing files in last commit.
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
           fi
 
+          echo "Raw changed files:"
           echo "$CHANGED"
 
-          FILE=$(echo "$CHANGED" | grep -E '(^articles/.*\.json$|^content/articles/.*\.json$|^articles.json$)' | head -n1 || true)
+          # Filter only JSON files (article jsons). Adjust grep pattern if your JSONs live elsewhere.
+          JSON_FILES=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
 
-          if [ -z "$FILE" ]; then
-            echo "no=true" >> $GITHUB_OUTPUT
-            exit 0
+          # If no JSON files detected, as a safe fallback scan common article folders for recent changes
+          if [ -z "$JSON_FILES" ]; then
+            echo "No .json changed files detected by diff. Attempting fallback search in common folders..."
+            JSON_FILES=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
           fi
 
-          echo "file=$FILE" >> $GITHUB_OUTPUT
+          # Normalize to newlines and output to step output
+          JSON_FILES_CLEAN=$(printf "%s\n" "$JSON_FILES" | sed '/^\s*$/d' || true)
 
-      - name: Install jq
-        if: steps.detect.outputs.no != 'true'
-        run: sudo apt-get update -y && sudo apt-get install -y jq
+          echo "Detected JSON files:"
+          printf "%s\n" "$JSON_FILES_CLEAN"
 
-      - name: Parse json & build caption (auto-resolve image path)
-        id: prep
-        if: steps.detect.outputs.no != 'true'
+          # Export as step output (newline-separated)
+          echo "::set-output name=json_files::$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')"
+
+      - name: Post each changed JSON to Telegram (caption sanitizer + image fallback)
+        if: steps.changes.outputs.json_files != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          F="${{ steps.detect.outputs.file }}"
+          set -euo pipefail
+          # Read newline-separated JSON file list from previous step (we used <<NL>> to encode newlines)
+          RAW="${{ steps.changes.outputs.json_files }}"
+          JSON_FILES=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
 
-          TITLE=$(jq -r '.title // ""' "$F")
-          EXCERPT=$(jq -r '.excerpt // .summary // .description // ""' "$F")
-          IMAGE_FIELD=$(jq -r '.cover_image // .image // .hero_image // .thumbnail // ""' "$F")
-          URL=$(jq -r '.url // ""' "$F")
+          TELEGRAM_API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
+          SEND_PHOTO="${TELEGRAM_API}/sendPhoto"
+          SEND_MESSAGE="${TELEGRAM_API}/sendMessage"
 
-          [ -z "$URL" ] && URL="${SITE_URL%/}/$(basename "$F" .json).html"
+          # helper to collapse duplicate blank lines
+          collapse_blank_lines() {
+            awk 'BEGIN{blank=0} { if (NF==0) { if (!blank) { print ""; blank=1 } } else { print; blank=0 } }'
+          }
 
-          IMAGE_FIELD="${IMAGE_FIELD#./}"
+          # For each changed JSON file, build caption and attempt upload
+          for jf in $JSON_FILES; do
+            if [ ! -f "$jf" ]; then
+              echo "Skipping (not a file): $jf"
+              continue
+            fi
 
-          RESOLVED_LOCAL=""
-          RESOLVED_URL=""
+            echo "Processing JSON: $jf"
 
-          if [ -z "$IMAGE_FIELD" ]; then
-            BASE=$(basename "$F" .json)
-            for try in "assets/articles/${BASE}.jpg" "assets/articles/${BASE}.jpeg" "assets/articles/${BASE}.png" "assets/articles/${BASE}.webp" "assets/${BASE}.jpg" "images/${BASE}.jpg" "images/uploads/${BASE}.jpg"; do
-              if [ -f "${GITHUB_WORKSPACE}/${try}" ]; then
-                RESOLVED_LOCAL="${try}"
-                break
-              fi
-            done
-          fi
+            # Extract fields; jq -r will decode escape sequences like "\n" into real newlines
+            TITLE="$(jq -r '.title // empty' "$jf")"
+            EXCERPT="$(jq -r '.excerpt // .description // empty' "$jf")"
+            URL="$(jq -r '.url // .link // empty' "$jf")"
+            RAW_COVER="$(jq -r '.cover_image // empty' "$jf")"
 
-          if [ -n "$IMAGE_FIELD" ]; then
-            if [[ "$IMAGE_FIELD" =~ ^https?:// ]]; then
-              RESOLVED_URL="$IMAGE_FIELD"
-            else
-              if [ -f "${GITHUB_WORKSPACE}/${IMAGE_FIELD}" ]; then
-                RESOLVED_LOCAL="${IMAGE_FIELD}"
+            echo "Extracted title: ${TITLE:-<none>}"
+            echo "Extracted url: ${URL:-<none>}"
+            echo "Extracted raw_cover: ${RAW_COVER:-<none>}"
+
+            # Build caption pieces. Use printf so newlines are preserved.
+            CAPTURE="$(printf "%s\n\n%s\n\n%s" "$TITLE" "$EXCERPT" "$URL")"
+
+            # Trim leading/trailing spaces per line, collapse multiple blank lines to single blank line
+            CLEANED="$(printf "%s" "$CAPTURE" \
+              | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' \
+              | awk '{ sub(/[[:space:]]+$/, ""); print }' \
+              | collapse_blank_lines )"
+
+            # Remove literal backslash-n sequences if any remain
+            CLEANED="$(printf "%s" "$CLEANED" | sed 's/\\n/\n/g')"
+
+            # Final preview in logs
+            echo "----- CAPTION PREVIEW START -----"
+            printf "%s\n" "$CLEANED"
+            echo "----- CAPTION PREVIEW END -----"
+
+            # Try to find a local image by scanning common directories:
+            # - assets/articles/
+            # - images/
+            # - images/uploads/
+            # - repo root (filename only)
+            IMAGE_PATH=""
+            # If raw_cover is already an absolute path or starts with ./ or / try it
+            if [ -n "$RAW_COVER" ]; then
+              # If the field is a filename only (no slash), try common folders
+              if printf "%s" "$RAW_COVER" | grep -qE '^https?://'; then
+                echo "Cover appears to be a URL; will try URL later: $RAW_COVER"
               else
-                for prefix in "assets/articles" "assets" "images" "images/uploads" ""; do
-                  if [ -n "$prefix" ]; then
-                    candidate="${prefix}/${IMAGE_FIELD}"
-                  else
-                    candidate="${IMAGE_FIELD}"
-                  fi
-                  if [ -f "${GITHUB_WORKSPACE}/${candidate}" ]; then
-                    RESOLVED_LOCAL="${candidate}"
+                # Remove any leading "./"
+                COV="$(printf "%s" "$RAW_COVER" | sed 's@^\./@@')"
+                # Check common locations
+                CHECKS=(
+                  "./assets/articles/${COV}"
+                  "./images/${COV}"
+                  "./images/uploads/${COV}"
+                  "./${COV}"
+                )
+                for p in "${CHECKS[@]}"; do
+                  if [ -f "$p" ]; then
+                    IMAGE_PATH="$p"
+                    echo "Found local image candidate: $IMAGE_PATH"
                     break
                   fi
                 done
-                if [ -z "$RESOLVED_LOCAL" ]; then
-                  RESOLVED_URL="${SITE_URL%/}/${IMAGE_FIELD}"
+              fi
+            fi
+
+            # If still empty, attempt a broad search for common filenames (basename match)
+            if [ -z "$IMAGE_PATH" ] && [ -n "$RAW_COVER" ]; then
+              BASENAME="$(basename "$RAW_COVER")"
+              if [ -n "$BASENAME" ]; then
+                echo "Searching repo for file basename: $BASENAME"
+                FOUND=$(git ls-files | grep -E "/$BASENAME$" || true)
+                if [ -n "$FOUND" ]; then
+                  IMAGE_PATH="$(printf "%s\n" "$FOUND" | head -n1)"
+                  echo "Found image via git ls-files: $IMAGE_PATH"
                 fi
               fi
             fi
-          fi
 
-          if [ -n "$RESOLVED_LOCAL" ]; then
-            RESOLVED_URL="${SITE_URL%/}/${RESOLVED_LOCAL#./}"
-          fi
+            # Upload attempt flags
+            UPLOADED=0
 
-          TITLE_ESC=$(echo "$TITLE" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
-          EXCERPT_ESC=$(echo "$EXCERPT" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+            # Function: try send local file
+            try_send_local() {
+              local file="$1"
+              echo "Trying local upload: $file"
+              # Attempt with limited retries
+              for i in 1 2 3; do
+                echo "Local upload attempt #$i"
+                RESP=$(curl -sS --show-error --fail --retry 2 --retry-delay 2 \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F "photo=@${file}" \
+                  -F "caption=${CLEANED}" \
+                  -F "parse_mode=HTML" \
+                  "${SEND_PHOTO}" || true)
+                echo "Response: $RESP"
+                if printf "%s" "$RESP" | grep -q '"ok":true'; then
+                  echo "Local photo upload OK"
+                  return 0
+                fi
+                sleep 1
+              done
+              return 1
+            }
 
-          CAPTION="<b>$TITLE_ESC</b>"
-          [ -n "$EXCERPT_ESC" ] && CAPTION="$CAPTION\n<i>$EXCERPT_ESC</i>"
-          CAPTION="$CAPTION\n$URL"
+            # Function: try send by URL
+            try_send_url() {
+              local url="$1"
+              echo "Trying remote URL upload: $url"
+              RESP=$(curl -sS --show-error --fail --data chat_id="${TELEGRAM_CHAT_ID}" \
+                --data "photo=${url}" \
+                --data "caption=${CLEANED}" \
+                --data "parse_mode=HTML" \
+                "${SEND_PHOTO}" || true)
+              echo "Response: $RESP"
+              if printf "%s" "$RESP" | grep -q '"ok":true'; then
+                echo "Remote URL photo upload OK"
+                return 0
+              fi
+              return 1
+            }
 
-          echo "caption<<EOF" >> $GITHUB_OUTPUT
-          echo "$CAPTION" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+            # 1) Try local file upload if a candidate exists
+            if [ -n "$IMAGE_PATH" ] && [ -f "$IMAGE_PATH" ]; then
+              if try_send_local "$IMAGE_PATH"; then
+                UPLOADED=1
+              else
+                echo "Local upload attempts failed for $IMAGE_PATH"
+              fi
+            fi
 
-          echo "img=${RESOLVED_LOCAL}" >> $GITHUB_OUTPUT
-          echo "img_url=${RESOLVED_URL}" >> $GITHUB_OUTPUT
+            # 2) If not uploaded, and RAW_COVER is an http(s) url, try URL upload
+            if [ "$UPLOADED" -eq 0 ] && printf "%s" "$RAW_COVER" | grep -qE '^https?://'; then
+              if try_send_url "$RAW_COVER"; then
+                UPLOADED=1
+              else
+                echo "Remote URL upload failed for $RAW_COVER"
+              fi
+            fi
 
-      - name: Debug prepared variables
-        if: steps.detect.outputs.no != 'true'
+            # 3) If still not uploaded, fallback to text-only sendMessage
+            if [ "$UPLOADED" -eq 0 ]; then
+              echo "Falling back to send text-only message."
+              RESP=$(curl -sS --show-error --fail --data chat_id="${TELEGRAM_CHAT_ID}" \
+                --data-urlencode "text=${CLEANED}" \
+                --data "parse_mode=HTML" \
+                "${SEND_MESSAGE}" || true)
+              echo "Text send response: $RESP"
+              if ! printf "%s" "$RESP" | grep -q '"ok":true'; then
+                echo "ERROR: Telegram text send also failed for $jf"
+                # Do not abort whole job; continue with next JSON
+              fi
+            fi
+
+            echo "Done processing $jf"
+            echo "--------------------------------------------"
+          done
+
+      - name: No changed JSONs found notice
+        if: steps.changes.outputs.json_files == ''
         run: |
-          echo "ARTICLE_FILE: ${{ steps.detect.outputs.file }}"
-          echo "CAPTION (preview):"
-          printf "%s\n" "${{ steps.prep.outputs.caption }}" | sed -n '1,6p'
-          echo
-          echo "RESOLVED LOCAL IMAGE: '${{ steps.prep.outputs.img }}'"
-          echo "RESOLVED IMAGE_URL: '${{ steps.prep.outputs.img_url }}'"
-
-      - name: Telegram send (local upload preferred, plain text caption)
-        if: steps.detect.outputs.no != 'true'
-        run: |
-          CAPTION_RAW="${{ steps.prep.outputs.caption }}"
-          IMG_RAW="${{ steps.prep.outputs.img }}"
-          IMG_URL="${{ steps.prep.outputs.img_url }}"
-          API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
-          POSTED=0
-
-          # plain-text caption: strip HTML tags (we keep distinct newlines)
-          CAP_PLAIN=$(printf "%s\n" "$CAPTION_RAW" | sed 's/<[^>]*>//g')
-
-          echo "Caption preview (plain text):"
-          printf "%s\n" "$CAP_PLAIN" | sed -n '1,6p'
-
-          # 1) prefer local repo upload when image path is repo-relative
-          if [ -n "$IMG_RAW" ] && [[ "$IMG_RAW" != http* ]]; then
-            LOCAL_PATH="${GITHUB_WORKSPACE}/${IMG_RAW#./}"
-            if [ -f "$LOCAL_PATH" ]; then
-              echo "Found local image at $LOCAL_PATH - attempting upload"
-              curl -s -S -X POST "$API/sendPhoto" \
-                -F chat_id="${TELEGRAM_CHAT_ID}" \
-                -F photo=@"${LOCAL_PATH}" \
-                --data-urlencode "caption=${CAP_PLAIN}" \
-                -o resp.json
-              rc=$?
-              if [ $rc -eq 0 ]; then POSTED=1; else echo "::warning::local upload rc=$rc"; fi
-            else
-              echo "Local image not found at $LOCAL_PATH - will try URL/download"
-              [ -n "$IMG_URL" ] || IMG_URL="${SITE_URL%/}/${IMG_RAW#./}"
-            fi
-          fi
-
-          # 2) Try URL (with retries)
-          if [ $POSTED -eq 0 ] && [ -n "${IMG_URL:-}" ]; then
-            echo "Trying IMG_URL: $IMG_URL"
-            MAX_TRIES=30
-            SLEEP=3
-            i=0
-            ok=0
-            while [ $i -lt $MAX_TRIES ]; do
-              code=$(curl -s -o /dev/null -w "%{http_code}" "$IMG_URL" || echo "000")
-              echo "try $i -> HTTP $code"
-              [ "$code" = "200" ] && ok=1 && break
-              sleep $SLEEP
-              i=$((i+1))
-            done
-            if [ $ok -eq 1 ]; then
-              echo "Sending photo via IMG_URL..."
-              curl -s -S -X POST "$API/sendPhoto" \
-                -F chat_id="${TELEGRAM_CHAT_ID}" \
-                -F photo="$IMG_URL" \
-                --data-urlencode "caption=${CAP_PLAIN}" \
-                -o resp.json
-              rc=$?
-              if [ $rc -eq 0 ]; then POSTED=1; else echo "::warning::sendPhoto via URL rc=$rc"; fi
-            else
-              echo "::warning::IMG_URL not available after wait"
-            fi
-          fi
-
-          # 3) Download then upload
-          if [ $POSTED -eq 0 ] && [ -n "${IMG_URL:-}" ]; then
-            TMP="/tmp/article_img_$(date +%s).img"
-            echo "Downloading $IMG_URL to $TMP"
-            if curl -s -L -f -o "$TMP" "$IMG_URL"; then
-              echo "Downloaded - uploading"
-              curl -s -S -X POST "$API/sendPhoto" \
-                -F chat_id="${TELEGRAM_CHAT_ID}" \
-                -F photo=@"${TMP}" \
-                --data-urlencode "caption=${CAP_PLAIN}" \
-                -o resp.json
-              rc=$?
-              if [ $rc -eq 0 ]; then POSTED=1; else echo "::warning::upload fallback rc=$rc"; fi
-              rm -f "$TMP" || true
-            else
-              echo "::warning::download failed"
-            fi
-          fi
-
-          # 4) Fallback to plain text message
-          if [ $POSTED -eq 0 ]; then
-            echo "Sending plain text fallback"
-            curl -s -S -X POST "$API/sendMessage" \
-              --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
-              --data-urlencode text="$CAP_PLAIN" \
-              -o resp.json
-          fi
-
-          echo "--- Telegram API Response ---"
-          if [ -f resp.json ]; then cat resp.json; else echo "{}"; fi
+          echo "No JSON files detected as changed in this push. Nothing to post to Telegram."
