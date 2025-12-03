@@ -1,4 +1,4 @@
-name: Telegram Post (manual, diagnostic)
+name: Telegram Post (manual)
 
 on:
   workflow_dispatch:
@@ -14,44 +14,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show run info
-        run: |
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          echo "GITHUB_REF: $GITHUB_REF"
-          echo "GITHUB_SHA: $GITHUB_SHA"
-          echo "Runner: $RUNNER_OS"
-          echo "Note: secrets themselves are NOT printed."
-
-      - name: Verify secrets exist (no secret values shown)
-        run: |
-          if [ -z "${TELEGRAM_BOT_TOKEN}" ]; then
-            echo "::error::TELEGRAM_BOT_TOKEN is empty or not set in this workflow. Please add it to repo secrets."
-            exit 2
-          fi
-          if [ -z "${TELEGRAM_CHAT_ID}" ]; then
-            echo "::error::TELEGRAM_CHAT_ID is empty or not set in this workflow. Please add it to repo secrets."
-            exit 2
-          fi
-          echo "Secrets present (not displayed)."
-
-      - name: Test bot token with getMe
-        run: |
-          echo "Calling getMe to validate bot token..."
-          curl -sS --fail -X GET "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" -w "\nHTTP_CODE:%{http_code}\n" -o telegram-getme.json || (echo "::error::getMe call failed" && cat telegram-getme.json && exit 3)
-          echo "getMe response saved to telegram-getme.json"
-          cat telegram-getme.json
-
-      - name: Send test message to Telegram (verbose)
+      - name: Send test message to Telegram
         run: |
           TIMESTAMP="$(date --utc +'%Y-%m-%d %H:%M:%S UTC')"
           TEXT="🔔 Test post from GitHub Actions at ${TIMESTAMP}"
-          echo "Sending message to chat id: (hidden)"
-          curl -sS --fail \
+          
+          curl -sSf \
             -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
             --data-urlencode "text=${TEXT}" \
-            --data-urlencode "parse_mode=MarkdownV2" \
-            -w "\nHTTP_CODE:%{http_code}\n" \
-            -o telegram-send.json || (echo "::error::sendMessage call failed" && cat telegram-send.json && exit 4)
-          echo "sendMessage response:"
-          cat telegram-send.json
+          | tee telegram-response.json
