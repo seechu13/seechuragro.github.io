@@ -44,7 +44,7 @@ jobs:
 
           echo "$CHANGED"
 
-          FILE=$(echo "$CHANGED" | grep -E 'articles/.*\.json$|articles.json$|content/articles/.*\.json$' | head -n1 || true)
+          FILE=$(echo "$CHANGED" | grep -E '(^articles/.*\.json$|^content/articles/.*\.json$|^articles.json$)' | head -n1 || true)
 
           if [ -z "$FILE" ]; then
             echo "no=true" >> $GITHUB_OUTPUT
@@ -55,9 +55,9 @@ jobs:
 
       - name: Install jq
         if: steps.detect.outputs.no != 'true'
-        run: sudo apt-get install -y jq
+        run: sudo apt-get update -y && sudo apt-get install -y jq
 
-      - name: Parse json & build caption
+      - name: Parse json & build caption (single newlines)
         id: prep
         if: steps.detect.outputs.no != 'true'
         run: |
@@ -68,76 +68,131 @@ jobs:
           IMAGE=$(jq -r '.cover_image // .image // .hero_image // .thumbnail // ""' "$F")
           URL=$(jq -r '.url // ""' "$F")
 
+          # fallback url built from filename if not in JSON
           [ -z "$URL" ] && URL="${SITE_URL%/}/$(basename "$F" .json).html"
 
+          # normalize image path
           IMAGE="${IMAGE#./}"
 
+          # if image is relative, compute absolute URL for URL-based attempts
           case "$IMAGE" in
-            http*) IMG_URL="$IMAGE" ;;
-            "") IMG_URL="" ;;
-            *) IMG_URL="${SITE_URL%/}/$IMAGE" ;;
+            http* ) IMG_URL="$IMAGE" ;;
+            "" ) IMG_URL="" ;;
+            * ) IMG_URL="${SITE_URL%/}/$IMAGE" ;;
           esac
 
+          # basic HTML escape for <,>,&
           TITLE_ESC=$(echo "$TITLE" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
           EXCERPT_ESC=$(echo "$EXCERPT" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
 
+          # Build caption with single newlines (distinct lines)
           CAPTION="<b>$TITLE_ESC</b>"
-          [ -n "$EXCERPT_ESC" ] && CAPTION="$CAPTION\n\n<i>$EXCERPT_ESC</i>"
-          CAPTION="$CAPTION\n\n$URL"
+          [ -n "$EXCERPT_ESC" ] && CAPTION="$CAPTION\n<i>$EXCERPT_ESC</i>"
+          CAPTION="$CAPTION\n$URL"
 
+          # export outputs safely (multi-line)
           echo "caption<<EOF" >> $GITHUB_OUTPUT
           echo "$CAPTION" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          echo "img=$IMG_URL" >> $GITHUB_OUTPUT
+          # also return the original IMAGE value (so we know if it was repo-relative)
+          echo "img=$IMAGE" >> $GITHUB_OUTPUT
+          echo "img_url=$IMG_URL" >> $GITHUB_OUTPUT
 
-      - name: Telegram send (photo → fallback upload → fallback text)
+      - name: Debug prepared variables
+        if: steps.detect.outputs.no != 'true'
+        run: |
+          echo "ARTICLE_FILE: ${{ steps.detect.outputs.file }}"
+          echo "CAPTION (preview):"
+          printf "%s\n" "${{ steps.prep.outputs.caption }}" | sed -n '1,6p'
+          echo
+          echo "IMAGE (raw): '${{ steps.prep.outputs.img }}'"
+          echo "IMAGE_URL (computed): '${{ steps.prep.outputs.img_url }}'"
+
+      - name: Telegram send (prefer repo file -> URL -> download -> text) - preserve newlines
         if: steps.detect.outputs.no != 'true'
         run: |
           CAPTION="${{ steps.prep.outputs.caption }}"
-          IMG="${{ steps.prep.outputs.img }}"
+          IMG_RAW="${{ steps.prep.outputs.img }}"
+          IMG_URL="${{ steps.prep.outputs.img_url }}"
           API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
-
           POSTED=0
 
-          if [ -n "$IMG" ]; then
-            echo "Checking image availability…"
-            for i in {1..20}; do
-              CODE=$(curl -s -o /dev/null -w "%{http_code}" "$IMG" || echo 000)
-              echo "Try $i: HTTP $CODE"
-              [ "$CODE" = "200" ] && break
-              sleep 3
-            done
+          # Create CAP_ACTUAL that preserves single newlines (collapses multiple blank lines)
+          CAP_ACTUAL=$(printf "%s\n" "$CAPTION" | awk 'BEGIN{first=1} { if (NF) { if(!first) printf "\n"; printf "%s", $0; first=0 } else { if(!first) printf "\n"; first=0 } } END{print ""}')
 
-            if [ "$CODE" = "200" ]; then
-              echo "Sending photo via URL..."
+          # If the image field is repo-relative (no http prefix), prefer uploading local file from workspace
+          if [ -n "$IMG_RAW" ] && [[ "$IMG_RAW" != http* ]]; then
+            LOCAL_PATH="${GITHUB_WORKSPACE}/${IMG_RAW#./}"
+            if [ -f "$LOCAL_PATH" ]; then
+              echo "Uploading local image from repo: $LOCAL_PATH"
               curl -s -X POST "$API/sendPhoto" \
                 -F chat_id="${TELEGRAM_CHAT_ID}" \
-                -F photo="$IMG" \
-                -F caption="$CAPTION" \
+                -F photo=@"${LOCAL_PATH}" \
+                -F caption="$CAP_ACTUAL" \
                 -F parse_mode=HTML \
-                -o resp.json &&
-              POSTED=1
-            fi
-
-            if [ $POSTED -eq 0 ]; then
-              echo "Downloading image for upload..."
-              curl -s -L -o /tmp/img.jpg "$IMG" && \
-              curl -s -X POST "$API/sendPhoto" \
-                -F chat_id="${TELEGRAM_CHAT_ID}" \
-                -F photo=@"/tmp/img.jpg" \
-                -F caption="$CAPTION" \
-                -F parse_mode=HTML \
-                -o resp.json &&
-              POSTED=1
+                -o resp.json \
+              && POSTED=1 || (echo "::warning::upload from local failed" && cat resp.json || true)
+            else
+              echo "Local image not found at $LOCAL_PATH; will try URL/download."
+              [ -n "$IMG_URL" ] || IMG_URL="${SITE_URL%/}/${IMG_RAW#./}"
             fi
           fi
 
+          # If not posted and we have an IMG_URL, attempt URL approach with retries
+          if [ $POSTED -eq 0 ] && [ -n "${IMG_URL:-}" ]; then
+            echo "Trying IMG_URL: $IMG_URL"
+            MAX_TRIES=30
+            SLEEP=3
+            i=0
+            ok=0
+            while [ $i -lt $MAX_TRIES ]; do
+              code=$(curl -s -o /dev/null -w "%{http_code}" "$IMG_URL" || echo "000")
+              echo "check $i -> HTTP $code"
+              [ "$code" = "200" ] && ok=1 && break
+              sleep $SLEEP
+              i=$((i+1))
+            done
+
+            if [ $ok -eq 1 ]; then
+              echo "Sending photo via IMG_URL..."
+              curl -s -X POST "$API/sendPhoto" \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
+                -F photo="$IMG_URL" \
+                -F caption="$CAP_ACTUAL" \
+                -F parse_mode=HTML \
+                -o resp.json \
+              && POSTED=1 || (echo "::warning::sendPhoto via URL failed" && cat resp.json || true)
+            else
+              echo "::warning::IMG_URL not available after wait"
+            fi
+          fi
+
+          # If still not posted and IMG_URL exists try download+upload
+          if [ $POSTED -eq 0 ] && [ -n "${IMG_URL:-}" ]; then
+            echo "Attempting to download IMG_URL for upload..."
+            TMP="/tmp/article_img_$(date +%s).img"
+            if curl -s -L -f -o "$TMP" "$IMG_URL"; then
+              echo "Downloaded image to $TMP — uploading..."
+              curl -s -X POST "$API/sendPhoto" \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
+                -F photo=@"${TMP}" \
+                -F caption="$CAP_ACTUAL" \
+                -F parse_mode=HTML \
+                -o resp.json \
+              && POSTED=1 || (echo "::warning::upload fallback failed" && cat resp.json || true)
+              rm -f "$TMP" || true
+            else
+              echo "::warning::download fallback failed"
+            fi
+          fi
+
+          # Final fallback: send a text message
           if [ $POSTED -eq 0 ]; then
-            echo "Falling back to text..."
+            echo "Final fallback: send text"
             curl -s -X POST "$API/sendMessage" \
               --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
-              --data-urlencode text="$CAPTION" \
+              --data-urlencode text="$CAP_ACTUAL" \
               --data-urlencode parse_mode=HTML \
               -o resp.json
           fi
