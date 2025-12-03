@@ -1,0 +1,28 @@
+name: Telegram Post (manual, staging trigger)
+
+on:
+  workflow_dispatch:           # lets you see Run workflow in the UI
+  push:
+    branches:
+      - staging                # still triggers only for staging pushes
+
+jobs:
+  telegram-post:
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Send test message to Telegram
+        run: |
+          TIMESTAMP="$(date --utc +'%Y-%m-%d %H:%M:%S UTC')"
+          TEXT="🔔 Test post from GitHub Actions at ${TIMESTAMP}"
+          curl -sSf \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${TEXT}" \
+          | tee telegram-response.json
