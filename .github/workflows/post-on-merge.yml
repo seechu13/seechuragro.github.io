@@ -57,7 +57,7 @@ jobs:
         if: steps.detect.outputs.no != 'true'
         run: sudo apt-get update -y && sudo apt-get install -y jq
 
-      - name: Parse json & build caption (single newlines)
+      - name: Parse json and build caption (single newlines)
         id: prep
         if: steps.detect.outputs.no != 'true'
         run: |
@@ -68,34 +68,27 @@ jobs:
           IMAGE=$(jq -r '.cover_image // .image // .hero_image // .thumbnail // ""' "$F")
           URL=$(jq -r '.url // ""' "$F")
 
-          # fallback url built from filename if not in JSON
           [ -z "$URL" ] && URL="${SITE_URL%/}/$(basename "$F" .json).html"
 
-          # normalize image path
           IMAGE="${IMAGE#./}"
 
-          # if image is relative, compute absolute URL for URL-based attempts
           case "$IMAGE" in
             http* ) IMG_URL="$IMAGE" ;;
             "" ) IMG_URL="" ;;
             * ) IMG_URL="${SITE_URL%/}/$IMAGE" ;;
           esac
 
-          # basic HTML escape for <,>,&
           TITLE_ESC=$(echo "$TITLE" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
           EXCERPT_ESC=$(echo "$EXCERPT" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
 
-          # Build caption with single newlines (distinct lines)
           CAPTION="<b>$TITLE_ESC</b>"
           [ -n "$EXCERPT_ESC" ] && CAPTION="$CAPTION\n<i>$EXCERPT_ESC</i>"
           CAPTION="$CAPTION\n$URL"
 
-          # export outputs safely (multi-line)
           echo "caption<<EOF" >> $GITHUB_OUTPUT
           echo "$CAPTION" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # also return the original IMAGE value (so we know if it was repo-relative)
           echo "img=$IMAGE" >> $GITHUB_OUTPUT
           echo "img_url=$IMG_URL" >> $GITHUB_OUTPUT
 
@@ -109,50 +102,40 @@ jobs:
           echo "IMAGE (raw): '${{ steps.prep.outputs.img }}'"
           echo "IMAGE_URL (computed): '${{ steps.prep.outputs.img_url }}'"
 
-      -       - name: Telegram send (prefer repo file -> URL -> download -> text) — robust local upload + plain text caption
+      - name: Telegram send - prefer local upload then URL then download then text
         if: steps.detect.outputs.no != 'true'
         run: |
-          # prepare variables
           CAPTION_RAW="${{ steps.prep.outputs.caption }}"
           IMG_RAW="${{ steps.prep.outputs.img }}"
           IMG_URL="${{ steps.prep.outputs.img_url }}"
           API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           POSTED=0
 
-          # Build a plain-text caption (preserve line breaks as real newlines)
-          # Remove any HTML tags (we previously escaped HTML; now send plain text)
+          # plain-text caption (remove HTML tags for plain text posting)
           CAP_PLAIN=$(printf "%s\n" "$CAPTION_RAW" | sed 's/<[^>]*>//g')
 
           echo "Caption preview:"
           printf "%s\n" "$CAP_PLAIN" | sed -n '1,6p'
 
-          # 1) If image is repo-relative, upload local file directly (most reliable)
+          # 1) Prefer local repo upload when image path is repo-relative
           if [ -n "$IMG_RAW" ] && [[ "$IMG_RAW" != http* ]]; then
             LOCAL_PATH="${GITHUB_WORKSPACE}/${IMG_RAW#./}"
             if [ -f "$LOCAL_PATH" ]; then
-              echo "Found local image at $LOCAL_PATH — attempting local upload..."
-              # always write response to resp.json so we can inspect even on failure
+              echo "Found local image at $LOCAL_PATH - uploading"
               curl -s -S -X POST "$API/sendPhoto" \
                 -F chat_id="${TELEGRAM_CHAT_ID}" \
                 -F photo=@"${LOCAL_PATH}" \
                 --data-urlencode "caption=${CAP_PLAIN}" \
                 -o resp.json
               rc=$?
-              if [ $rc -eq 0 ]; then
-                echo "Local upload curl exit 0"
-                POSTED=1
-              else
-                echo "::warning::Local upload curl exited $rc (resp.json below if present)"
-                POSTED=0
-              fi
+              if [ $rc -eq 0 ]; then POSTED=1; else echo "::warning::local upload rc=$rc"; fi
             else
-              echo "Local image not found at $LOCAL_PATH"
-              # ensure IMG_URL has a value to try URL approach
+              echo "Local image not found at $LOCAL_PATH - will try URL/download"
               [ -n "$IMG_URL" ] || IMG_URL="${SITE_URL%/}/${IMG_RAW#./}"
             fi
           fi
 
-          # 2) If not posted and we have an IMG_URL, try URL with retries
+          # 2) Try URL (with retries)
           if [ $POSTED -eq 0 ] && [ -n "${IMG_URL:-}" ]; then
             echo "Trying IMG_URL: $IMG_URL"
             MAX_TRIES=30
@@ -161,47 +144,47 @@ jobs:
             ok=0
             while [ $i -lt $MAX_TRIES ]; do
               code=$(curl -s -o /dev/null -w "%{http_code}" "$IMG_URL" || echo "000")
-              echo "check $i -> HTTP $code"
+              echo "try $i -> HTTP $code"
               [ "$code" = "200" ] && ok=1 && break
               sleep $SLEEP
               i=$((i+1))
             done
             if [ $ok -eq 1 ]; then
-              echo "Sending photo via IMG_URL..."
+              echo "Sending photo via URL..."
               curl -s -S -X POST "$API/sendPhoto" \
                 -F chat_id="${TELEGRAM_CHAT_ID}" \
                 -F photo="$IMG_URL" \
                 --data-urlencode "caption=${CAP_PLAIN}" \
                 -o resp.json
               rc=$?
-              if [ $rc -eq 0 ]; then POSTED=1; else echo "::warning::sendPhoto via URL curl rc $rc"; fi
+              if [ $rc -eq 0 ]; then POSTED=1; else echo "::warning::sendPhoto via URL rc=$rc"; fi
             else
               echo "::warning::IMG_URL not available after wait"
             fi
           fi
 
-          # 3) If still not posted and we have IMG_URL, download and upload
+          # 3) Download then upload
           if [ $POSTED -eq 0 ] && [ -n "${IMG_URL:-}" ]; then
             TMP="/tmp/article_img_$(date +%s).img"
-            echo "Attempting download to $TMP"
+            echo "Downloading $IMG_URL to $TMP"
             if curl -s -L -f -o "$TMP" "$IMG_URL"; then
-              echo "Downloaded to $TMP — uploading..."
+              echo "Downloaded - uploading"
               curl -s -S -X POST "$API/sendPhoto" \
                 -F chat_id="${TELEGRAM_CHAT_ID}" \
                 -F photo=@"${TMP}" \
                 --data-urlencode "caption=${CAP_PLAIN}" \
                 -o resp.json
               rc=$?
-              if [ $rc -eq 0 ]; then POSTED=1; else echo "::warning::upload fallback rc $rc"; fi
+              if [ $rc -eq 0 ]; then POSTED=1; else echo "::warning::upload fallback rc=$rc"; fi
               rm -f "$TMP" || true
             else
-              echo "::warning::download fallback failed"
+              echo "::warning::download failed"
             fi
           fi
 
-          # 4) Final fallback: plain text send
+          # 4) Fallback to text
           if [ $POSTED -eq 0 ]; then
-            echo "Final fallback: send plain text message"
+            echo "Sending plain text fallback"
             curl -s -S -X POST "$API/sendMessage" \
               --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
               --data-urlencode text="$CAP_PLAIN" \
@@ -209,5 +192,4 @@ jobs:
           fi
 
           echo "--- Telegram API Response ---"
-          # show response if present
           if [ -f resp.json ]; then cat resp.json; else echo "{}"; fi
