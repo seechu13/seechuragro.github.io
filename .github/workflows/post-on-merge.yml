@@ -8,11 +8,12 @@ on:
       - 'articles/**'
       - 'articles.json'
       - 'content/articles/**'
+      - 'assets/**'
       - 'images/**'
 
-# Top-level env: inherited by jobs
+# top-level SITE_URL used by jobs (inherited)
 env:
-  SITE_URL: https://seechuragro.github.io
+  SITE_URL: https://seechuragro.in
 
 jobs:
   post-to-telegram:
@@ -23,7 +24,7 @@ jobs:
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repository (full)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -40,12 +41,10 @@ jobs:
             echo "Using GITHUB_EVENT_BEFORE -> git diff --name-only $GITHUB_EVENT_BEFORE $GITHUB_SHA"
             changed="$(git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" || true)"
           else
-            # Try using parent commit of HEAD
             if git rev-parse "${GITHUB_SHA}^" >/dev/null 2>&1; then
               echo "GITHUB_EVENT_BEFORE empty but parent exists -> git diff --name-only ${GITHUB_SHA}^ ${GITHUB_SHA}"
               changed="$(git diff --name-only "${GITHUB_SHA}^" "${GITHUB_SHA}" || true)"
             else
-              # No parent (initial commit) — list files in this commit
               echo "No parent commit found; listing files in commit ${GITHUB_SHA}"
               changed="$(git ls-tree -r --name-only "${GITHUB_SHA}" || true)"
             fi
@@ -54,7 +53,6 @@ jobs:
           echo "Changed files:"
           printf "%s\n" "$changed"
 
-          # find first matching article JSON path
           article="$(printf "%s\n" "$changed" | grep -E '(^articles/.*\.json$|^content/articles/.*\.json$|^articles.json$)' | head -n1 || true)"
 
           if [ -z "$article" ]; then
@@ -66,16 +64,18 @@ jobs:
           echo "article=$article" >> "$GITHUB_OUTPUT"
           echo "Detected article: $article"
 
-      - name: Install jq
+      - name: Install dependencies (jq, python)
         if: steps.detect.outputs.no_article != 'true'
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq python3 python3-pip
+          pip3 --version || true
 
-      - name: Parse article JSON and prepare caption
+      - name: Parse article JSON and build HTML caption (handles cover_image & excerpt)
         id: prepare
         if: steps.detect.outputs.no_article != 'true'
         run: |
+          set -euo pipefail
           ARTICLE_FILE="${{ steps.detect.outputs.article }}"
           echo "ARTICLE_FILE=$ARTICLE_FILE"
 
@@ -85,78 +85,156 @@ jobs:
             exit 1
           fi
 
-          # Extract fields with jq and normalize
-          TITLE=$(jq -r '.title // .name // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
-          SUMMARY=$(jq -r '.summary // .description // .excerpt // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
-          IMAGE=$(jq -r '.image // .hero_image // .cover // .thumbnail // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
-          IMAGE="${IMAGE#./}"
+          # extract potential fields
+          TITLE_RAW=$(jq -r '.title // .name // ""' "$ARTICLE_FILE" || echo "")
+          EXCERPT_RAW=$(jq -r '.excerpt // .summary // .description // .snippet // ""' "$ARTICLE_FILE" || echo "")
+          IMAGE_RAW=$(jq -r '.cover_image // .image // .hero_image // .cover // .thumbnail // .asset // ""' "$ARTICLE_FILE" || echo "")
+          URL_RAW=$(jq -r '.url // .permalink // ""' "$ARTICLE_FILE" || echo "")
 
-          # prefer explicit url field; else build from file name
-          URL=$(jq -r '.url // .permalink // ""' "$ARTICLE_FILE" || true)
-          if [ -z "$URL" ]; then
+          # derive URL if not provided
+          if [ -z "$URL_RAW" ]; then
             BASENAME=$(basename "$ARTICLE_FILE" .json)
-            URL="${SITE_URL%/}/${BASENAME}.html"
+            URL_RAW="${SITE_URL%/}/${BASENAME}.html"
           fi
 
-          # build caption (simple safe concatenation)
-          CAPTION="${TITLE}"
-          if [ -n "$SUMMARY" ]; then
-            CAPTION="${CAPTION}\n\n${SUMMARY}"
-          fi
-          CAPTION="${CAPTION}\n\n${URL}"
+          # normalize image path (remove leading ./)
+          IMAGE_RAW="${IMAGE_RAW#./}"
 
-          # write outputs with GITHUB_OUTPUT (multi-line safe)
+          # compute absolute image URL if relative path
+          if [ -n "$IMAGE_RAW" ] && [[ "$IMAGE_RAW" != http* ]]; then
+            IMAGE_URL="${SITE_URL%/}/${IMAGE_RAW}"
+          else
+            IMAGE_URL="$IMAGE_RAW"
+          fi
+
+          # use python to safely escape HTML and build caption
+          export TITLE_RAW EXCERPT_RAW URL_RAW IMAGE_URL
+          python3 - <<'PY' > /tmp/caption_out.json
+import html, json, os
+title = os.environ.get('TITLE_RAW','') or ''
+excerpt = os.environ.get('EXCERPT_RAW','') or ''
+url = os.environ.get('URL_RAW','') or ''
+image = os.environ.get('IMAGE_URL','') or ''
+title_esc = html.escape(title)
+excerpt_esc = html.escape(excerpt)
+url_esc = html.escape(url)
+if len(excerpt_esc) > 700:
+    excerpt_esc = excerpt_esc[:700] + '...'
+caption = ""
+if title_esc:
+    caption += f"<b>{title_esc}</b>"
+if excerpt_esc:
+    caption += f"\n\n<i>{excerpt_esc}</i>"
+if url_esc:
+    caption += f"\n\n<a href=\"{url_esc}\">Read more</a>"
+out = {"caption": caption, "image": image, "url": url}
+print(json.dumps(out, ensure_ascii=False))
+PY
+
+          FINAL_JSON="$(cat /tmp/caption_out.json)"
+          echo "final=$FINAL_JSON" >> "$GITHUB_OUTPUT"
+          CAPTION_VAL=$(python3 -c "import json,sys;print(json.load(open('/tmp/caption_out.json'))['caption'])")
+          IMAGE_VAL=$(python3 -c "import json,sys;print(json.load(open('/tmp/caption_out.json'))['image'])")
+          URL_VAL=$(python3 -c "import json,sys;print(json.load(open('/tmp/caption_out.json'))['url'])")
+
           echo "caption<<EOF" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "$CAPTION" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "$CAPTION_VAL" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
-          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
-          echo "article_url=${URL}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE_VAL}" >> "$GITHUB_OUTPUT"
+          echo "article_url=${URL_VAL}" >> "$GITHUB_OUTPUT"
 
       - name: Debug prepared variables
         if: steps.detect.outputs.no_article != 'true'
         run: |
           echo "ARTICLE_FILE: ${{ steps.detect.outputs.article }}"
-          echo "CAPTION (first 1000 chars):"
+          echo "CAPTION (preview):"
           printf "%s\n" "${{ steps.prepare.outputs.caption }}" | head -c 1000
           echo
-          echo "IMAGE: '${{ steps.prepare.outputs.image }}'"
+          echo "IMAGE (final): '${{ steps.prepare.outputs.image }}'"
           echo "ARTICLE_URL: '${{ steps.prepare.outputs.article_url }}'"
 
-      - name: Post to Telegram (photo if image present, else text)
+      - name: Post to Telegram (try URL, wait, then fallback to runner upload)
         if: steps.detect.outputs.no_article != 'true'
         run: |
+          set -euo pipefail
+
           BOT_API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           CAPTION="${{ steps.prepare.outputs.caption }}"
           IMG_FIELD="${{ steps.prepare.outputs.image }}"
           ARTICLE_URL="${{ steps.prepare.outputs.article_url }}"
 
-          # compute final photo URL if image is a relative path
+          # compute final photo URL if image is a relative path (should already be normalized)
           if [ -n "$IMG_FIELD" ] && [[ "$IMG_FIELD" != http* ]]; then
             PHOTO_URL="${SITE_URL%/}/${IMG_FIELD}"
           else
             PHOTO_URL="$IMG_FIELD"
           fi
 
-          echo "PHOTO_URL='$PHOTO_URL' (empty means no image)"
+          echo "PHOTO_URL='$PHOTO_URL'"
+          echo "Caption preview (first 400 chars):"
+          printf "%s\n" "${CAPTION}" | head -c 400
+          echo
+
+          POSTED=0
+
+          # If we have a PHOTO_URL, try polling until the resource is available
           if [ -n "$PHOTO_URL" ]; then
-            echo "Posting photo..."
-            curl -sS --fail -X POST "${BOT_API}/sendPhoto" \
-              -F chat_id="${TELEGRAM_CHAT_ID}" \
-              -F photo="${PHOTO_URL}" \
-              -F caption="${CAPTION}" \
-              -F parse_mode=HTML \
-              -o telegram-photo.json \
-            || (echo "::error::sendPhoto failed" && cat telegram-photo.json && exit 5)
-            echo "sendPhoto response:"
-            cat telegram-photo.json
-          else
-            echo "Posting text message..."
+            MAX_WAIT=60   # total seconds to wait for Pages to publish
+            SLEEP=3
+            elapsed=0
+            ok=0
+            echo "Checking PHOTO_URL availability..."
+            while [ $elapsed -lt $MAX_WAIT ]; do
+              status=$(curl -s -o /dev/null -w "%{http_code}" "$PHOTO_URL" || echo "000")
+              echo "check $elapsed sec -> HTTP $status"
+              if [ "$status" = "200" ]; then
+                ok=1
+                break
+              fi
+              sleep $SLEEP
+              elapsed=$((elapsed + SLEEP))
+            done
+
+            if [ $ok -eq 1 ]; then
+              echo "PHOTO_URL available; attempting sendPhoto via URL..."
+              curl -sS --fail -X POST "${BOT_API}/sendPhoto" \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
+                -F photo="${PHOTO_URL}" \
+                -F caption="${CAPTION}" \
+                -F parse_mode=HTML \
+                -o telegram-photo.json \
+              && (echo "sendPhoto response:" && cat telegram-photo.json) && POSTED=1 || (echo "::warning::sendPhoto via URL failed" && cat telegram-photo.json || true)
+            else
+              echo "::warning::PHOTO_URL not available after ${MAX_WAIT}s, will try runner upload fallback."
+            fi
+          fi
+
+          # If not yet posted, attempt to download image and upload from runner (fallback)
+          if [ $POSTED -eq 0 ] && [ -n "$PHOTO_URL" ]; then
+            TMPFILE="/tmp/telegram_img_$(date +%s)_$(basename "$PHOTO_URL")"
+            echo "Attempting to download image to runner: $TMPFILE"
+            if curl -sS -f -L -o "$TMPFILE" "$PHOTO_URL"; then
+              echo "Downloaded image to $TMPFILE, uploading to Telegram as multipart..."
+              curl -sS --fail -X POST "${BOT_API}/sendPhoto" \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
+                -F photo=@"${TMPFILE}" \
+                -F caption="${CAPTION}" \
+                -F parse_mode=HTML \
+                -o telegram-photo.json \
+              && (echo "sendPhoto (upload) response:" && cat telegram-photo.json) && POSTED=1 || (echo "::warning::sendPhoto (upload) failed" && cat telegram-photo.json || true)
+              rm -f "$TMPFILE" || true
+            else
+              echo "::warning::Failed to download image from PHOTO_URL. Will fallback to text post."
+            fi
+          fi
+
+          # If still not posted, send text message fallback
+          if [ $POSTED -eq 0 ]; then
+            echo "Posting fallback text message..."
             curl -sS --fail -X POST "${BOT_API}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
               --data-urlencode "text=${CAPTION}" \
               --data-urlencode "parse_mode=HTML" \
               -o telegram-send.json \
-            || (echo "::error::sendMessage failed" && cat telegram-send.json && exit 6)
-            echo "sendMessage response:"
-            cat telegram-send.json
+            && (echo "sendMessage response:" && cat telegram-send.json) || (echo "::error::sendMessage failed" && cat telegram-send.json && exit 6)
           fi
