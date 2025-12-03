@@ -10,6 +10,7 @@ on:
       - 'content/articles/**'
       - 'images/**'
 
+# top-level env: jobs inherit this automatically
 env:
   SITE_URL: https://seechuragro.github.io
 
@@ -17,10 +18,11 @@ jobs:
   post-to-telegram:
     name: Post changed article to Telegram
     runs-on: ubuntu-latest
+    # job-level env: only include secrets or overrides; do NOT attempt to reference env.SITE_URL here
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      SITE_URL: ${{ env.SITE_URL }}
+      # do NOT use: SITE_URL: ${{ env.SITE_URL }}  <-- this caused the error
 
     steps:
       - name: Checkout
@@ -31,13 +33,11 @@ jobs:
       - name: Detect changed article JSON
         id: detect
         run: |
-          # Get changed files between previous and current commit (works for push events)
           echo "GITHUB_EVENT_BEFORE = $GITHUB_EVENT_BEFORE"
           echo "GITHUB_SHA = $GITHUB_SHA"
           changed="$(git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" || true)"
           echo "Changed files:"
           printf "%s\n" "$changed"
-          # Find first matching article JSON path
           article="$(printf "%s\n" "$changed" | grep -E '(^articles/.*\.json$|^content/articles/.*\.json$|^articles.json$)' | head -n1 || true)"
           if [ -z "$article" ]; then
             echo "no_article=true" >> "$GITHUB_OUTPUT"
@@ -65,29 +65,23 @@ jobs:
             exit 1
           fi
 
-          # extract fields with jq, fallback to empty string
           TITLE=$(jq -r '.title // .name // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
           SUMMARY=$(jq -r '.summary // .description // .excerpt // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
           IMAGE=$(jq -r '.image // .hero_image // .cover // .thumbnail // ""' "$ARTICLE_FILE" | sed -n '1p' || true)
-
-          # normalize image path (strip leading ./)
           IMAGE="${IMAGE#./}"
 
-          # build article url (prefer url/permalink in JSON)
           URL=$(jq -r '.url // .permalink // ""' "$ARTICLE_FILE" || true)
           if [ -z "$URL" ]; then
             BASENAME=$(basename "$ARTICLE_FILE" .json)
             URL="${SITE_URL%/}/${BASENAME}.html"
           fi
 
-          # build caption (avoid embedded YAML-sensitive quoting)
           CAPTION="${TITLE}"
           if [ -n "$SUMMARY" ]; then
             CAPTION="${CAPTION}\n\n${SUMMARY}"
           fi
           CAPTION="${CAPTION}\n\n${URL}"
 
-          # write outputs using GITHUB_OUTPUT (multi-line safe)
           echo "caption<<EOF" >> "$GITHUB_OUTPUT"
           printf "%s\n" "$CAPTION" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -112,7 +106,6 @@ jobs:
           IMG_FIELD="${{ steps.prepare.outputs.image }}"
           ARTICLE_URL="${{ steps.prepare.outputs.article_url }}"
 
-          # compute final photo URL if image is a relative path
           if [ -n "$IMG_FIELD" ] && [[ "$IMG_FIELD" != http* ]]; then
             PHOTO_URL="${SITE_URL%/}/${IMG_FIELD}"
           else
