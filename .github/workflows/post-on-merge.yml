@@ -1,34 +1,202 @@
-name: Post Article to Socials on Staging Merge (validation only)
+name: Post articles to social on merge (staging)
 
 on:
   push:
     branches:
       - staging
     paths:
-      - 'articles.html'
       - 'articles/**'
+      - 'articles.json'
+      - 'images/**'
       - 'content/articles/**'
-      - 'assets/articles/**'
-      - 'article.json'
-      - 'src/articles/**'
-      - 'public/articles/**'
-
-permissions:
-  contents: read
 
 jobs:
-  validate-changes:
+  post-to-telegram:
+    name: Post changed article to Telegram
     runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      SITE_URL: https://seechuragro.github.io   # adjust if your site has different base URL
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (full history)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
-      - name: Show last commit and changed files (validation)
+      - name: Determine changed article JSON
+        id: detect
         run: |
-          echo "Run by: $GITHUB_ACTOR"
-          echo "Commit: $GITHUB_SHA"
-          echo "Files changed in last commit:"
-          git --no-pager diff --name-only HEAD~1 HEAD || true
-          echo "End of list."
+          # list files changed in this push
+          echo "Getting changed files between $GITHUB_EVENT_BEFORE and $GITHUB_SHA"
+          changed_files="$(git diff --name-only $GITHUB_EVENT_BEFORE $GITHUB_SHA || true)"
+          echo "Changed files:"
+          printf "%s\n" "$changed_files"
+          # prefer explicit article JSON inside articles/ or content/articles/ or top-level articles.json
+          article_path="$(printf "%s\n" "$changed_files" | grep -E '(^articles/.*\.json$|^content/articles/.*\.json$|^articles.json$)' | head -n1 || true)"
+          if [ -z "$article_path" ]; then
+            echo "no_article=true" >> "$GITHUB_OUTPUT"
+            echo "No article JSON changed. Exiting."
+            exit 0
+          fi
+          echo "article=${article_path}" >> "$GITHUB_OUTPUT"
+          echo "Detected article: ${article_path}"
+
+      - name: Read article JSON and prepare post variables
+        id: prepare
+        run: |
+          if [ "${{ steps.detect.outputs.no_article }}" = "true" ]; then
+            echo "No article to post, exiting."
+            exit 0
+          fi
+
+          ARTICLE_FILE="${{ steps.detect.outputs.article }}"
+          echo "Reading article file: $ARTICLE_FILE"
+
+          if [ ! -f "$ARTICLE_FILE" ]; then
+            echo "::error::Article file not found at path: $ARTICLE_FILE"
+            exit 2
+          fi
+
+          # Use python to parse the JSON reliably (works for nested or missing keys)
+          python - <<'PY' > /tmp/article_parse.json
+import json,sys
+p = json.load(open(sys.argv[1], encoding='utf-8'))
+out = {}
+# try common keys
+out['title'] = p.get('title') or p.get('name') or ''
+summary = p.get('summary') or p.get('description') or p.get('excerpt') or ''
+out['summary'] = summary
+# possible image fields
+img = p.get('image') or p.get('hero_image') or p.get('cover') or p.get('thumbnail') or ''
+# normalize image path (strip leading ./)
+if isinstance(img,str) and img.startswith('./'):
+    img = img[2:]
+out['image'] = img or ''
+# canonical article url if exists or build from slug/file path
+url = p.get('url') or p.get('permalink') or ''
+if not url:
+    # try to construct from site + file path
+    file_path = sys.argv[1]
+    # if file is articles/slug.json try to convert
+    import os
+    name = os.path.splitext(os.path.basename(file_path))[0]
+    url = ''
+    if name:
+        url = ''
+out['url'] = url
+print(json.dumps(out, ensure_ascii=False))
+PY
+          python - <<'PY'
+import json,sys
+d=json.load(open('/tmp/article_parse.json',encoding='utf-8'))
+# create caption: Title newline summary newline link
+title = d.get('title','').strip()
+summary = d.get('summary','').strip()
+img = d.get('image','').strip()
+# build link - prefer a "url" field in article JSON else derive from file name
+# attempt to derive from GITHUB env variables if not provided
+url = d.get('url','')
+if not url:
+    # derive from file path
+    import os,sys
+    artfile = os.environ.get('ARTICLE_FILE','')
+    base = os.environ.get('SITE_URL','https://seechuragro.github.io').rstrip('/')
+    if artfile:
+        name = os.path.splitext(os.path.basename(artfile))[0]
+        url = base + '/' + name + '.html'
+    else:
+        url = base
+# prepare caption (shorten summary if needed)
+cap = title
+if summary:
+    cap += "\n\n" + (summary if len(summary) <= 500 else summary[:500] + "...")
+cap += "\n\n" + url
+out={'caption':cap, 'image': img, 'url': url}
+print(json.dumps(out, ensure_ascii=False))
+PY
+          # export outputs
+          CAPTION="$(python -c "import json; print(json.load(open('/tmp/article_parse.json'))['title'] if True else '')")"
+          # The second python produced the final /tmp json
+          FINAL_JSON="$(python - <<'PY'
+import json
+a=json.load(open('/tmp/article_parse.json',encoding='utf-8'))
+title=a.get('title','').strip()
+summary=a.get('summary','').strip()
+img=a.get('image','').strip()
+base = "$SITE_URL"
+import os
+article_file = "${{ steps.detect.outputs.article }}"
+if not article_file:
+    article_file = ''
+name = ''
+if article_file:
+    name = os.path.splitext(os.path.basename(article_file))[0]
+url = a.get('url','') or (base.rstrip('/') + '/' + (name + '.html' if name else ''))
+cap = title
+if summary:
+    cap += "\\n\\n" + (summary if len(summary) <= 500 else summary[:500] + "...")
+cap += "\\n\\n" + url
+print(json.dumps({'caption':cap, 'image':img, 'url':url}, ensure_ascii=False))
+PY
+)"
+          echo "final_json=$FINAL_JSON" >> "$GITHUB_OUTPUT"
+          # parse fields into outputs for next steps
+          CAPTION_VAL="$(python -c "import json,sys; print(json.loads(sys.argv[1])['caption'])" "$FINAL_JSON")"
+          IMAGE_VAL="$(python -c "import json,sys; print(json.loads(sys.argv[1])['image'])" "$FINAL_JSON")"
+          URL_VAL="$(python -c "import json,sys; print(json.loads(sys.argv[1])['url'])" "$FINAL_JSON")"
+          echo "caption<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CAPTION_VAL" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "image=$IMAGE_VAL" >> "$GITHUB_OUTPUT"
+          echo "article_url=$URL_VAL" >> "$GITHUB_OUTPUT"
+
+      - name: Debug: show prepared vars
+        run: |
+          echo "ARTICLE_FILE: ${{ steps.detect.outputs.article }}"
+          echo "CAPTION (truncated to 1000 chars):"
+          printf "%s\n" "${{ steps.prepare.outputs.caption }}" | head -c 1000
+          echo
+          echo "IMAGE field: '${{ steps.prepare.outputs.image }}'"
+          echo "article_url: '${{ steps.prepare.outputs.article_url }}'"
+
+      - name: Post to Telegram (photo if image present, else text)
+        run: |
+          # read prepared outputs
+          CAPTION="${{ steps.prepare.outputs.caption }}"
+          IMG_FIELD="${{ steps.prepare.outputs.image }}"
+          ARTICLE_URL="${{ steps.prepare.outputs.article_url }}"
+          BOT_URL="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
+
+          # normalize image url if image field exists
+          if [ -n "$IMG_FIELD" ] && [[ "$IMG_FIELD" != http* ]]; then
+            # assume it's a path inside repo; strip leading ./ if present
+            IMG_FIELD="${IMG_FIELD#./}"
+            PHOTO_URL="${SITE_URL%/}/${IMG_FIELD}"
+          else
+            PHOTO_URL="$IMG_FIELD"
+          fi
+
+          echo "Will post. PHOTO_URL='$PHOTO_URL' (empty means no image)"
+          if [ -n "$PHOTO_URL" ]; then
+            echo "Posting photo to Telegram..."
+            curl -sS --fail -X POST "${BOT_URL}/sendPhoto" \
+              -F chat_id="${TELEGRAM_CHAT_ID}" \
+              -F photo="${PHOTO_URL}" \
+              -F caption="${CAPTION}" \
+              -F parse_mode=HTML \
+              -o telegram-photo.json \
+            || (echo "::error::sendPhoto failed" && cat telegram-photo.json && exit 5)
+            echo "sendPhoto response:"
+            cat telegram-photo.json
+          else
+            echo "Posting plain message to Telegram..."
+            curl -sS --fail -X POST "${BOT_URL}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=${CAPTION}" \
+              --data-urlencode "parse_mode=HTML" \
+              -o telegram-send.json \
+            || (echo "::error::sendMessage failed" && cat telegram-send.json && exit 6)
+            echo "sendMessage response:"
+            cat telegram-send.json
+          fi
