@@ -57,7 +57,7 @@ jobs:
         if: steps.detect.outputs.no != 'true'
         run: sudo apt-get update -y && sudo apt-get install -y jq
 
-      - name: Parse json and build caption (single newlines)
+      - name: Parse json & build caption (auto-resolve image path)
         id: prep
         if: steps.detect.outputs.no != 'true'
         run: |
@@ -65,18 +65,54 @@ jobs:
 
           TITLE=$(jq -r '.title // ""' "$F")
           EXCERPT=$(jq -r '.excerpt // .summary // .description // ""' "$F")
-          IMAGE=$(jq -r '.cover_image // .image // .hero_image // .thumbnail // ""' "$F")
+          IMAGE_FIELD=$(jq -r '.cover_image // .image // .hero_image // .thumbnail // ""' "$F")
           URL=$(jq -r '.url // ""' "$F")
 
           [ -z "$URL" ] && URL="${SITE_URL%/}/$(basename "$F" .json).html"
 
-          IMAGE="${IMAGE#./}"
+          IMAGE_FIELD="${IMAGE_FIELD#./}"
 
-          case "$IMAGE" in
-            http* ) IMG_URL="$IMAGE" ;;
-            "" ) IMG_URL="" ;;
-            * ) IMG_URL="${SITE_URL%/}/$IMAGE" ;;
-          esac
+          RESOLVED_LOCAL=""
+          RESOLVED_URL=""
+
+          if [ -z "$IMAGE_FIELD" ]; then
+            BASE=$(basename "$F" .json)
+            for try in "assets/articles/${BASE}.jpg" "assets/articles/${BASE}.jpeg" "assets/articles/${BASE}.png" "assets/articles/${BASE}.webp" "assets/${BASE}.jpg" "images/${BASE}.jpg" "images/uploads/${BASE}.jpg"; do
+              if [ -f "${GITHUB_WORKSPACE}/${try}" ]; then
+                RESOLVED_LOCAL="${try}"
+                break
+              fi
+            done
+          fi
+
+          if [ -n "$IMAGE_FIELD" ]; then
+            if [[ "$IMAGE_FIELD" =~ ^https?:// ]]; then
+              RESOLVED_URL="$IMAGE_FIELD"
+            else
+              if [ -f "${GITHUB_WORKSPACE}/${IMAGE_FIELD}" ]; then
+                RESOLVED_LOCAL="${IMAGE_FIELD}"
+              else
+                for prefix in "assets/articles" "assets" "images" "images/uploads" ""; do
+                  if [ -n "$prefix" ]; then
+                    candidate="${prefix}/${IMAGE_FIELD}"
+                  else
+                    candidate="${IMAGE_FIELD}"
+                  fi
+                  if [ -f "${GITHUB_WORKSPACE}/${candidate}" ]; then
+                    RESOLVED_LOCAL="${candidate}"
+                    break
+                  fi
+                done
+                if [ -z "$RESOLVED_LOCAL" ]; then
+                  RESOLVED_URL="${SITE_URL%/}/${IMAGE_FIELD}"
+                fi
+              fi
+            fi
+          fi
+
+          if [ -n "$RESOLVED_LOCAL" ]; then
+            RESOLVED_URL="${SITE_URL%/}/${RESOLVED_LOCAL#./}"
+          fi
 
           TITLE_ESC=$(echo "$TITLE" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
           EXCERPT_ESC=$(echo "$EXCERPT" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
@@ -89,8 +125,8 @@ jobs:
           echo "$CAPTION" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          echo "img=$IMAGE" >> $GITHUB_OUTPUT
-          echo "img_url=$IMG_URL" >> $GITHUB_OUTPUT
+          echo "img=${RESOLVED_LOCAL}" >> $GITHUB_OUTPUT
+          echo "img_url=${RESOLVED_URL}" >> $GITHUB_OUTPUT
 
       - name: Debug prepared variables
         if: steps.detect.outputs.no != 'true'
@@ -99,10 +135,10 @@ jobs:
           echo "CAPTION (preview):"
           printf "%s\n" "${{ steps.prep.outputs.caption }}" | sed -n '1,6p'
           echo
-          echo "IMAGE (raw): '${{ steps.prep.outputs.img }}'"
-          echo "IMAGE_URL (computed): '${{ steps.prep.outputs.img_url }}'"
+          echo "RESOLVED LOCAL IMAGE: '${{ steps.prep.outputs.img }}'"
+          echo "RESOLVED IMAGE_URL: '${{ steps.prep.outputs.img_url }}'"
 
-      - name: Telegram send - prefer local upload then URL then download then text
+      - name: Telegram send (local upload preferred, plain text caption)
         if: steps.detect.outputs.no != 'true'
         run: |
           CAPTION_RAW="${{ steps.prep.outputs.caption }}"
@@ -111,17 +147,17 @@ jobs:
           API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           POSTED=0
 
-          # plain-text caption (remove HTML tags for plain text posting)
+          # plain-text caption: strip HTML tags (we keep distinct newlines)
           CAP_PLAIN=$(printf "%s\n" "$CAPTION_RAW" | sed 's/<[^>]*>//g')
 
-          echo "Caption preview:"
+          echo "Caption preview (plain text):"
           printf "%s\n" "$CAP_PLAIN" | sed -n '1,6p'
 
-          # 1) Prefer local repo upload when image path is repo-relative
+          # 1) prefer local repo upload when image path is repo-relative
           if [ -n "$IMG_RAW" ] && [[ "$IMG_RAW" != http* ]]; then
             LOCAL_PATH="${GITHUB_WORKSPACE}/${IMG_RAW#./}"
             if [ -f "$LOCAL_PATH" ]; then
-              echo "Found local image at $LOCAL_PATH - uploading"
+              echo "Found local image at $LOCAL_PATH - attempting upload"
               curl -s -S -X POST "$API/sendPhoto" \
                 -F chat_id="${TELEGRAM_CHAT_ID}" \
                 -F photo=@"${LOCAL_PATH}" \
@@ -150,7 +186,7 @@ jobs:
               i=$((i+1))
             done
             if [ $ok -eq 1 ]; then
-              echo "Sending photo via URL..."
+              echo "Sending photo via IMG_URL..."
               curl -s -S -X POST "$API/sendPhoto" \
                 -F chat_id="${TELEGRAM_CHAT_ID}" \
                 -F photo="$IMG_URL" \
@@ -182,7 +218,7 @@ jobs:
             fi
           fi
 
-          # 4) Fallback to text
+          # 4) Fallback to plain text message
           if [ $POSTED -eq 0 ]; then
             echo "Sending plain text fallback"
             curl -s -S -X POST "$API/sendMessage" \
