@@ -78,13 +78,12 @@ jobs:
             *) IMG_URL="${SITE_URL%/}/$IMAGE" ;;
           esac
 
-          # Basic HTML escaping
-          TITLE_ESC=$(echo "$TITLE" | sed 's/&/&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
-          EXCERPT_ESC=$(echo "$EXCERPT" | sed 's/&/&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+          TITLE_ESC=$(echo "$TITLE" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+          EXCERPT_ESC=$(echo "$EXCERPT" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
 
           CAPTION="<b>$TITLE_ESC</b>"
           [ -n "$EXCERPT_ESC" ] && CAPTION="$CAPTION\n\n<i>$EXCERPT_ESC</i>"
-          CAPTION="$CAPTION\n\n<a href=\"$URL\">Read more</a>"
+          CAPTION="$CAPTION\n\n$URL"
 
           echo "caption<<EOF" >> $GITHUB_OUTPUT
           echo "$CAPTION" >> $GITHUB_OUTPUT
