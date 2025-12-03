@@ -1,4 +1,4 @@
-name: Post changed article JSONs to Telegram (staging) — image resize & neutral doc name
+name: Post changed article JSONs to social platforms (staging) — image resize & neutral doc name
 
 on:
   push:
@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   notify-telegram:
+    name: Telegram — Post changed article JSONs (staging)
     runs-on: ubuntu-latest
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -290,3 +291,233 @@ jobs:
         if: steps.changes.outputs.json_files == ''
         run: |
           echo "No JSON files detected as changed in this push. Nothing to post to Telegram."
+
+  post-linkedin:
+    name: LinkedIn — Post changed article JSONs (staging)
+    runs-on: ubuntu-latest
+    # runs in parallel with notify-telegram by default
+    env:
+      # keep the same image resize settings as Telegram
+      MAX_WIDTH: "1280"
+      JPEG_QUALITY: "85"
+      LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+      LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
+    steps:
+      - name: Checkout code (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tools (jq, curl, imagemagick)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl imagemagick
+
+      - name: Determine changed files in this push (LinkedIn)
+        id: changes_li
+        run: |
+          set -euo pipefail
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
+          fi
+          JSON_FILES=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
+          if [ -z "$JSON_FILES" ]; then
+            JSON_FILES=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          fi
+          JSON_FILES_CLEAN=$(printf "%s\n" "$JSON_FILES" | sed '/^\s*$/d' || true)
+          if [ -z "$JSON_FILES_CLEAN" ]; then
+            echo "::set-output name=json_files::"
+          else
+            echo "::set-output name=json_files::$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')"
+          fi
+
+      - name: Post each changed JSON to LinkedIn (resize image, register upload)
+        if: steps.changes_li.outputs.json_files != ''
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
+          MAX_WIDTH: ${{ env.MAX_WIDTH }}
+          JPEG_QUALITY: ${{ env.JPEG_QUALITY }}
+        run: |
+          set -euo pipefail
+
+          RAW="${{ steps.changes_li.outputs.json_files }}"
+          JSON_FILES=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
+          collapse_blank_lines() {
+            awk 'BEGIN{blank=0} { if (NF==0) { if (!blank) { print ""; blank=1 } } else { print; blank=0 } }'
+          }
+
+          for jf in $JSON_FILES; do
+            if [ ! -f "$jf" ]; then
+              echo "Skipping (not a file): $jf"
+              continue
+            fi
+
+            echo "Processing JSON (LinkedIn): $jf"
+
+            TITLE="$(jq -r '.title // empty' "$jf")"
+            EXCERPT="$(jq -r '.excerpt // .description // empty' "$jf")"
+            URL="$(jq -r '.url // .link // empty' "$jf")"
+            RAW_COVER="$(jq -r '.cover_image // empty' "$jf")"
+
+            echo "Fields -> title:'${TITLE:-<none>}' url:'${URL:-<none>}' raw_cover:'${RAW_COVER:-<none>}'"
+
+            # Build caption: Title, blank line, excerpt, blank line, URL (LinkedIn will show link preview)
+            CAPTURE="$(printf "%s\n\n%s\n\n%s" "$TITLE" "$EXCERPT" "$URL")"
+            CLEANED="$(printf "%s" "$CAPTURE" \
+              | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' \
+              | awk '{ sub(/[[:space:]]+$/, ""); print }' \
+              | collapse_blank_lines )"
+            CLEANED="$(printf "%s" "$CLEANED" | sed 's/\\n/\n/g')"
+
+            echo "----- CAPTION PREVIEW START -----"
+            printf "%s\n" "$CLEANED"
+            echo "----- CAPTION PREVIEW END -----"
+
+            # -----------------------
+            # Image-finding (normalize cover path) - same heuristic as Telegram
+            # -----------------------
+            IMAGE_PATH=""
+
+            if [ -n "$RAW_COVER" ]; then
+              COV="$(printf "%s" "$RAW_COVER" | sed -E 's@^https?://[^/]+@@; s@^\./@@; s@^/@@')"
+              echo "Normalized cover: '$COV'"
+            else
+              COV=""
+            fi
+
+            if [ -n "$COV" ]; then
+              if [ -f "./${COV}" ]; then
+                IMAGE_PATH="./${COV}"
+                echo "Found exact image path: $IMAGE_PATH"
+              else
+                echo "Exact path ./${COV} not found; will try common locations."
+              fi
+            fi
+
+            if [ -z "$IMAGE_PATH" ]; then
+              BASENAME_JSON="$(basename "$jf" .json)"
+              if [ -n "$COV" ]; then
+                SEARCH_NAME="$(basename "$COV")"
+              else
+                SEARCH_NAME="$BASENAME_JSON"
+              fi
+
+              echo "Searching for image basename: $SEARCH_NAME"
+
+              exts="jpg jpeg png webp gif"
+              for ext in $exts; do
+                CAND="./assets/articles/${SEARCH_NAME}.${ext}"
+                if [ -f "$CAND" ]; then IMAGE_PATH="$CAND"; echo "Found by name: $IMAGE_PATH"; break; fi
+                CAND="./images/${SEARCH_NAME}.${ext}"
+                if [ -f "$CAND" ]; then IMAGE_PATH="$CAND"; echo "Found by name: $IMAGE_PATH"; break; fi
+                CAND="./images/uploads/${SEARCH_NAME}.${ext}"
+                if [ -f "$CAND" ]; then IMAGE_PATH="$CAND"; echo "Found by name: $IMAGE_PATH"; break; fi
+                CAND="./${SEARCH_NAME}.${ext}"
+                if [ -f "$CAND" ]; then IMAGE_PATH="$CAND"; echo "Found by name: $IMAGE_PATH"; break; fi
+              done
+
+              if [ -z "$IMAGE_PATH" ] && [ -n "$SEARCH_NAME" ]; then
+                FOUND=$(git ls-files | grep -E "/${SEARCH_NAME}\.(jpg|jpeg|png|webp|gif)$" || true)
+                if [ -n "$FOUND" ]; then
+                  IMAGE_PATH="$(printf "%s\n" "$FOUND" | head -n1)"
+                  echo "Found via git ls-files: $IMAGE_PATH"
+                fi
+              fi
+            fi
+
+            # -----------------------
+            # If image found: resize with ImageMagick to MAX_WIDTH while preserving aspect
+            # -----------------------
+            TMP_RESIZED=""
+            if [ -n "$IMAGE_PATH" ] && [ -f "$IMAGE_PATH" ]; then
+              echo "Resizing image for LinkedIn (max width ${MAX_WIDTH})"
+              TMP_RESIZED="$(mktemp --suffix=.jpg)"
+              convert "$IMAGE_PATH" -resize "${MAX_WIDTH}x>" -strip -quality "${JPEG_QUALITY}" "$TMP_RESIZED" || {
+                echo "ImageMagick convert failed; will try uploading original file as fallback"
+                TMP_RESIZED=""
+              }
+
+              if [ -n "$TMP_RESIZED" ] && [ -f "$TMP_RESIZED" ]; then
+                echo "Resized image ready: $TMP_RESIZED (size: $(du -h "$TMP_RESIZED" | cut -f1))"
+              else
+                echo "No resized file, will attempt upload with original: $IMAGE_PATH"
+              fi
+            fi
+
+            # -----------------------
+            # If no image: create text-only post
+            # If image exists: register upload -> upload -> create post referencing asset
+            # -----------------------
+            if [ -z "${TMP_RESIZED:-}" ] || [ ! -f "${TMP_RESIZED:-}" ]; then
+              echo "No image available for LinkedIn post. Creating text-only UGC post."
+              payload=$(jq -n --arg owner "$LINKEDIN_ORG_URN" \
+                              --arg text "$CLEANED" \
+                '{author:$owner, lifecycleState:"PUBLISHED", specificContent: { "com.linkedin.ugc.ShareContent": { "shareCommentary": { "text": $text }, "shareMediaCategory":"NONE" } }, visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" } }')
+              echo "Posting text-only UGC..."
+              curl -s -X POST \
+                -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "$payload" \
+                "https://api.linkedin.com/v2/ugcPosts" | jq .
+              echo "LinkedIn text post created for $jf"
+              # continue with next JSON
+              continue
+            fi
+
+            # 1) Register an upload to get upload URL
+            register_payload=$(jq -n --arg owner "$LINKEDIN_ORG_URN" \
+              '{registerUploadRequest: { owner: $owner, recipes: ["urn:li:digitalmediaRecipe:feedshare-image"], serviceRelationships: [{identifier:"urn:li:userGeneratedContent", relationshipType:"OWNER"}], supportedUploadMechanism: ["SYNCHRONOUS_UPLOAD"]}}')
+
+            echo "Registering upload..."
+            reg_response=$(curl -s -X POST \
+              -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$register_payload" "https://api.linkedin.com/v2/assets?action=registerUpload")
+            echo "Register response:"
+            echo "$reg_response" | jq .
+
+            upload_url=$(echo "$reg_response" | jq -r '.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl')
+            asset_urn=$(echo "$reg_response" | jq -r '.value.asset')
+            if [ "$upload_url" = "null" ] || [ -z "$upload_url" ]; then
+              echo "Upload URL not found, falling back to text post"
+              payload=$(jq -n --arg owner "$LINKEDIN_ORG_URN" \
+                              --arg text "$CLEANED" \
+                '{author:$owner, lifecycleState:"PUBLISHED", specificContent: { "com.linkedin.ugc.ShareContent": { "shareCommentary": { "text": $text }, "shareMediaCategory":"NONE" } }, visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" } }')
+              curl -s -X POST -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$payload" "https://api.linkedin.com/v2/ugcPosts" | jq .
+              continue
+            fi
+
+            # 2) Upload binary
+            echo "Uploading image to LinkedIn upload URL..."
+            upload_resp_file=$(mktemp)
+            curl -s -X PUT -H "Content-Type: application/octet-stream" --data-binary @"$TMP_RESIZED" "$upload_url" -w "\nHTTP_STATUS:%{http_code}\n" > "$upload_resp_file"
+            cat "$upload_resp_file" || true
+            rm -f "$upload_resp_file"
+
+            # 3) Create UGC post referencing the asset
+            post_payload=$(jq -n --arg owner "$LINKEDIN_ORG_URN" --arg text "$CLEANED" --arg asset "$asset_urn" \
+              '{author:$owner, lifecycleState:"PUBLISHED", specificContent: {"com.linkedin.ugc.ShareContent": {"shareCommentary": {"text": $text},"shareMediaCategory":"IMAGE","media":[{"status":"READY","description":{"text":""},"media":$asset,"title":{"text":""}}]}}, visibility: {"com.linkedin.ugc.MemberNetworkVisibility":"PUBLIC"}}')
+            echo "Creating UGC post..."
+            curl -s -X POST \
+              -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$post_payload" "https://api.linkedin.com/v2/ugcPosts" | jq .
+
+            echo "LinkedIn image post created for $jf"
+
+            # cleanup
+            if [ -n "$TMP_RESIZED" ] && [ -f "$TMP_RESIZED" ]; then
+              rm -f "$TMP_RESIZED"
+            fi
+
+            echo "Done processing $jf (LinkedIn)"
+            echo "--------------------------------------------"
+          done
+
+      - name: No changed JSONs found notice (LinkedIn)
+        if: steps.changes_li.outputs.json_files == ''
+        run: |
+          echo "No JSON files detected as changed in this push. Nothing to post to LinkedIn."
