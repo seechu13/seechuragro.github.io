@@ -36,9 +36,12 @@ env:
 
 jobs:
   post-x:
-    if: >
+    # Allow runs both when triggered by workflow_run (upstream already finished)
+    # and when triggered by push (we'll poll for upstream run in that case).
+    if: >-
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging')
+
     name: X — Post changed article JSONs (staging)
     runs-on: ubuntu-latest
 
@@ -53,7 +56,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y jq curl imagemagick git
           python -m pip install --upgrade pip
-          pip install tweepy Pillow requests
+          pip install --quiet tweepy Pillow requests
 
       - name: If triggered by push — wait for upstream workflow completion (poll)
         if: github.event_name == 'push'
@@ -111,7 +114,7 @@ jobs:
           fi
 
       - name: Optional safety sleep after upstream success
-        if: >
+        if: >-
           github.event_name == 'workflow_run' ||
           (github.event_name == 'push' && steps.upstream_wait.outputs.upstream_found == 'true')
         run: |
@@ -122,11 +125,21 @@ jobs:
             echo "No safety sleep configured"
           fi
 
-      - name: Create runner-local scripts/send_x.py (self-contained, uses ImageMagick first)
+      - name: Create runner-local scripts/send_x.py (self-contained, ImageMagick first)
         run: |
           mkdir -p scripts
           cat > scripts/send_x.py << 'PY'
 #!/usr/bin/env python3
+"""
+scripts/send_x.py
+Usage: python3 scripts/send_x.py path/to/article.json
+
+Respects the same heuristics used by Telegram/LinkedIn:
+- normalize cover_image path
+- search local paths and git ls-files fallback
+- resize using ImageMagick 'convert' first; fallback to Pillow
+- post to X (tweepy, OAuth1), using neutral filename copy for uploads
+"""
 import os, sys, json, tempfile, shutil, subprocess, logging
 from pathlib import Path
 import requests
@@ -136,11 +149,11 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 try:
     import tweepy
 except Exception:
-    logging.error("tweepy is required; please install 'tweepy'.")
+    logging.error("tweepy is required; please install it.")
     sys.exit(2)
 
 try:
-    from PIL import Image, UnidentifiedImageError
+    from PIL import Image
     PIL_AVAILABLE = True
 except Exception:
     PIL_AVAILABLE = False
@@ -163,16 +176,14 @@ def normalize_cover_path(raw):
     s = raw.strip()
     if s.startswith("http://") or s.startswith("https://"):
         parts = s.split("/", 3)
-        if len(parts) >= 4:
-            return parts[3]
-        else:
-            return Path(s).name
+        return parts[3] if len(parts) >= 4 else Path(parts[-1]).name
     return s.lstrip("./").lstrip("/")
 
 def find_local_image(candidate, json_path):
     exts = ["jpg","jpeg","png","webp","gif"]
     cand_name = Path(candidate).name
     base = Path(cand_name).stem
+
     candidates = [
         Path(candidate),
         json_path.parent / cand_name,
@@ -184,6 +195,7 @@ def find_local_image(candidate, json_path):
     for p in candidates:
         if p.exists() and p.is_file():
             return p.resolve()
+
     for ext in exts:
         for p in [
             Path("assets/articles") / f"{base}.{ext}",
@@ -194,6 +206,7 @@ def find_local_image(candidate, json_path):
         ]:
             if p.exists() and p.is_file():
                 return p.resolve()
+
     try:
         out = subprocess.check_output(["git","ls-files"], text=True)
         for line in out.splitlines():
@@ -201,6 +214,7 @@ def find_local_image(candidate, json_path):
                 return Path(line).resolve()
     except Exception:
         pass
+
     return None
 
 def resize_with_imagemagick(src, maxw, quality):
@@ -257,13 +271,13 @@ def post_with_media(api, text, image_path):
     try:
         shutil.copyfile(image_path, tmp_neutral)
     except Exception as e:
-        logging.error("Failed to copy for neutral filename: %s", e)
+        logging.error("Failed copying file for neutral filename: %s", e)
         return False
     try:
         media = api.media_upload(str(tmp_neutral))
         media_id = getattr(media, "media_id_string", getattr(media, "media_id", None))
         if not media_id:
-            logging.error("No media id returned")
+            logging.error("No media id from upload")
             return False
         resp = api.update_status(status=text, media_ids=[media_id])
         logging.info("Posted with media; id=%s", getattr(resp, "id", "<id>"))
@@ -283,6 +297,7 @@ def main():
     if not jf.exists():
         logging.error("JSON not found: %s", jf)
         sys.exit(2)
+
     data = json.loads(jf.read_text(encoding="utf-8"))
     title = data.get("title", "")
     excerpt = data.get("excerpt", data.get("description", ""))
@@ -291,9 +306,9 @@ def main():
 
     caption = compose_caption(title, excerpt, url)
 
-    # authenticate tweepy (OAuth1)
+    # Authenticate X (tweepy OAuth1)
     try:
-        auth = tweepy.OAuth1UserHandler(os.getenv("X_API_KEY"), os.getenv("X_API_SECRET"), os.getenv("X_ACCESS_TOKEN"), os.getenv("X_ACCESS_SECRET"))
+        auth = tweepy.OAuth1UserHandler(X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET)
         api = tweepy.API(auth, wait_on_rate_limit=True)
         api.verify_credentials()
     except Exception as e:
