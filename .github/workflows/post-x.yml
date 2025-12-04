@@ -1,0 +1,173 @@
+name: Post changed article JSONs to X (staging)
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'assets/articles/**'
+      - 'articles/**'
+      - 'content/articles/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+env:
+  MAX_WIDTH: "1280"
+  JPEG_QUALITY: "85"
+
+jobs:
+  post-x:
+    name: X — Post changed article JSONs (staging)
+    runs-on: ubuntu-latest
+    env:
+      X_API_KEY: ${{ secrets.X_API_KEY }}
+      X_API_SECRET: ${{ secrets.X_API_SECRET }}
+      X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+      X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+      MAX_WIDTH: ${{ env.MAX_WIDTH }}
+      JPEG_QUALITY: ${{ env.JPEG_QUALITY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install runtime & libs
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl imagemagick python3 python3-pip
+          pip3 install requests requests_oauthlib
+
+      - name: Determine changed files
+        id: changes_x
+        run: |
+          set -euo pipefail
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
+          fi
+          JSON_FILES=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
+          if [ -z "$JSON_FILES" ]; then
+            JSON_FILES=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          fi
+          JSON_FILES_CLEAN=$(printf "%s\n" "$JSON_FILES" | sed '/^\s*$/d' || true)
+          if [ -z "$JSON_FILES_CLEAN" ]; then
+            echo "json_files=" >> $GITHUB_OUTPUT
+          else
+            CLEANED_LIST=$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+            echo "json_files=$CLEANED_LIST" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post each changed JSON to X
+        if: steps.changes_x.outputs.json_files != ''
+        run: |
+          set -euo pipefail
+
+          RAW="${{ steps.changes_x.outputs.json_files }}"
+          JSON_FILES=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
+          collapse_blank_lines() {
+            awk 'BEGIN{blank=0} { if (NF==0) { if (!blank) { print ""; blank=1 } } else { print; blank=0 } }'
+          }
+
+          # small python posting script (uses OAuth1Session, installed earlier)
+          cat > /tmp/tweet_x.py << 'PY'
+from requests_oauthlib import OAuth1Session
+import os, sys, json
+
+API_KEY = os.environ["X_API_KEY"]
+API_SECRET = os.environ["X_API_SECRET"]
+ACCESS_TOKEN = os.environ["X_ACCESS_TOKEN"]
+ACCESS_SECRET = os.environ["X_ACCESS_SECRET"]
+
+tweet_text = sys.argv[1]
+image_path = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != "NONE" else None
+
+oauth = OAuth1Session(API_KEY, client_secret=API_SECRET,
+                      resource_owner_key=ACCESS_TOKEN,
+                      resource_owner_secret=ACCESS_SECRET)
+
+media_ids = []
+if image_path:
+    if not os.path.isfile(image_path):
+        print("Image not found:", image_path)
+        sys.exit(2)
+    url_upload = "https://upload.twitter.com/1.1/media/upload.json"
+    with open(image_path, "rb") as f:
+        resp = oauth.post(url_upload, files={"media": f})
+    if resp.status_code != 200:
+        print("MEDIA UPLOAD FAILED", resp.status_code, resp.text)
+        sys.exit(3)
+    media_ids.append(resp.json()["media_id_string"])
+
+tweet_url = "https://api.twitter.com/1.1/statuses/update.json"
+payload = {"status": tweet_text}
+if media_ids:
+    payload["media_ids"] = ",".join(media_ids)
+
+resp = oauth.post(tweet_url, data=payload)
+print(resp.status_code, resp.text)
+PY
+
+          for jf in $JSON_FILES; do
+            echo "Processing JSON for X: $jf"
+
+            TITLE="$(jq -r '.title // empty' "$jf")"
+            EXCERPT="$(jq -r '.excerpt // .description // empty' "$jf")"
+            URL="$(jq -r '.url // .link // empty' "$jf")"
+            RAW_COVER="$(jq -r '.cover_image // empty' "$jf")"
+
+            CAPTURE="$(printf "%s\n\n%s\n\n%s" "$TITLE" "$EXCERPT" "$URL")"
+            CLEANED="$(printf "%s" "$CAPTURE" \
+              | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' \
+              | awk '{ sub(/[[:space:]]+$/, ""); print }' \
+              | collapse_blank_lines )"
+            CLEANED="$(printf "%s" "$CLEANED" | sed 's/\\n/\n/g')"
+
+            # find image (same logic as other workflows)
+            IMAGE_PATH=""
+            if [ -n "$RAW_COVER" ]; then
+              COV="$(printf "%s" "$RAW_COVER" | sed -E 's@^https?://[^/]+@@; s@^\./@@; s@^/@@')"
+            else
+              COV=""
+            fi
+
+            if [ -n "$COV" ] && [ -f "./${COV}" ]; then
+              IMAGE_PATH="./${COV}"
+            else
+              BASENAME_JSON="$(basename "$jf" .json)"
+              if [ -n "$COV" ]; then SEARCH_NAME="$(basename "$COV")"; else SEARCH_NAME="$BASENAME_JSON"; fi
+              for ext in jpg jpeg png webp gif; do
+                for dir in "./assets/articles" "./images" "./images/uploads" "."; do
+                  CAND="${dir}/${SEARCH_NAME}.${ext}"
+                  if [ -f "$CAND" ]; then
+                    IMAGE_PATH="$CAND"
+                    break 2
+                  fi
+                done
+              done
+            fi
+
+            TMP_RESIZED=""
+            if [ -n "$IMAGE_PATH" ] && [ -f "$IMAGE_PATH" ]; then
+              TMP_RESIZED="$(mktemp --suffix=.jpg)"
+              convert "$IMAGE_PATH" -resize "${MAX_WIDTH}x>" -strip -quality "${JPEG_QUALITY}" "$TMP_RESIZED" || TMP_RESIZED=""
+            fi
+
+            FINAL_IMAGE="$TMP_RESIZED"
+            if [ -z "$FINAL_IMAGE" ] || [ ! -f "$FINAL_IMAGE" ]; then
+              FINAL_IMAGE="NONE"
+            fi
+
+            echo "Tweeting: (len $(printf '%s' "$CLEANED" | wc -c)) chars; image: $FINAL_IMAGE"
+            python3 /tmp/tweet_x.py "$CLEANED" "$FINAL_IMAGE" || true
+
+            if [ -n "$TMP_RESIZED" ] && [ -f "$TMP_RESIZED" ]; then rm -f "$TMP_RESIZED"; fi
+          done
+
+      - name: No changed JSONs found
+        if: steps.changes_x.outputs.json_files == ''
+        run: |
+          echo "No JSON files detected as changed in this push. Nothing to post to X."
