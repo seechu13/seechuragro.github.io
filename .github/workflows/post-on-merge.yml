@@ -12,7 +12,6 @@ on:
 permissions:
   contents: read
 
-
 env:
   # Max width used for resizing (you can tweak)
   MAX_WIDTH: "1280"
@@ -26,6 +25,8 @@ jobs:
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      MAX_WIDTH: ${{ env.MAX_WIDTH }}
+      JPEG_QUALITY: ${{ env.JPEG_QUALITY }}
 
     steps:
       - name: Checkout code (full history)
@@ -236,6 +237,8 @@ jobs:
     env:
       LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
       LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
+      MAX_WIDTH: ${{ env.MAX_WIDTH }}
+      JPEG_QUALITY: ${{ env.JPEG_QUALITY }}
 
     steps:
       - name: Checkout code (full history)
