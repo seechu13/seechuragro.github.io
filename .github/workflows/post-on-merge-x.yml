@@ -22,13 +22,22 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # image resize settings
   MAX_WIDTH: "1280"
   JPEG_QUALITY: "85"
+
+  # upstream workflow file name (used when polling)
   UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
-  MAX_WAIT_SECONDS: "180"
-  POLL_INTERVAL: "10"
-  PROCEED_IF_UPSTREAM_MISSING: "false"
+
+  # Polling settings (when triggered by push)
+  MAX_WAIT_SECONDS: "180"     # total seconds to wait for upstream workflow to finish
+  POLL_INTERVAL: "10"        # seconds between polls
+  PROCEED_IF_UPSTREAM_MISSING: "false"  # set "true" to proceed even if upstream not found within timeout
+
+  # safety delay *after* upstream success (seconds). set "120" for 2 minutes
   SLEEP_SECONDS: "120"
+
+  # X credentials (must exist in repo Secrets)
   X_API_KEY: ${{ secrets.X_API_KEY }}
   X_API_SECRET: ${{ secrets.X_API_SECRET }}
   X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
@@ -36,12 +45,10 @@ env:
 
 jobs:
   post-x:
-    # Allow runs both when triggered by workflow_run (upstream already finished)
-    # and when triggered by push (we'll poll for upstream run in that case).
-    if: >-
+    # Allow runs triggered by push (will poll) or by workflow_run (only continues when upstream success on staging)
+    if: >
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging')
-
     name: X — Post changed article JSONs (staging)
     runs-on: ubuntu-latest
 
@@ -56,7 +63,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y jq curl imagemagick git
           python -m pip install --upgrade pip
-          pip install --quiet tweepy Pillow requests
+          pip install tweepy Pillow requests
 
       - name: If triggered by push — wait for upstream workflow completion (poll)
         if: github.event_name == 'push'
@@ -71,7 +78,7 @@ jobs:
           PROCEED=${PROCEED_IF_UPSTREAM_MISSING}
           API_URL="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?head_sha=${SHA}"
 
-          echo "Polling for upstream workflow run for ${WORKFLOW_FILE} at commit ${SHA} (max ${MAX_WAIT}s)..."
+          echo "Polling for upstream workflow run ${WORKFLOW_FILE} for commit ${SHA} (timeout ${MAX_WAIT}s)..."
 
           elapsed=0
           found_success=false
@@ -82,7 +89,7 @@ jobs:
             if [ -n "$run_id" ]; then
               status=$(echo "$resp" | jq -r '.workflow_runs[0].status // empty')
               conclusion=$(echo "$resp" | jq -r '.workflow_runs[0].conclusion // empty')
-              echo "Found run id=$run_id, status=$status, conclusion=$conclusion"
+              echo "Found run id=$run_id status=$status conclusion=$conclusion"
               if [ "$status" = "completed" ] && [ "$conclusion" = "success" ]; then
                 echo "upstream_conclusion=success" >> $GITHUB_OUTPUT
                 found_success=true
@@ -105,16 +112,16 @@ jobs:
           else
             echo "upstream_found=false" >> $GITHUB_OUTPUT
             if [ "$PROCEED" = "true" ]; then
-              echo "Proceeding despite upstream missing/failed (PROCEED_IF_UPSTREAM_MISSING=true)"
+              echo "Proceeding despite upstream missing/failed (PROCEED_IF_UPSTREAM_MISSING=true)" >&2
               echo "upstream_conclusion=missing_or_failed" >> $GITHUB_OUTPUT
             else
-              echo "Upstream did not finish successfully within wait window. Exiting to avoid conflict."
+              echo "Upstream did not finish successfully within wait window. Exiting to avoid conflict." >&2
               exit 1
             fi
           fi
 
       - name: Optional safety sleep after upstream success
-        if: >-
+        if: >
           github.event_name == 'workflow_run' ||
           (github.event_name == 'push' && steps.upstream_wait.outputs.upstream_found == 'true')
         run: |
@@ -134,11 +141,9 @@ jobs:
 scripts/send_x.py
 Usage: python3 scripts/send_x.py path/to/article.json
 
-Respects the same heuristics used by Telegram/LinkedIn:
-- normalize cover_image path
-- search local paths and git ls-files fallback
-- resize using ImageMagick 'convert' first; fallback to Pillow
-- post to X (tweepy, OAuth1), using neutral filename copy for uploads
+- image-finding heuristics (normalize cover path, search common locations, git ls-files fallback)
+- resize with ImageMagick 'convert' first; fallback to Pillow
+- uses tweepy (OAuth1) to post to X; uses neutral filename for uploads
 """
 import os, sys, json, tempfile, shutil, subprocess, logging
 from pathlib import Path
@@ -149,11 +154,11 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 try:
     import tweepy
 except Exception:
-    logging.error("tweepy is required; please install it.")
+    logging.error("tweepy is required; install it in the workflow environment.")
     sys.exit(2)
 
 try:
-    from PIL import Image
+    from PIL import Image, UnidentifiedImageError
     PIL_AVAILABLE = True
 except Exception:
     PIL_AVAILABLE = False
@@ -176,7 +181,10 @@ def normalize_cover_path(raw):
     s = raw.strip()
     if s.startswith("http://") or s.startswith("https://"):
         parts = s.split("/", 3)
-        return parts[3] if len(parts) >= 4 else Path(parts[-1]).name
+        if len(parts) >= 4:
+            return parts[3]
+        else:
+            return Path(s).name
     return s.lstrip("./").lstrip("/")
 
 def find_local_image(candidate, json_path):
@@ -184,7 +192,7 @@ def find_local_image(candidate, json_path):
     cand_name = Path(candidate).name
     base = Path(cand_name).stem
 
-    candidates = [
+    checks = [
         Path(candidate),
         json_path.parent / cand_name,
         Path("assets/articles") / cand_name,
@@ -192,17 +200,17 @@ def find_local_image(candidate, json_path):
         Path("images/uploads") / cand_name,
         Path(cand_name),
     ]
-    for p in candidates:
+    for p in checks:
         if p.exists() and p.is_file():
             return p.resolve()
 
     for ext in exts:
         for p in [
-            Path("assets/articles") / f"{base}.{ext}",
-            Path("images") / f"{base}.{ext}",
-            Path("images/uploads") / f"{base}.{ext}",
-            json_path.parent / f"{base}.{ext}",
+            Path("assets/articles")/f"{base}.{ext}",
+            Path("images")/f"{base}.{ext}",
+            Path("images/uploads")/f"{base}.{ext}",
             Path(f"{base}.{ext}"),
+            Path(json_path.parent)/f"{base}.{ext}",
         ]:
             if p.exists() and p.is_file():
                 return p.resolve()
@@ -271,13 +279,13 @@ def post_with_media(api, text, image_path):
     try:
         shutil.copyfile(image_path, tmp_neutral)
     except Exception as e:
-        logging.error("Failed copying file for neutral filename: %s", e)
+        logging.error("Failed to copy for neutral filename: %s", e)
         return False
     try:
         media = api.media_upload(str(tmp_neutral))
         media_id = getattr(media, "media_id_string", getattr(media, "media_id", None))
         if not media_id:
-            logging.error("No media id from upload")
+            logging.error("No media id returned")
             return False
         resp = api.update_status(status=text, media_ids=[media_id])
         logging.info("Posted with media; id=%s", getattr(resp, "id", "<id>"))
@@ -297,7 +305,6 @@ def main():
     if not jf.exists():
         logging.error("JSON not found: %s", jf)
         sys.exit(2)
-
     data = json.loads(jf.read_text(encoding="utf-8"))
     title = data.get("title", "")
     excerpt = data.get("excerpt", data.get("description", ""))
@@ -306,7 +313,7 @@ def main():
 
     caption = compose_caption(title, excerpt, url)
 
-    # Authenticate X (tweepy OAuth1)
+    # authenticate tweepy (OAuth1)
     try:
         auth = tweepy.OAuth1UserHandler(X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET)
         api = tweepy.API(auth, wait_on_rate_limit=True)
@@ -359,6 +366,7 @@ def main():
     else:
         uploaded = post_text(api, caption)
 
+    # cleanup
     try:
         if tmp_resized and tmp_resized.exists(): tmp_resized.unlink(missing_ok=True)
         if image_final and image_final.exists() and str(image_final).startswith("/tmp"): image_final.unlink(missing_ok=True)
