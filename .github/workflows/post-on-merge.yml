@@ -14,7 +14,9 @@ permissions:
   contents: read
 
 env:
+  # Max width used for resizing (you can tweak)
   MAX_WIDTH: "1280"
+  # JPEG quality for resized image
   JPEG_QUALITY: "85"
 
 jobs:
@@ -24,8 +26,6 @@ jobs:
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      MAX_WIDTH: ${{ env.MAX_WIDTH }}
-      JPEG_QUALITY: ${{ env.JPEG_QUALITY }}
 
     steps:
       - name: Checkout code (full history)
@@ -54,7 +54,6 @@ jobs:
           if [ -z "$JSON_FILES_CLEAN" ]; then
             echo "json_files=" >> $GITHUB_OUTPUT
           else
-            # encode with <<NL>> separator
             ENC=$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
             echo "json_files=${ENC}" >> $GITHUB_OUTPUT
           fi
@@ -65,7 +64,7 @@ jobs:
           set -euo pipefail
           RAW="${{ steps.changes.outputs.json_files }}"
           JSON_FILES=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
-          TELEGRAM_API="https://api.telegram.org/bot${{ env.TELEGRAM_BOT_TOKEN }}"
+          TELEGRAM_API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           SEND_PHOTO="${TELEGRAM_API}/sendPhoto"
           SEND_DOCUMENT="${TELEGRAM_API}/sendDocument"
           SEND_MESSAGE="${TELEGRAM_API}/sendMessage"
@@ -157,7 +156,7 @@ jobs:
               local file="$1"
               body=$(mktemp)
               http_code=$(curl -sS -w "%{http_code}" --show-error --fail --retry 2 --retry-delay 2 \
-                -F chat_id="${{ env.TELEGRAM_CHAT_ID }}" \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
                 -F "photo=@${file}" \
                 -F "caption=${CLEANED}" \
                 -F "parse_mode=HTML" \
@@ -172,7 +171,7 @@ jobs:
               local neutral="image.jpg"
               body=$(mktemp)
               http_code=$(curl -sS -w "%{http_code}" --show-error --fail --retry 2 --retry-delay 2 \
-                -F chat_id="${{ env.TELEGRAM_CHAT_ID }}" \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
                 -F "document=@${file};filename=${neutral}" \
                 -F "caption=${CLEANED}" \
                 -F "parse_mode=HTML" \
@@ -192,7 +191,7 @@ jobs:
 
             if [ "$UPLOADED" -eq 0 ] && printf "%s" "$RAW_COVER" | grep -qE '^https?://'; then
               body=$(mktemp)
-              http_code=$(curl -sS -w "%{http_code}" --show-error --fail --data chat_id="${{ env.TELEGRAM_CHAT_ID }}" \
+              http_code=$(curl -sS -w "%{http_code}" --show-error --fail --data chat_id="${TELEGRAM_CHAT_ID}" \
                 --data "photo=${RAW_COVER}" \
                 --data "caption=${CLEANED}" \
                 --data "parse_mode=HTML" \
@@ -212,7 +211,7 @@ jobs:
             fi
 
             if [ "$UPLOADED" -eq 0 ]; then
-              RESP=$(curl -sS --show-error --fail --data chat_id="${{ env.TELEGRAM_CHAT_ID }}" \
+              RESP=$(curl -sS --show-error --fail --data chat_id="${TELEGRAM_CHAT_ID}" \
                 --data-urlencode "text=${CLEANED}" \
                 --data "parse_mode=HTML" \
                 "${SEND_MESSAGE}" || true)
@@ -235,8 +234,6 @@ jobs:
     name: LinkedIn — Post changed article JSONs (staging)
     runs-on: ubuntu-latest
     env:
-      MAX_WIDTH: ${{ env.MAX_WIDTH }}
-      JPEG_QUALITY: ${{ env.JPEG_QUALITY }}
       LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
       LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
 
