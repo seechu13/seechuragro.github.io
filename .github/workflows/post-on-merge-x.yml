@@ -1,0 +1,398 @@
+name: Post changed article JSONs to X (staging) — self-contained (safe upstream check)
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'assets/articles/**'
+      - 'articles/**'
+      - 'content/articles/**'
+      - '.github/workflows/**'
+  workflow_run:
+    workflows:
+      - "Post changed article JSONs to social platforms (staging) — image resize & neutral doc name"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: post-x-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Upstream workflow file name in .github/workflows/ (used when triggered by push)
+  UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
+  MAX_WAIT_SECONDS: "180"
+  POLL_INTERVAL: "10"
+  PROCEED_IF_UPSTREAM_MISSING: "false"
+  SLEEP_SECONDS: "0"
+  MAX_WIDTH: "1280"
+  JPEG_QUALITY: "85"
+  # X secrets (must be added to repo secrets)
+  X_API_KEY: ${{ secrets.X_API_KEY }}
+  X_API_SECRET: ${{ secrets.X_API_SECRET }}
+  X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+  X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+
+jobs:
+  post-x:
+    name: X — Post changed article JSONs (staging)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tools & Python deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl imagemagick git
+          python -m pip install --upgrade pip
+          pip install tweepy Pillow requests
+
+      - name: Decide mode and check upstream run (if triggered by push)
+        id: upstream_check
+        run: |
+          set -euo pipefail
+          EVENT_NAME="${{ github.event_name }}"
+          echo "event_name=$EVENT_NAME" >&2
+
+          if [ "$EVENT_NAME" = "workflow_run" ]; then
+            echo "trigger_mode=workflow_run" >> $GITHUB_OUTPUT
+            echo "upstream_conclusion=${{ github.event.workflow_run.conclusion }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "trigger_mode=push" >> $GITHUB_OUTPUT
+          REPO="${GITHUB_REPOSITORY}"
+          SHA="${GITHUB_SHA}"
+          WORKFLOW_FILE="${UPSTREAM_WORKFLOW_FILE}"
+          MAX_WAIT=${MAX_WAIT_SECONDS}
+          POLL=${POLL_INTERVAL}
+          PROCEED=${PROCEED_IF_UPSTREAM_MISSING}
+
+          echo "Looking for upstream workflow runs of ${WORKFLOW_FILE} for commit ${SHA} (timeout ${MAX_WAIT}s)..." >&2
+
+          API_URL="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?head_sha=${SHA}"
+          elapsed=0
+          found_success="false"
+
+          while [ "$elapsed" -le "$MAX_WAIT" ]; do
+            resp=$(curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API_URL")
+            run_id=$(echo "$resp" | jq -r '.workflow_runs[0].id // empty')
+            if [ -n "$run_id" ]; then
+              status=$(echo "$resp" | jq -r '.workflow_runs[0].status // empty')
+              conclusion=$(echo "$resp" | jq -r '.workflow_runs[0].conclusion // empty')
+              echo "Found run id=$run_id status=$status conclusion=$conclusion" >&2
+              if [ "$status" = "completed" ] && [ "$conclusion" = "success" ]; then
+                echo "upstream_conclusion=success" >> $GITHUB_OUTPUT
+                found_success="true"
+                break
+              fi
+              if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then
+                echo "upstream_conclusion=${conclusion}" >> $GITHUB_OUTPUT
+                found_success="false"
+                break
+              fi
+            else
+              echo "No upstream run found yet for this commit..." >&2
+            fi
+            sleep "$POLL"
+            elapsed=$((elapsed + POLL))
+          done
+
+          if [ "$found_success" = "true" ]; then
+            echo "upstream_found=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "upstream_found=false" >> $GITHUB_OUTPUT
+          if [ "$PROCEED" = "true" ]; then
+            echo "Proceeding even though upstream did not finish (PROCEED_IF_UPSTREAM_MISSING=true)" >&2
+            exit 0
+          else
+            echo "Upstream did not finish successfully within wait window. Exiting to avoid conflict." >&2
+            exit 1
+          fi
+
+      - name: Optional safety sleep after upstream success
+        if: steps.upstream_check.outputs.upstream_found == 'true' || startsWith(github.event_name, 'workflow_run')
+        run: |
+          if [ "${SLEEP_SECONDS}" != "0" ]; then
+            echo "Sleeping ${SLEEP_SECONDS}s"
+            sleep "${SLEEP_SECONDS}"
+          else
+            echo "No extra sleep"
+          fi
+
+      - name: Create scripts/send_x.py (runner temporary script)
+        run: |
+          mkdir -p scripts
+          cat > scripts/send_x.py <<'PY'
+#!/usr/bin/env python3
+# Self-contained send_x script (created at runtime)
+import os, sys, json, tempfile, shutil, subprocess, logging
+from pathlib import Path
+import requests
+from PIL import Image, UnidentifiedImageError
+try:
+    import tweepy
+except Exception as e:
+    print("tweepy missing", file=sys.stderr); raise
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+MAX_WIDTH = int(os.getenv("MAX_WIDTH", "1280"))
+JPEG_QUALITY = int(os.getenv("JPEG_QUALITY", "85"))
+
+X_API_KEY = os.getenv("X_API_KEY")
+X_API_SECRET = os.getenv("X_API_SECRET")
+X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
+X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
+
+if not all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET]):
+    logging.error("Missing X credentials in environment"); sys.exit(2)
+
+def normalize_cover_path(raw_cover: str) -> str:
+    if not raw_cover:
+        return ""
+    cov = raw_cover.strip()
+    if cov.startswith("http://") or cov.startswith("https://"):
+        parts = cov.split("/", 3)
+        if len(parts) >= 4:
+            cov = parts[3]
+        else:
+            cov = Path(parts[-1]).name
+    cov = cov.lstrip("./").lstrip("/")
+    return cov
+
+def find_local_image(candidate: str, json_path: Path):
+    exts = ["jpg","jpeg","png","webp","gif"]
+    cand_name = Path(candidate).name
+    base_no_ext = os.path.splitext(cand_name)[0]
+    checks = [
+        Path(candidate),
+        Path(json_path.parent) / candidate,
+        Path("assets/articles") / cand_name,
+        Path("images") / cand_name,
+        Path("images/uploads") / cand_name,
+        Path(cand_name),
+    ]
+    for p in checks:
+        if p.exists() and p.is_file():
+            return p.resolve()
+    for ext in exts:
+        for p in [
+            Path("assets/articles")/f"{base_no_ext}.{ext}",
+            Path("images")/f"{base_no_ext}.{ext}",
+            Path("images/uploads")/f"{base_no_ext}.{ext}",
+            Path(f"{base_no_ext}.{ext}"),
+            Path(json_path.parent)/f"{base_no_ext}.{ext}",
+        ]:
+            if p.exists() and p.is_file():
+                return p.resolve()
+    try:
+        out = subprocess.check_output(["git","ls-files"], text=True)
+        for line in out.splitlines():
+            if line.lower().endswith(tuple(f"/{base_no_ext}.{e}" for e in exts)) or Path(line).name.lower()==cand_name.lower():
+                p = Path(line)
+                if p.exists():
+                    return p.resolve()
+    except Exception:
+        pass
+    return None
+
+def download_image(url: str):
+    try:
+        resp = requests.get(url, stream=True, timeout=20); resp.raise_for_status()
+    except Exception as e:
+        logging.warning("Download failed: %s", e); return None
+    suffix = ".jpg"
+    ct = resp.headers.get("Content-Type","")
+    if "png" in ct: suffix = ".png"
+    elif "webp" in ct: suffix = ".webp"
+    elif "gif" in ct: suffix = ".gif"
+    tmp = Path(tempfile.mktemp(suffix=suffix))
+    try:
+        with open(tmp,"wb") as fh:
+            for chunk in resp.iter_content(8192): fh.write(chunk)
+        return tmp.resolve()
+    except Exception as e:
+        logging.warning("Save failed: %s", e); tmp.unlink(missing_ok=True); return None
+
+def resize_image_keep_aspect(in_path: Path, max_width=MAX_WIDTH, quality=JPEG_QUALITY):
+    try:
+        img = Image.open(in_path)
+    except UnidentifiedImageError as e:
+        logging.warning("Cannot open image: %s", e); return None
+    w,h = img.size
+    try:
+        if w <= max_width:
+            tmp = Path(tempfile.mktemp(suffix=".jpg"))
+            if img.mode in ("RGBA","LA") or img.mode=="P": img = img.convert("RGB")
+            img.save(tmp, format="JPEG", quality=quality, optimize=True)
+            return tmp.resolve()
+        else:
+            new_h = int((max_width/float(w))*h)
+            img = img.resize((max_width,new_h), Image.LANCZOS)
+            if img.mode in ("RGBA","LA") or img.mode=="P": img = img.convert("RGB")
+            tmp = Path(tempfile.mktemp(suffix=".jpg"))
+            img.save(tmp, format="JPEG", quality=quality, optimize=True)
+            return tmp.resolve()
+    finally:
+        try: img.close()
+        except: pass
+
+def compose_caption(title, excerpt, url):
+    parts=[]
+    if title: parts.append(title.strip())
+    if excerpt: parts.append(excerpt.strip())
+    if url: parts.append(url.strip())
+    caption = "\n\n".join(parts).strip()
+    MAX_TOTAL=2800
+    if len(caption)>MAX_TOTAL:
+        title_part = title.strip() if title else ""
+        url_part = url.strip() if url else ""
+        allowed = max(0, MAX_TOTAL - len(title_part) - len(url_part) - 4)
+        excerpt_trunc = (excerpt.strip()[:allowed]).rstrip() if excerpt else ""
+        caption = "\n\n".join([p for p in [title_part, excerpt_trunc, url_part] if p]).strip()
+    return caption
+
+def post_text_only(api, text):
+    try:
+        resp = api.update_status(status=text)
+        logging.info("Posted text id=%s", getattr(resp,"id_str",getattr(resp,"id","<id>"))); return True
+    except Exception as e:
+        logging.error("Post failed: %s", e); return False
+
+def post_with_media(api, text, image_path):
+    tmp_neutral = Path(tempfile.mktemp(suffix=".jpg"))
+    try:
+        shutil.copyfile(image_path, tmp_neutral)
+    except Exception as e:
+        logging.error("Copy failed: %s", e); return False
+    try:
+        media = api.media_upload(str(tmp_neutral))
+        media_id = getattr(media,"media_id_string",getattr(media,"media_id",None))
+        if not media_id: logging.error("No media id"); return False
+        resp = api.update_status(status=text, media_ids=[media_id])
+        logging.info("Posted with media id=%s", getattr(resp,"id_str",getattr(resp,"id","<id>"))); return True
+    except Exception as e:
+        logging.error("Upload/post failed: %s", e); return False
+    finally:
+        try: tmp_neutral.unlink(missing_ok=True)
+        except: pass
+
+def main():
+    if len(sys.argv)<2:
+        print("Usage: send_x.py path/to/article.json", file=sys.stderr); sys.exit(2)
+    json_path = Path(sys.argv[1])
+    if not json_path.exists():
+        logging.error("JSON not found: %s", json_path); sys.exit(2)
+    try:
+        data = json.loads(json_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        logging.error("Load JSON failed: %s", e); sys.exit(2)
+    title = data.get("title","")
+    excerpt = data.get("excerpt",data.get("description",""))
+    url = data.get("url",data.get("link",""))
+    raw_cover = data.get("cover_image","")
+    caption = compose_caption(title, excerpt, url)
+    try:
+        auth = tweepy.OAuth1UserHandler(os.getenv("X_API_KEY"), os.getenv("X_API_SECRET"), os.getenv("X_ACCESS_TOKEN"), os.getenv("X_ACCESS_SECRET"))
+        api = tweepy.API(auth, wait_on_rate_limit=True)
+        api.verify_credentials()
+    except Exception as e:
+        logging.error("Tweepy auth failed: %s", e); sys.exit(2)
+    image_final = None
+    resized_tmp = None
+    if raw_cover:
+        norm = normalize_cover_path(raw_cover)
+        if raw_cover.startswith("http://") or raw_cover.startswith("https://"):
+            dl = download_image(raw_cover)
+            if dl:
+                logging.info("Downloaded image %s", dl)
+                maybe = resize_image_keep_aspect(dl)
+                if maybe:
+                    resized_tmp = maybe; image_final = resized_tmp
+                else:
+                    image_final = dl
+        else:
+            found = find_local_image(norm, json_path)
+            if found:
+                maybe = resize_image_keep_aspect(found)
+                if maybe: resized_tmp = maybe; image_final = resized_tmp
+                else: image_final = found
+    if not image_final:
+        basename = json_path.stem
+        found = find_local_image(basename, json_path)
+        if found:
+            maybe = resize_image_keep_aspect(found)
+            if maybe: resized_tmp = maybe; image_final = resized_tmp
+            else: image_final = found
+    success = False
+    if image_final and image_final.exists():
+        logging.info("Uploading image %s", image_final)
+        success = post_with_media(api, caption, image_final)
+    else:
+        logging.info("Posting text only")
+        success = post_text_only(api, caption)
+    try:
+        if resized_tmp and Path(resized_tmp).exists(): Path(resized_tmp).unlink(missing_ok=True)
+    except Exception:
+        pass
+    if success:
+        logging.info("Success"); sys.exit(0)
+    else:
+        logging.error("Failure"); sys.exit(3)
+
+if __name__ == "__main__":
+    main()
+PY
+          chmod +x scripts/send_x.py
+
+      - name: Determine changed JSONs (same heuristic)
+        id: changes_x
+        run: |
+          set -euo pipefail
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
+          fi
+          JSON_FILES=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
+          if [ -z "$JSON_FILES" ]; then
+            JSON_FILES=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          fi
+          JSON_FILES_CLEAN=$(printf "%s\n" "$JSON_FILES" | sed '/^\s*$/d' || true)
+          if [ -z "$JSON_FILES_CLEAN" ]; then
+            echo "json_files=" >> $GITHUB_OUTPUT
+          else
+            ENC=$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post each changed JSON to X (no repo script required; uses runner script)
+        if: steps.changes_x.outputs.json_files != ''
+        run: |
+          set -euo pipefail
+          RAW="${{ steps.changes_x.outputs.json_files }}"
+          JSON_FILES=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+          for jf in $JSON_FILES; do
+            if [ ! -f "$jf" ]; then
+              echo "Skipping (not a file): $jf"
+              continue
+            fi
+            echo "Processing: $jf"
+            python3 scripts/send_x.py "$jf"
+            echo "Done: $jf"
+            echo "-----------------------------------"
+          done
+
+      - name: No changed JSONs found notice (X)
+        if: steps.changes_x.outputs.json_files == ''
+        run: |
+          echo "No JSON files detected as changed in this trigger. Nothing to post to X."
