@@ -1,8 +1,5 @@
 name: Post changed article JSONs to X (staging) — upstream-safe, image-resize, neutral filename
 
-# Triggers:
-# - push to staging (when JSONs are updated) -> will poll upstream workflow run for same commit and wait for success
-# - workflow_run when upstream workflow completes -> will run if upstream concluded success
 on:
   push:
     branches:
@@ -25,22 +22,13 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # image resize settings
   MAX_WIDTH: "1280"
   JPEG_QUALITY: "85"
-
-  # upstream workflow file name (used when polling)
   UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
-
-  # Polling settings (when triggered by push)
-  MAX_WAIT_SECONDS: "180"     # total seconds to wait for upstream workflow to finish
-  POLL_INTERVAL: "10"        # seconds between polls
-  PROCEED_IF_UPSTREAM_MISSING: "false"  # set "true" to proceed even if upstream not found within timeout
-
-  # safety delay *after* upstream success (set "120" for 2 minutes)
+  MAX_WAIT_SECONDS: "180"
+  POLL_INTERVAL: "10"
+  PROCEED_IF_UPSTREAM_MISSING: "false"
   SLEEP_SECONDS: "120"
-
-  # X credentials (must exist in repo Secrets)
   X_API_KEY: ${{ secrets.X_API_KEY }}
   X_API_SECRET: ${{ secrets.X_API_SECRET }}
   X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
@@ -48,19 +36,11 @@ env:
 
 jobs:
   post-x:
-    # If triggered by workflow_run: only run when upstream concluded success AND head_branch is staging.
-    # If triggered by push, this `if` doesn't prevent run; the run will poll for upstream success in a step below.
     if: >
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging')
-
     name: X — Post changed article JSONs (staging)
     runs-on: ubuntu-latest
-
-    env:
-      # duplicate useful env here to avoid using ${{ env.* }} in env entries which sometimes parses oddly
-      MAX_WIDTH: "1280"
-      JPEG_QUALITY: "85"
 
     steps:
       - name: Checkout repository (full history)
@@ -131,7 +111,6 @@ jobs:
           fi
 
       - name: Optional safety sleep after upstream success
-        # run when triggered by workflow_run (upstream already success) OR push AND upstream_wait found success
         if: >
           github.event_name == 'workflow_run' ||
           (github.event_name == 'push' && steps.upstream_wait.outputs.upstream_found == 'true')
@@ -143,21 +122,11 @@ jobs:
             echo "No safety sleep configured"
           fi
 
-      - name: Create runner-local scripts/send_x.py (self-contained, uses Pillow fallback)
+      - name: Create runner-local scripts/send_x.py (self-contained, uses ImageMagick first)
         run: |
           mkdir -p scripts
           cat > scripts/send_x.py << 'PY'
 #!/usr/bin/env python3
-"""
-scripts/send_x.py
-Usage: python3 scripts/send_x.py path/to/article.json
-
-This script mirrors Telegram/LinkedIn heuristics:
-- normalize cover_image path (strip domain, ./, leading /)
-- try to find local image in multiple places, fallback to git ls-files
-- try ImageMagick 'convert' (via subprocess) for resize first; fallback to Pillow resize
-- upload to X using tweepy (OAuth1) and use neutral filename (copy to temp image.jpg) to avoid exposing original filename
-"""
 import os, sys, json, tempfile, shutil, subprocess, logging
 from pathlib import Path
 import requests
@@ -179,7 +148,6 @@ except Exception:
 MAX_WIDTH = int(os.getenv("MAX_WIDTH", "1280"))
 JPEG_QUALITY = int(os.getenv("JPEG_QUALITY", "85"))
 
-# X OAuth1 creds from env
 X_API_KEY = os.getenv("X_API_KEY")
 X_API_SECRET = os.getenv("X_API_SECRET")
 X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
@@ -205,7 +173,6 @@ def find_local_image(candidate, json_path):
     exts = ["jpg","jpeg","png","webp","gif"]
     cand_name = Path(candidate).name
     base = Path(cand_name).stem
-
     candidates = [
         Path(candidate),
         json_path.parent / cand_name,
@@ -217,7 +184,6 @@ def find_local_image(candidate, json_path):
     for p in candidates:
         if p.exists() and p.is_file():
             return p.resolve()
-
     for ext in exts:
         for p in [
             Path("assets/articles") / f"{base}.{ext}",
@@ -228,8 +194,6 @@ def find_local_image(candidate, json_path):
         ]:
             if p.exists() and p.is_file():
                 return p.resolve()
-
-    # git ls-files fallback
     try:
         out = subprocess.check_output(["git","ls-files"], text=True)
         for line in out.splitlines():
@@ -237,11 +201,9 @@ def find_local_image(candidate, json_path):
                 return Path(line).resolve()
     except Exception:
         pass
-
     return None
 
 def resize_with_imagemagick(src, maxw, quality):
-    # returns path to temp jpg file or None
     try:
         tmp = Path(tempfile.mktemp(suffix=".jpg"))
         cmd = ["convert", str(src), "-resize", f"{maxw}x>", "-strip", "-quality", str(quality), str(tmp)]
@@ -291,7 +253,6 @@ def post_text(api, text):
         return False
 
 def post_with_media(api, text, image_path):
-    # copy to neutral filename
     tmp_neutral = Path(tempfile.mktemp(suffix=".jpg"))
     try:
         shutil.copyfile(image_path, tmp_neutral)
@@ -332,7 +293,7 @@ def main():
 
     # authenticate tweepy (OAuth1)
     try:
-        auth = tweepy.OAuth1UserHandler(X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET)
+        auth = tweepy.OAuth1UserHandler(os.getenv("X_API_KEY"), os.getenv("X_API_SECRET"), os.getenv("X_ACCESS_TOKEN"), os.getenv("X_ACCESS_SECRET"))
         api = tweepy.API(auth, wait_on_rate_limit=True)
         api.verify_credentials()
     except Exception as e:
@@ -362,18 +323,15 @@ def main():
                 image_final = found
 
     if not image_final:
-        # try by JSON basename
         found = find_local_image(jf.stem, jf)
         if found:
             image_final = found
 
     if image_final:
-        # try ImageMagick resize first
         resized = resize_with_imagemagick(image_final, MAX_WIDTH, JPEG_QUALITY)
         if resized:
             tmp_resized = resized
         else:
-            # fallback to Pillow
             resized2 = resize_with_pillow(image_final, MAX_WIDTH, JPEG_QUALITY)
             if resized2:
                 tmp_resized = resized2
@@ -386,10 +344,8 @@ def main():
     else:
         uploaded = post_text(api, caption)
 
-    # cleanup
     try:
         if tmp_resized and tmp_resized.exists(): tmp_resized.unlink(missing_ok=True)
-        # if we downloaded remote image into /tmp, best-effort delete
         if image_final and image_final.exists() and str(image_final).startswith("/tmp"): image_final.unlink(missing_ok=True)
     except Exception:
         pass
