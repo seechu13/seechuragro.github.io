@@ -1,4 +1,4 @@
- name: Post changed article JSONs to social platforms (staging) — image resize & neutral doc name
+name: Post changed article JSONs to social platforms (staging) — image resize & neutral doc name
 
 on:
   push:
@@ -8,15 +8,13 @@ on:
       - 'assets/articles/**'
       - 'articles/**'
       - 'content/articles/**'
-      - '.github/workflows/**' # optional: keep workflow changes triggering
+      - '.github/workflows/**'
 
 permissions:
   contents: read
 
 env:
-  # Max width used for resizing (you can tweak)
   MAX_WIDTH: "1280"
-  # JPEG quality for resized image
   JPEG_QUALITY: "85"
 
 jobs:
@@ -54,9 +52,11 @@ jobs:
           fi
           JSON_FILES_CLEAN=$(printf "%s\n" "$JSON_FILES" | sed '/^\s*$/d' || true)
           if [ -z "$JSON_FILES_CLEAN" ]; then
-            echo "::set-output name=json_files::"
+            echo "json_files=" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=json_files::$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')"
+            # encode with <<NL>> separator
+            ENC=$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
           fi
 
       - name: Post each changed JSON to Telegram (resize image, neutral doc name fallback)
@@ -265,9 +265,10 @@ jobs:
           fi
           JSON_FILES_CLEAN=$(printf "%s\n" "$JSON_FILES" | sed '/^\s*$/d' || true)
           if [ -z "$JSON_FILES_CLEAN" ]; then
-            echo "::set-output name=json_files::"
+            echo "json_files=" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=json_files::$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')"
+            ENC=$(printf "%s" "$JSON_FILES_CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
           fi
 
       - name: Post each changed JSON to LinkedIn (resize image, register upload)
