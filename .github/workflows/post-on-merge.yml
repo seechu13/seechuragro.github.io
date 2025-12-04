@@ -8,9 +8,10 @@ on:
       - 'assets/articles/**'
       - 'articles/**'
       - 'content/articles/**'
-      
+
 permissions:
   contents: read
+
 
 env:
   # Max width used for resizing (you can tweak)
