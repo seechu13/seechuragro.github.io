@@ -8,6 +8,7 @@ on:
       - 'assets/articles/**'
       - 'articles/**'
       - 'content/articles/**'
+
   workflow_run:
     workflows:
       - "Post changed article JSONs to social platforms (staging) — image resize & neutral doc name"
@@ -42,6 +43,7 @@ jobs:
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'staging')
+
     name: X — Post changed article JSONs (staging)
     runs-on: ubuntu-latest
 
@@ -71,9 +73,9 @@ jobs:
           POLL=${POLL_INTERVAL}
           PROCEED=${PROCEED_IF_UPSTREAM_MISSING}
 
-          echo "Polling upstream workflow ${WORKFLOW_FILE} for commit ${SHA}..."
-
           API_URL="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?head_sha=${SHA}"
+
+          echo "Polling upstream workflow ${WORKFLOW_FILE} for commit ${SHA}..."
 
           elapsed=0
           found="false"
@@ -85,6 +87,7 @@ jobs:
             if [ -n "$run_id" ]; then
               status=$(echo "$resp" | jq -r '.workflow_runs[0].status')
               conclusion=$(echo "$resp" | jq -r '.workflow_runs[0].conclusion')
+
               echo "Upstream run id=$run_id status=$status conclusion=$conclusion"
 
               if [ "$status" = "completed" ] && [ "$conclusion" = "success" ]; then
@@ -113,7 +116,7 @@ jobs:
             if [ "$PROCEED" = "true" ]; then
               echo "Proceeding anyway (PROCEED_IF_UPSTREAM_MISSING=true)"
             else
-              echo "Upstream not successful within wait window. Exiting."
+              echo "Upstream did not complete successfully within wait window."
               exit 1
             fi
           fi
@@ -127,6 +130,8 @@ jobs:
           if [ "${SLEEP_SECONDS}" != "0" ]; then
             echo "Sleeping ${SLEEP_SECONDS}s for safety…"
             sleep "${SLEEP_SECONDS}"
+          else
+            echo "No safety sleep configured"
           fi
 
       - name: Create scripts/send_x.py
@@ -143,7 +148,8 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 try:
     import tweepy
 except:
-    logging.error("tweepy missing"); sys.exit(2)
+    logging.error("tweepy missing")
+    sys.exit(2)
 
 try:
     from PIL import Image, UnidentifiedImageError
@@ -181,7 +187,8 @@ def find_local_image(candidate, jf):
         Path(name),
     ]
     for p in checks:
-        if p.exists(): return p.resolve()
+        if p.exists():
+            return p.resolve()
 
     for ext in exts:
         for p in [
@@ -191,7 +198,8 @@ def find_local_image(candidate, jf):
             Path(f"{base}.{ext}"),
             jf.parent/f"{base}.{ext}",
         ]:
-            if p.exists(): return p.resolve()
+            if p.exists():
+                return p.resolve()
 
     try:
         out = subprocess.check_output(["git","ls-files"], text=True)
@@ -247,7 +255,8 @@ def post_text(api, text):
         api.update_status(status=text)
         return True
     except Exception as e:
-        logging.error(e); return False
+        logging.error(e)
+        return False
 
 def post_media(api, text, img):
     tmp = Path(tempfile.mktemp(suffix=".jpg"))
@@ -258,15 +267,19 @@ def post_media(api, text, img):
         api.update_status(status=text, media_ids=[mid])
         return True
     except Exception as e:
-        logging.error(e); return False
+        logging.error(e)
+        return False
     finally:
         tmp.unlink(missing_ok=True)
 
 def main():
     if len(sys.argv)<2:
-        print("Usage: send_x.py file.json"); sys.exit(2)
+        print("Usage: send_x.py file.json")
+        sys.exit(2)
+
     jf = Path(sys.argv[1])
     data = json.loads(jf.read_text())
+
     title = data.get("title","")
     excerpt = data.get("excerpt") or data.get("description","")
     url = data.get("url") or data.get("link","")
@@ -349,7 +362,6 @@ PY
           set -euo pipefail
           RAW="${{ steps.changes_x.outputs.json_files }}"
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
-
           for jf in $LIST; do
             if [ ! -f "$jf" ]; then
               echo "Skipping: $jf"
