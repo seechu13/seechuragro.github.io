@@ -23,7 +23,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Upstream workflow file name in .github/workflows/ (used when triggered by push)
   UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
   MAX_WAIT_SECONDS: "180"
   POLL_INTERVAL: "10"
@@ -31,7 +30,6 @@ env:
   SLEEP_SECONDS: "0"
   MAX_WIDTH: "1280"
   JPEG_QUALITY: "85"
-  # X secrets (must be added to repo secrets)
   X_API_KEY: ${{ secrets.X_API_KEY }}
   X_API_SECRET: ${{ secrets.X_API_SECRET }}
   X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
@@ -41,6 +39,7 @@ jobs:
   post-x:
     name: X — Post changed article JSONs (staging)
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository (full history)
         uses: actions/checkout@v4
@@ -134,15 +133,11 @@ jobs:
           mkdir -p scripts
           cat > scripts/send_x.py <<'PY'
 #!/usr/bin/env python3
-# Self-contained send_x script (created at runtime)
 import os, sys, json, tempfile, shutil, subprocess, logging
 from pathlib import Path
 import requests
 from PIL import Image, UnidentifiedImageError
-try:
-    import tweepy
-except Exception as e:
-    print("tweepy missing", file=sys.stderr); raise
+import tweepy
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -155,7 +150,8 @@ X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
 X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
 
 if not all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET]):
-    logging.error("Missing X credentials in environment"); sys.exit(2)
+    logging.error("Missing X credentials in environment")
+    sys.exit(2)
 
 def normalize_cover_path(raw_cover: str) -> str:
     if not raw_cover:
@@ -396,3 +392,4 @@ PY
         if: steps.changes_x.outputs.json_files == ''
         run: |
           echo "No JSON files detected as changed in this trigger. Nothing to post to X."
+
