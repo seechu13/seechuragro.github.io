@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-scripts/send_x.py — text-only X posting (v2)
-This script posts a text-only tweet using tweepy.Client.create_tweet.
-It ALWAYS includes the article URL at the end of the text and will
-truncate the title/excerpt if the combined length exceeds 2800 characters.
+scripts/send_x.py — text-only X posting (v2) with BASE_URL fallback.
 
-Exit codes:
-  0 = success
-  2 = usage / missing args
-  3 = post failed
+Behavior:
+- Composes a caption from title + excerpt and ALWAYS appends an absolute article URL.
+- If JSON provides a relative URL or only a slug, this script builds an absolute URL
+  using BASE_URL environment variable (default: https://seechuragro.in).
+- Uses tweepy.Client.create_tweet (v2) to post text-only tweets (no media).
+- Exit codes:
+    0 = success
+    2 = usage / missing args
+    3 = post failed
 """
+
 import os
 import sys
 import json
@@ -24,17 +27,44 @@ except Exception:
     logging.error("tweepy library not installed. Install in workflow or runner environment.")
     sys.exit(2)
 
-MAX_TWEET_LEN = 2800  # conservative cap (matches prior script)
-# read credentials from env (set as repo secrets in GitHub Actions)
+# Max tweet length we allow for composing/truncation (conservative)
+MAX_TWEET_LEN = 2800
+
+# Credentials read from env (these must be set as GitHub Secrets in workflow)
 X_API_KEY = os.getenv("X_API_KEY")
 X_API_SECRET = os.getenv("X_API_SECRET")
 X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
 X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
 
+# Base URL used to build absolute URLs when JSON contains relative paths or slugs
+BASE_URL = os.getenv("BASE_URL", "https://seechuragro.in").rstrip('/')
+
+
+def build_absolute_url(raw_url: str, slug: str) -> str:
+    """
+    Return an absolute https URL to include in the tweet.
+    raw_url: value from JSON 'url' or 'link' (may be empty or relative).
+    slug: value from JSON 'slug' (may be empty).
+    """
+    if raw_url:
+        s = raw_url.strip()
+        if s.startswith("http://") or s.startswith("https://"):
+            return s
+        # if starts with // (protocol relative), add https:
+        if s.startswith("//"):
+            return f"https:{s}"
+        # otherwise treat as relative path
+        return f"{BASE_URL}/{s.lstrip('/')}"
+    # if no raw_url, try slug
+    if slug:
+        return f"{BASE_URL}/{str(slug).lstrip('/')}"
+    return ""
+
+
 def compose_caption(title: str, excerpt: str, url: str) -> str:
     """
-    Return text that contains title, excerpt, and URL.
-    Ensure URL is preserved; truncate excerpt if needed to keep under MAX_TWEET_LEN.
+    Compose text from title + excerpt, ensure URL appended.
+    Truncate the combined text if necessary to keep under MAX_TWEET_LEN.
     """
     parts = []
     if title:
@@ -43,31 +73,25 @@ def compose_caption(title: str, excerpt: str, url: str) -> str:
         parts.append(excerpt.strip())
     body = "\n\n".join(parts).strip()
 
-    # Always append the URL on its own line (if present)
-    if url:
-        # Reserve room for newline + url
-        reserved = 1 + len(url)
-    else:
-        reserved = 0
+    # reserved room for newline + url if url present
+    reserved = (1 + len(url)) if url else 0
 
     if reserved + len(body) <= MAX_TWEET_LEN:
         text = body
     else:
-        # Need to truncate body to fit
         allowed_body_len = max(0, MAX_TWEET_LEN - reserved)
-        # Simple truncation: keep the start of body and append ellipsis if trimmed
         if allowed_body_len > 3:
             text = body[:allowed_body_len - 3].rstrip() + "..."
         else:
             text = body[:allowed_body_len].rstrip()
 
-    # If a URL exists, ensure it is appended separated by newline
     if url:
         if text:
             text = f"{text}\n{url}"
         else:
             text = url
     return text
+
 
 def post_text_v2(text: str) -> bool:
     """
@@ -86,16 +110,17 @@ def post_text_v2(text: str) -> bool:
             wait_on_rate_limit=True
         )
         resp = client.create_tweet(text=text)
-        # resp may be a Response object; check for data or raise no-exception
         logging.info("v2 tweet response: %s", getattr(resp, "data", resp))
         return True
     except Exception as e:
         logging.error("v2 post failed: %s", e)
         return False
 
+
 def usage_and_exit():
     print("Usage: send_x.py path/to/article.json")
     sys.exit(2)
+
 
 def main():
     if len(sys.argv) < 2:
@@ -114,18 +139,20 @@ def main():
 
     title = data.get("title", "") or ""
     excerpt = data.get("excerpt") or data.get("description") or ""
-    url = data.get("url") or data.get("link") or ""
+    raw_url = data.get("url") or data.get("link") or ""
+    slug = data.get("slug") or ""
 
-    # If URL is relative path (local asset), do not try to resolve — we only embed absolute URLs.
-    # If the JSON contains a relative path, it's fine — the script will include it as-is,
-    # but typically you'll want a public absolute URL for readers to click.
-    caption = compose_caption(title, excerpt, url)
+    absolute_url = build_absolute_url(raw_url, slug)
+
+    caption = compose_caption(title, excerpt, absolute_url)
 
     logging.info("Caption preview (truncated to %d chars):", MAX_TWEET_LEN)
+    # log a short preview but avoid dumping huge text into logs
     logging.info("%s", caption[:2000] + ("..." if len(caption) > 2000 else ""))
 
     ok = post_text_v2(caption)
     sys.exit(0 if ok else 3)
+
 
 if __name__ == "__main__":
     main()
