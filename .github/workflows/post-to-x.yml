@@ -31,6 +31,7 @@ env:
   PROCEED_IF_UPSTREAM_MISSING: "false"
   SLEEP_SECONDS: "120"
 
+  # X credentials from secrets (do NOT hardcode real keys here)
   X_API_KEY: ${{ secrets.X_API_KEY }}
   X_API_SECRET: ${{ secrets.X_API_SECRET }}
   X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
@@ -38,9 +39,11 @@ env:
 
 jobs:
   post-x:
-    # make sure GITHUB_TOKEN is defined for the shell and scripts
+    # Make sure GITHUB_TOKEN is defined for the shell and scripts,
+    # and provide BASE_URL used to build absolute article URLs.
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BASE_URL: "https://seechuragro.in"
 
     if: >
       github.event_name != 'workflow_run' ||
@@ -84,7 +87,6 @@ jobs:
           found="false"
 
           while [ "$elapsed" -le "$MAX_WAIT" ]; do
-            # use the GITHUB_TOKEN made available in job env
             resp=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API_URL")
             run_id=$(echo "$resp" | jq -r '.workflow_runs[0].id // empty')
 
