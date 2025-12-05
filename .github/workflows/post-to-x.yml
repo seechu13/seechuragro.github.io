@@ -38,6 +38,10 @@ env:
 
 jobs:
   post-x:
+    # make sure GITHUB_TOKEN is defined for the shell and scripts
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     if: >
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -67,71 +71,112 @@ jobs:
           set -euo pipefail
           REPO="${GITHUB_REPOSITORY}"
           SHA="${GITHUB_SHA}"
-          API="https://api.github.com/repos/${REPO}/actions/workflows/${UPSTREAM_WORKFLOW_FILE}/runs?head_sha=${SHA}"
+          WORKFLOW_FILE="${UPSTREAM_WORKFLOW_FILE}"
+          MAX_WAIT=${MAX_WAIT_SECONDS}
+          POLL=${POLL_INTERVAL}
+          PROCEED=${PROCEED_IF_UPSTREAM_MISSING}
+
+          API_URL="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?head_sha=${SHA}"
+
+          echo "Polling upstream workflow ${WORKFLOW_FILE} for commit ${SHA}..."
 
           elapsed=0
-          found=false
+          found="false"
 
-          while [ "$elapsed" -le "${MAX_WAIT_SECONDS}" ]; do
-            resp=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API")
+          while [ "$elapsed" -le "$MAX_WAIT" ]; do
+            # use the GITHUB_TOKEN made available in job env
+            resp=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API_URL")
             run_id=$(echo "$resp" | jq -r '.workflow_runs[0].id // empty')
 
             if [ -n "$run_id" ]; then
-              status=$(echo "$resp" | jq -r '.workflow_runs[0].status')
-              conclusion=$(echo "$resp" | jq -r '.workflow_runs[0].conclusion')
+              status=$(echo "$resp" | jq -r '.workflow_runs[0].status // empty')
+              conclusion=$(echo "$resp" | jq -r '.workflow_runs[0].conclusion // empty')
+
+              echo "Upstream run id=$run_id status=$status conclusion=$conclusion"
 
               if [ "$status" = "completed" ] && [ "$conclusion" = "success" ]; then
                 echo "upstream_found=true" >> $GITHUB_OUTPUT
-                found=true
+                echo "upstream_conclusion=success" >> $GITHUB_OUTPUT
+                found="true"
                 break
               fi
 
               if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then
                 echo "upstream_found=false" >> $GITHUB_OUTPUT
-                exit 1
+                echo "upstream_conclusion=$conclusion" >> $GITHUB_OUTPUT
+                found="false"
+                break
               fi
+            else
+              echo "No upstream run yet…"
             fi
 
-            sleep "${POLL_INTERVAL}"
-            elapsed=$((elapsed + POLL_INTERVAL))
+            sleep "$POLL"
+            elapsed=$((elapsed + POLL))
           done
 
-          if [ "$found" = false ] && [ "${PROCEED_IF_UPSTREAM_MISSING}" != "true" ]; then
-            echo "Upstream workflow did not complete successfully."
-            exit 1
+          if [ "$found" = "false" ]; then
+            echo "upstream_found=false" >> $GITHUB_OUTPUT
+            if [ "$PROCEED" = "true" ]; then
+              echo "Proceeding anyway (PROCEED_IF_UPSTREAM_MISSING=true)"
+            else
+              echo "Upstream did not complete successfully within wait window."
+              exit 1
+            fi
           fi
 
       - name: Optional safety sleep
+        if: >
+          github.event_name == 'workflow_run' ||
+          (github.event_name == 'push' &&
+           steps.upstream_wait.outputs.upstream_found == 'true')
         run: |
           if [ "${SLEEP_SECONDS}" != "0" ]; then
+            echo "Sleeping ${SLEEP_SECONDS}s for safety..."
             sleep "${SLEEP_SECONDS}"
+          else
+            echo "No safety sleep configured"
           fi
 
       - name: Detect changed JSONs
         id: changes_x
         run: |
           set -euo pipefail
-          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" || true)
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
           if [ -z "$CHANGED" ]; then
             CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
           fi
-          LIST=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
-          if [ -z "$LIST" ]; then
-            LIST=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
+          if [ -z "$JSONS" ]; then
+            JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
           fi
-          CLEAN=$(printf "%s\n" "$LIST" | sed '/^\s*$/d' || true)
-          echo "json_files=$(printf "%s" "$CLEAN" | paste -sd',' -)" >> $GITHUB_OUTPUT
+          CLEAN=$(printf "%s\n" "$JSONS" | sed '/^\s*$/d' || true)
+          if [ -z "$CLEAN" ]; then
+            echo "json_files=" >> $GITHUB_OUTPUT
+          else
+            # use <<NL>> separator to avoid issues with commas in filenames
+            ENC=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Post to X
+      - name: Post each JSON to X (runner script)
         if: steps.changes_x.outputs.json_files != ''
         run: |
-          IFS=',' read -ra FILES <<< "${{ steps.changes_x.outputs.json_files }}"
-          for jf in "${FILES[@]}"; do
-            echo "Posting $jf"
+          set -euo pipefail
+          RAW="${{ steps.changes_x.outputs.json_files }}"
+          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
+          for jf in $LIST; do
+            if [ ! -f "$jf" ]; then
+              echo "Skipping: $jf"
+              continue
+            fi
+            echo "Posting: $jf"
             python3 scripts/send_x.py "$jf"
-            echo "------------------------"
+            echo "--------------------------------"
           done
 
-      - name: No JSONs found
+      - name: No JSONs found notice
         if: steps.changes_x.outputs.json_files == ''
-        run: echo "No JSONs to post."
+        run: |
+          echo "No changed JSONs — nothing to post to X."
