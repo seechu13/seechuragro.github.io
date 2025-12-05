@@ -1,199 +1,131 @@
 #!/usr/bin/env python3
-import os, sys, json, tempfile, shutil, subprocess, logging
+"""
+scripts/send_x.py — text-only X posting (v2)
+This script posts a text-only tweet using tweepy.Client.create_tweet.
+It ALWAYS includes the article URL at the end of the text and will
+truncate the title/excerpt if the combined length exceeds 2800 characters.
+
+Exit codes:
+  0 = success
+  2 = usage / missing args
+  3 = post failed
+"""
+import os
+import sys
+import json
+import logging
 from pathlib import Path
-import requests
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 try:
     import tweepy
 except Exception:
-    logging.error("tweepy is required; install it in the workflow environment.")
+    logging.error("tweepy library not installed. Install in workflow or runner environment.")
     sys.exit(2)
 
-try:
-    from PIL import Image
-    PIL_AVAILABLE = True
-except Exception:
-    PIL_AVAILABLE = False
-
-MAX_WIDTH = int(os.getenv("MAX_WIDTH", "1280"))
-JPEG_QUALITY = int(os.getenv("JPEG_QUALITY", "85"))
-
+MAX_TWEET_LEN = 2800  # conservative cap (matches prior script)
+# read credentials from env (set as repo secrets in GitHub Actions)
 X_API_KEY = os.getenv("X_API_KEY")
 X_API_SECRET = os.getenv("X_API_SECRET")
 X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
 X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
 
-def normalize(raw):
-    if not raw:
-        return ""
-    s = raw.strip()
-    if s.startswith("http://") or s.startswith("https://"):
-        parts = s.split("/", 3)
-        return parts[3] if len(parts) >= 4 else Path(s).name
-    return s.lstrip("./").lstrip("/")
+def compose_caption(title: str, excerpt: str, url: str) -> str:
+    """
+    Return text that contains title, excerpt, and URL.
+    Ensure URL is preserved; truncate excerpt if needed to keep under MAX_TWEET_LEN.
+    """
+    parts = []
+    if title:
+        parts.append(title.strip())
+    if excerpt:
+        parts.append(excerpt.strip())
+    body = "\n\n".join(parts).strip()
 
-def find_local_image(candidate, jf):
-    exts = ["jpg","jpeg","png","webp","gif"]
-    name = Path(candidate).name
-    base = Path(name).stem
+    # Always append the URL on its own line (if present)
+    if url:
+        # Reserve room for newline + url
+        reserved = 1 + len(url)
+    else:
+        reserved = 0
 
-    checks = [
-        Path(candidate),
-        jf.parent / name,
-        Path("assets/articles")/name,
-        Path("images")/name,
-        Path("images/uploads")/name,
-        Path(name),
-    ]
-    for p in checks:
-        if p.exists() and p.is_file():
-            return p.resolve()
+    if reserved + len(body) <= MAX_TWEET_LEN:
+        text = body
+    else:
+        # Need to truncate body to fit
+        allowed_body_len = max(0, MAX_TWEET_LEN - reserved)
+        # Simple truncation: keep the start of body and append ellipsis if trimmed
+        if allowed_body_len > 3:
+            text = body[:allowed_body_len - 3].rstrip() + "..."
+        else:
+            text = body[:allowed_body_len].rstrip()
 
-    for ext in exts:
-        for p in [
-            Path("assets/articles")/f"{base}.{ext}",
-            Path("images")/f"{base}.{ext}",
-            Path("images/uploads")/f"{base}.{ext}",
-            Path(f"{base}.{ext}"),
-            jf.parent/f"{base}.{ext}",
-        ]:
-            if p.exists() and p.is_file():
-                return p.resolve()
+    # If a URL exists, ensure it is appended separated by newline
+    if url:
+        if text:
+            text = f"{text}\n{url}"
+        else:
+            text = url
+    return text
 
+def post_text_v2(text: str) -> bool:
+    """
+    Post text-only tweet via tweepy.Client.create_tweet.
+    Returns True if successful.
+    """
+    if not all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET]):
+        logging.error("Missing one or more X credentials in environment.")
+        return False
     try:
-        out = subprocess.check_output(["git","ls-files"], text=True)
-        for line in out.splitlines():
-            if Path(line).stem == base and Path(line).exists():
-                return Path(line).resolve()
-    except:
-        pass
-
-    return None
-
-def resize_im(src):
-    try:
-        tmp = Path(tempfile.mktemp(suffix=".jpg"))
-        subprocess.check_call([
-            "convert", str(src),
-            "-resize", f"{MAX_WIDTH}x>",
-            "-strip", "-quality", str(JPEG_QUALITY),
-            str(tmp)
-        ])
-        return tmp
-    except:
-        return None
-
-def resize_pillow(src):
-    if not PIL_AVAILABLE:
-        return None
-    try:
-        img = Image.open(src)
-        w,h = img.size
-        if w <= MAX_WIDTH:
-            tmp = Path(tempfile.mktemp(suffix=".jpg"))
-            if img.mode!="RGB":
-                img = img.convert("RGB")
-            img.save(tmp, format="JPEG", quality=JPEG_QUALITY)
-            return tmp
-        nh = int(h * (MAX_WIDTH/w))
-        img = img.resize((MAX_WIDTH, nh), Image.LANCZOS)
-        if img.mode!="RGB":
-            img = img.convert("RGB")
-        tmp = Path(tempfile.mktemp(suffix=".jpg"))
-        img.save(tmp, format="JPEG", quality=JPEG_QUALITY)
-        return tmp
-    except:
-        return None
-
-def caption(t, e, u):
-    parts=[p for p in [t,e,u] if p]
-    out="\n\n".join(parts).strip()
-    return out[:2800]
-
-def post_text(api, text):
-    try:
-        api.update_status(status=text)
+        client = tweepy.Client(
+            consumer_key=X_API_KEY,
+            consumer_secret=X_API_SECRET,
+            access_token=X_ACCESS_TOKEN,
+            access_token_secret=X_ACCESS_SECRET,
+            wait_on_rate_limit=True
+        )
+        resp = client.create_tweet(text=text)
+        # resp may be a Response object; check for data or raise no-exception
+        logging.info("v2 tweet response: %s", getattr(resp, "data", resp))
         return True
     except Exception as e:
-        logging.error(e)
+        logging.error("v2 post failed: %s", e)
         return False
 
-def post_media(api, text, img):
-    tmp = Path(tempfile.mktemp(suffix=".jpg"))
-    shutil.copyfile(img, tmp)
-    try:
-        media = api.media_upload(str(tmp))
-        mid = getattr(media, "media_id_string", None)
-        api.update_status(status=text, media_ids=[mid])
-        return True
-    except Exception as e:
-        logging.error(e)
-        return False
-    finally:
-        tmp.unlink(missing_ok=True)
+def usage_and_exit():
+    print("Usage: send_x.py path/to/article.json")
+    sys.exit(2)
 
 def main():
-    if len(sys.argv)<2:
-        print("Usage: send_x.py file.json"); sys.exit(2)
-    jf = Path(sys.argv[1])
-    if not jf.exists():
-        logging.error("JSON not found: %s", jf)
+    if len(sys.argv) < 2:
+        usage_and_exit()
+
+    jf_path = Path(sys.argv[1])
+    if not jf_path.exists():
+        logging.error("JSON file not found: %s", jf_path)
         sys.exit(2)
-    data = json.loads(jf.read_text(encoding="utf-8"))
-    title = data.get("title","")
-    excerpt = data.get("excerpt") or data.get("description","")
-    url = data.get("url") or data.get("link","")
-    raw = data.get("cover_image","")
 
-    cap = caption(title,excerpt,url)
+    try:
+        data = json.loads(jf_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        logging.error("Failed to read/parse JSON: %s", e)
+        sys.exit(2)
 
-    auth = tweepy.OAuth1UserHandler(
-        X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET
-    )
-    api = tweepy.API(auth, wait_on_rate_limit=True)
+    title = data.get("title", "") or ""
+    excerpt = data.get("excerpt") or data.get("description") or ""
+    url = data.get("url") or data.get("link") or ""
 
-    img_final=None
-    tmp_resized=None
+    # If URL is relative path (local asset), do not try to resolve — we only embed absolute URLs.
+    # If the JSON contains a relative path, it's fine — the script will include it as-is,
+    # but typically you'll want a public absolute URL for readers to click.
+    caption = compose_caption(title, excerpt, url)
 
-    if raw and raw.startswith("http"):
-        try:
-            r = requests.get(raw, stream=True, timeout=20); r.raise_for_status()
-            tmp = Path(tempfile.mktemp(suffix=".jpg"))
-            with open(tmp,"wb") as f:
-                for c in r.iter_content(8192): f.write(c)
-            img_final=tmp
-        except:
-            img_final=None
-    else:
-        norm = normalize(raw)
-        found = find_local_image(norm, jf)
-        img_final = found or None
+    logging.info("Caption preview (truncated to %d chars):", MAX_TWEET_LEN)
+    logging.info("%s", caption[:2000] + ("..." if len(caption) > 2000 else ""))
 
-    if not img_final:
-        found = find_local_image(jf.stem, jf)
-        img_final = found or None
-
-    if img_final:
-        tmp = resize_im(img_final)
-        if not tmp:
-            tmp = resize_pillow(img_final)
-        if tmp:
-            tmp_resized = tmp
-
-    ok=False
-    if tmp_resized:
-        ok = post_media(api, cap, tmp_resized)
-        tmp_resized.unlink(missing_ok=True)
-    elif img_final:
-        ok = post_media(api, cap, img_final)
-        if str(img_final).startswith("/tmp"):
-            img_final.unlink(missing_ok=True)
-    else:
-        ok = post_text(api, cap)
-
+    ok = post_text_v2(caption)
     sys.exit(0 if ok else 3)
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
