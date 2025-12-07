@@ -46,9 +46,6 @@ jobs:
       FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
 
-    # allow execution either when triggered by push or when triggered as workflow_run
-    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging') }}
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -145,10 +142,11 @@ jobs:
           ls -la assets || true
           set +x
 
-      - name: Detect changed JSONs
-        id: changes
+      - name: Detect changed JSONs and run publisher (single step)
+        id: detect_and_run
         run: |
           set -euo pipefail
+          # Detect changed jsons similar to other workflows
           CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" || true)
           if [ -z "$CHANGED" ]; then
             CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
@@ -157,36 +155,35 @@ jobs:
           if [ -z "$JSONS" ]; then
             JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
           fi
+
+          # Normalize list
           CLEAN=$(printf "%s\n" "$JSONS" | sed '/^\s*$/d' || true)
+
           if [ -z "$CLEAN" ]; then
-            echo "json_files=" >> $GITHUB_OUTPUT
-          else
-            ENC=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
-            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
+            echo "No JSON files detected to post. Exiting."
+            exit 0
           fi
 
-      - name: Post JSONs to FB (debug mode: unbuffered python, show exit code)
-        if: ${{ steps.changes.outputs.json_files != '' }}
-        run: |
-          set -euo pipefail
-          RAW="${{ steps.changes.outputs.json_files }}"
-          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+          # Iterate and call the publisher for each JSON
+          LIST=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+          LIST=$(printf "%s" "$LIST" | sed 's/<<NL>>/\n/g')
 
           for jf in $LIST; do
+            if [ ! -f "$jf" ]; then
+              echo "Skipping missing file: $jf"
+              continue
+            fi
             echo "RAW=\"$jf\""
             echo "Posting to FB → $jf"
-            # debug: ensure script is present and executable
             if [ ! -f "scripts/publish_fb_insta.py" ]; then
               echo "ERROR: scripts/publish_fb_insta.py missing!"
               exit 10
             fi
             echo "Running: python3 -u scripts/publish_fb_insta.py \"$jf\" --mode fb"
-            # unbuffered python to stream logs; print exit code if non-zero
             python3 -u scripts/publish_fb_insta.py "$jf" --mode fb || { echo "PYTHON EXIT CODE $?" ; echo "---- script head ----"; sed -n '1,200p' scripts/publish_fb_insta.py || true ; exit 11; }
             echo "POST SCRIPT EXITED OK"
             echo "--------------------------------"
           done
 
-      - name: Nothing to post
-        if: ${{ steps.changes.outputs.json_files == '' }}
-        run: echo "No JSONs found."
+      - name: Done
+        run: echo "FB publish step complete."
