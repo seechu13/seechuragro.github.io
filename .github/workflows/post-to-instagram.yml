@@ -30,6 +30,10 @@ jobs:
     name: Post to Instagram (staging)
     runs-on: ubuntu-latest
 
+    # ensure GITHUB_TOKEN available to any future shell checks (safe)
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     if: >
       github.event.workflow_run.conclusion == 'success'
       && github.event.workflow_run.head_branch == 'staging'
