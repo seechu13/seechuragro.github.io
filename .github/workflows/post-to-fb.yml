@@ -1,0 +1,152 @@
+name: Post changed article JSONs to Facebook (staging)
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'assets/articles/**'
+      - 'articles/**'
+      - 'content/articles/**'
+
+  workflow_run:
+    workflows:
+      - "post-on-merge.yml"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: post-fb-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
+  MAX_WAIT_SECONDS: "180"
+  POLL_INTERVAL: "10"
+  PROCEED_IF_UPSTREAM_MISSING: "false"
+
+  SLEEP_SECONDS: "30"     # safety wait
+
+  FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+  FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+  SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
+  ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
+
+jobs:
+  post-fb:
+    name: Post to Facebook (staging)
+    runs-on: ubuntu-latest
+
+    if: >
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success'
+       && github.event.workflow_run.head_branch == 'staging')
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tools + ImageMagick + Python deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl imagemagick git
+          convert -version
+          python3 -m pip install --upgrade pip
+          pip install requests python-dateutil
+
+      - name: Wait for upstream workflow (push only)
+        if: github.event_name == 'push'
+        id: upstream_wait
+        run: |
+          set -euo pipefail
+          REPO="${GITHUB_REPOSITORY}"
+          SHA="${GITHUB_SHA}"
+          WORKFLOW_FILE="${UPSTREAM_WORKFLOW_FILE}"
+          MAX_WAIT=${MAX_WAIT_SECONDS}
+          POLL=${POLL_INTERVAL}
+          PROCEED=${PROCEED_IF_UPSTREAM_MISSING}
+
+          API_URL="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?head_sha=${SHA}"
+
+          elapsed=0
+          found="false"
+
+          while [ "$elapsed" -le "$MAX_WAIT" ]; do
+            resp=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API_URL")
+            run_id=$(echo "$resp" | jq -r '.workflow_runs[0].id // empty')
+
+            if [ -n "$run_id" ]; then
+              status=$(echo "$resp" | jq -r '.workflow_runs[0].status // empty')
+              conclusion=$(echo "$resp" | jq -r '.workflow_runs[0].conclusion // empty')
+
+              if [ "$status" = "completed" ] && [ "$conclusion" = "success" ]; then
+                echo "upstream_found=true" >> $GITHUB_OUTPUT
+                found="true"
+                break
+              fi
+
+              if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then
+                echo "upstream_found=false" >> $GITHUB_OUTPUT
+                found="false"
+                break
+              fi
+            fi
+
+            sleep "$POLL"
+            elapsed=$((elapsed + POLL))
+          done
+
+          if [ "$found" = "false" ]; then
+            if [ "$PROCEED" = "true" ]; then
+              echo "Proceeding anyway."
+            else
+              echo "Upstream workflow did not succeed in time."
+              exit 1
+            fi
+          fi
+
+      - name: Safety sleep
+        run: |
+          echo "Sleeping ${SLEEP_SECONDS}s for safety…"
+          sleep ${SLEEP_SECONDS}
+
+      - name: Detect changed JSONs
+        id: changes
+        run: |
+          set -euo pipefail
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" || true)
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
+          fi
+          JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
+          if [ -z "$JSONS" ]; then
+            JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          fi
+          CLEAN=$(printf "%s\n" "$JSONS" | sed '/^\s*$/d' || true)
+          if [ -z "$CLEAN" ]; then
+            echo "json_files=" >> $GITHUB_OUTPUT
+          else
+            ENC=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post JSONs to FB
+        if: steps.changes.outputs.json_files != ''
+        run: |
+          RAW="${{ steps.changes.outputs.json_files }}"
+          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
+          for jf in $LIST; do
+            echo "Posting to FB → $jf"
+            python3 scripts/publish_fb_insta.py "$jf" --mode fb
+            echo "--------------------------------"
+          done
+
+      - name: Nothing to post
+        if: steps.changes.outputs.json_files == ''
+        run: echo "No JSONs found."
