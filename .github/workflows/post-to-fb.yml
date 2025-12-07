@@ -18,18 +18,14 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: post-fb-${{ github.ref }}
-  cancel-in-progress: false
-
 env:
   UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
   MAX_WAIT_SECONDS: "180"
   POLL_INTERVAL: "10"
   PROCEED_IF_UPSTREAM_MISSING: "false"
+  SLEEP_SECONDS: "30"
 
-  SLEEP_SECONDS: "30"     # safety wait
-
+  # secrets mapped to env for the script to use
   FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
   FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
   SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
@@ -41,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # ensure this is always available to shell steps
+      # ensure shell steps can access this safely
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
@@ -52,7 +48,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install tools + ImageMagick + Python deps
+      - name: Install system tools, ImageMagick and Python deps
         run: |
           sudo apt-get update -y
           sudo apt-get install -y jq curl imagemagick git
@@ -60,7 +56,7 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install requests python-dateutil
 
-      - name: Wait for upstream workflow (push only)
+      - name: If push event, wait for upstream workflow run matching this commit
         if: ${{ github.event_name == 'push' }}
         id: upstream_wait
         run: |
@@ -71,14 +67,12 @@ jobs:
           MAX_WAIT=${MAX_WAIT_SECONDS}
           POLL=${POLL_INTERVAL}
           PROCEED=${PROCEED_IF_UPSTREAM_MISSING}
-
           API_URL="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?head_sha=${SHA}"
 
           elapsed=0
           found="false"
 
           while [ "$elapsed" -le "$MAX_WAIT" ]; do
-            # safe expansion so set -u won't fail if GITHUB_TOKEN is unset
             if [ -n "${GITHUB_TOKEN:-}" ]; then
               resp=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API_URL")
             else
@@ -117,73 +111,73 @@ jobs:
             fi
           fi
 
-      - name: Safety sleep
+      - name: Safety sleep before posting
         run: |
           echo "Sleeping ${SLEEP_SECONDS}s for safety…"
           sleep ${SLEEP_SECONDS}
 
-      - name: Debug: show repo and scripts before running publisher
+      - name: Debug — show files and script
         run: |
           set -x
           echo "Working dir: $(pwd)"
-          echo "--- Python version ---"
           python3 --version || true
-          echo "--- List scripts folder ---"
+          echo "Contents of scripts/:"
           ls -la scripts || true
-          echo "--- Head of publisher script (first 200 lines) ---"
+          echo "First 120 lines of scripts/publish_fb_insta.py (if present):"
           if [ -f scripts/publish_fb_insta.py ]; then
-            sed -n '1,200p' scripts/publish_fb_insta.py || true
+            sed -n '1,120p' scripts/publish_fb_insta.py || true
             chmod +x scripts/publish_fb_insta.py || true
           else
             echo "scripts/publish_fb_insta.py not found!"
           fi
-          echo "--- List article JSON file & assets ---"
+          echo "List articles/ and assets/:"
           ls -la articles || true
           ls -la assets || true
           set +x
 
-      - name: Detect changed JSONs and run publisher (single step)
+      - name: Detect changed JSONs and run publisher
         id: detect_and_run
         run: |
           set -euo pipefail
-          # Detect changed jsons similar to other workflows
+
           CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" || true)
           if [ -z "$CHANGED" ]; then
             CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
           fi
+
           JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
           if [ -z "$JSONS" ]; then
             JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
           fi
 
-          # Normalize list
           CLEAN=$(printf "%s\n" "$JSONS" | sed '/^\s*$/d' || true)
 
           if [ -z "$CLEAN" ]; then
-            echo "No JSON files detected to post. Exiting."
+            echo "No JSON files detected; nothing to post."
             exit 0
           fi
 
-          # Iterate and call the publisher for each JSON
-          LIST=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
-          LIST=$(printf "%s" "$LIST" | sed 's/<<NL>>/\n/g')
-
-          for jf in $LIST; do
+          # iterate files
+          printf "%s\n" "$CLEAN" | while read -r jf; do
+            [ -z "$jf" ] && continue
             if [ ! -f "$jf" ]; then
               echo "Skipping missing file: $jf"
               continue
             fi
-            echo "RAW=\"$jf\""
-            echo "Posting to FB → $jf"
+            echo "Publishing file: $jf"
             if [ ! -f "scripts/publish_fb_insta.py" ]; then
-              echo "ERROR: scripts/publish_fb_insta.py missing!"
-              exit 10
+              echo "ERROR: publisher script missing at scripts/publish_fb_insta.py"
+              exit 12
             fi
-            echo "Running: python3 -u scripts/publish_fb_insta.py \"$jf\" --mode fb"
-            python3 -u scripts/publish_fb_insta.py "$jf" --mode fb || { echo "PYTHON EXIT CODE $?" ; echo "---- script head ----"; sed -n '1,200p' scripts/publish_fb_insta.py || true ; exit 11; }
-            echo "POST SCRIPT EXITED OK"
-            echo "--------------------------------"
+            # run unbuffered python for immediate logs
+            python3 -u scripts/publish_fb_insta.py "$jf" --mode fb
+            rc=$?
+            if [ $rc -ne 0 ]; then
+              echo "Publisher script exited with code $rc"
+              exit $rc
+            fi
+            echo "Published $jf successfully."
           done
 
-      - name: Done
-        run: echo "FB publish step complete."
+      - name: Complete step
+        run: echo "FB publish job finished."
