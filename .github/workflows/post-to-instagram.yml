@@ -1,0 +1,81 @@
+name: Post changed article JSONs to Instagram (staging)
+
+on:
+  workflow_run:
+    workflows:
+      - "Post changed article JSONs to Facebook (staging)"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: post-ig-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SLEEP_BEFORE_IG: "20"       # wait so URLs become public
+  MAX_URL_CHECK_RETRIES: "6"
+  URL_CHECK_INTERVAL: "5"
+
+  FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+  FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+  IG_USER_ID: ${{ secrets.IG_USER_ID }}
+  SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
+  ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
+
+jobs:
+  post-ig:
+    name: Post to Instagram (staging)
+    runs-on: ubuntu-latest
+
+    if: >
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.head_branch == 'staging'
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tools + ImageMagick + Python deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl imagemagick git
+          convert -version
+          python3 -m pip install --upgrade pip
+          pip install requests python-dateutil
+
+      - name: Sleep before IG
+        run: |
+          echo "Sleeping ${SLEEP_BEFORE_IG}s before IG publish..."
+          sleep ${SLEEP_BEFORE_IG}
+
+      - name: Detect JSONs (use all article JSONs)
+        id: changes
+        run: |
+          JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          if [ -z "$JSONS" ]; then
+            echo "json_files=" >> $GITHUB_OUTPUT
+          else
+            ENC=$(printf "%s" "$JSONS" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post each JSON to Instagram
+        if: steps.changes.outputs.json_files != ''
+        run: |
+          RAW="${{ steps.changes.outputs.json_files }}"
+          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
+          for jf in $LIST; do
+            echo "Posting to IG → $jf"
+            python3 scripts/publish_fb_insta.py "$jf" --mode ig --max-retries ${MAX_URL_CHECK_RETRIES} --retry-interval ${URL_CHECK_INTERVAL}
+            echo "--------------------------------"
+          done
+
+      - name: No JSONs
+        if: steps.changes.outputs.json_files == ''
+        run: echo "No JSON files found."
