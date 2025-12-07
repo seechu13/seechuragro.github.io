@@ -40,6 +40,10 @@ jobs:
     name: Post to Facebook (staging)
     runs-on: ubuntu-latest
 
+    # ensure GITHUB_TOKEN is available to shell steps
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     if: >
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success'
