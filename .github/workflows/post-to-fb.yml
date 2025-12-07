@@ -46,10 +46,8 @@ jobs:
       FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
 
-    if: >
-      github.event_name != 'workflow_run' ||
-      (github.event.workflow_run.conclusion == 'success'
-       && github.event.workflow_run.head_branch == 'staging')
+    # allow execution either when triggered by push or when triggered as workflow_run
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging') }}
 
     steps:
       - name: Checkout repo
@@ -66,7 +64,7 @@ jobs:
           pip install requests python-dateutil
 
       - name: Wait for upstream workflow (push only)
-        if: github.event_name == 'push'
+        if: ${{ github.event_name == 'push' }}
         id: upstream_wait
         run: |
           set -euo pipefail
@@ -168,7 +166,7 @@ jobs:
           fi
 
       - name: Post JSONs to FB (debug mode: unbuffered python, show exit code)
-        if: steps.changes.outputs.json_files != ''
+        if: ${{ steps.changes.outputs.json_files != '' }}
         run: |
           set -euo pipefail
           RAW="${{ steps.changes.outputs.json_files }}"
@@ -190,5 +188,5 @@ jobs:
           done
 
       - name: Nothing to post
-        if: steps.changes.outputs.json_files == ''
+        if: ${{ steps.changes.outputs.json_files == '' }}
         run: echo "No JSONs found."
