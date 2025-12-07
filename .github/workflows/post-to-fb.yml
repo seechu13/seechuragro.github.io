@@ -40,9 +40,11 @@ jobs:
     name: Post to Facebook (staging)
     runs-on: ubuntu-latest
 
-    # ensure GITHUB_TOKEN is available to shell steps
     env:
+      # ensure this is always available to shell steps
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+      FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
 
     if: >
       github.event_name != 'workflow_run' ||
@@ -81,7 +83,13 @@ jobs:
           found="false"
 
           while [ "$elapsed" -le "$MAX_WAIT" ]; do
-            resp=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API_URL")
+            # safe expansion so set -u won't fail if GITHUB_TOKEN is unset
+            if [ -n "${GITHUB_TOKEN:-}" ]; then
+              resp=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API_URL")
+            else
+              resp=$(curl -sS "$API_URL")
+            fi
+
             run_id=$(echo "$resp" | jq -r '.workflow_runs[0].id // empty')
 
             if [ -n "$run_id" ]; then
@@ -119,6 +127,26 @@ jobs:
           echo "Sleeping ${SLEEP_SECONDS}s for safety…"
           sleep ${SLEEP_SECONDS}
 
+      - name: Debug: show repo and scripts before running publisher
+        run: |
+          set -x
+          echo "Working dir: $(pwd)"
+          echo "--- Python version ---"
+          python3 --version || true
+          echo "--- List scripts folder ---"
+          ls -la scripts || true
+          echo "--- Head of publisher script (first 200 lines) ---"
+          if [ -f scripts/publish_fb_insta.py ]; then
+            sed -n '1,200p' scripts/publish_fb_insta.py || true
+            chmod +x scripts/publish_fb_insta.py || true
+          else
+            echo "scripts/publish_fb_insta.py not found!"
+          fi
+          echo "--- List article JSON file & assets ---"
+          ls -la articles || true
+          ls -la assets || true
+          set +x
+
       - name: Detect changed JSONs
         id: changes
         run: |
@@ -139,15 +167,25 @@ jobs:
             echo "json_files=${ENC}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Post JSONs to FB
+      - name: Post JSONs to FB (debug mode: unbuffered python, show exit code)
         if: steps.changes.outputs.json_files != ''
         run: |
+          set -euo pipefail
           RAW="${{ steps.changes.outputs.json_files }}"
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
 
           for jf in $LIST; do
+            echo "RAW=\"$jf\""
             echo "Posting to FB → $jf"
-            python3 scripts/publish_fb_insta.py "$jf" --mode fb
+            # debug: ensure script is present and executable
+            if [ ! -f "scripts/publish_fb_insta.py" ]; then
+              echo "ERROR: scripts/publish_fb_insta.py missing!"
+              exit 10
+            fi
+            echo "Running: python3 -u scripts/publish_fb_insta.py \"$jf\" --mode fb"
+            # unbuffered python to stream logs; print exit code if non-zero
+            python3 -u scripts/publish_fb_insta.py "$jf" --mode fb || { echo "PYTHON EXIT CODE $?" ; echo "---- script head ----"; sed -n '1,200p' scripts/publish_fb_insta.py || true ; exit 11; }
+            echo "POST SCRIPT EXITED OK"
             echo "--------------------------------"
           done
 
