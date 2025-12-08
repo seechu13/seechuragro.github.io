@@ -14,7 +14,6 @@ env:
   UPSTREAM_WORKFLOW_FILE: "post-to-x.yml"
   SLEEP_SECONDS: "30"
 
-  # secrets
   FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
   FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
   IG_USER_ID: ${{ secrets.IG_USER_ID }}
@@ -285,3 +284,61 @@ for k in ("cover_image","image","featured_image","hero"):
 def build_public_url(val):
     v = val.lstrip("/")
     base = os.getenv("SITE_URL_BASE","").rstrip("/")
+    AS = os.getenv("ASSETS_PATH","").strip("/")
+    if not base:
+        return ""
+    if AS and v.startswith(AS): return f"{base}/{v}"
+    if v.startswith("assets/"): return f"{base}/{v}"
+    if AS: return f"{base}/{AS}/{Path(v).name}"
+    return f"{base}/{v}"
+if not img:
+    print("RESOLVED_URL=")
+    print("HEAD_OK=0")
+    sys.exit(0)
+is_pub = isinstance(img, str) and (img.startswith("http://") or img.startswith("https://"))
+resolved = img if is_pub else build_public_url(img)
+ok = 0
+if resolved:
+    try:
+        r = requests.head(resolved, timeout=10, allow_redirects=True)
+        if r.status_code == 200:
+            ok = 1
+    except:
+        ok = 0
+print("RESOLVED_URL=" + (resolved or ""))
+print("HEAD_OK=" + str(ok))
+PY
+
+          RESOLVED_URL=$(cat $DIAG_LOG | sed -n 's/^RESOLVED_URL=//p' | tr -d '\r\n')
+          HEAD_OK=$(cat $DIAG_LOG | sed -n 's/^HEAD_OK=//p' | tr -d '\r\n')
+          echo "IG decision: RESOLVED_URL=${RESOLVED_URL}  HEAD_OK=${HEAD_OK}"
+          if [ -z "$RESOLVED_URL" ] || [ "$HEAD_OK" != "1" ]; then
+            echo "Skipping IG publish: no publicly reachable image URL (IG requires image_url)."
+            exit 0
+          fi
+
+          echo "Running IG publisher using public URL: $RESOLVED_URL"
+
+          # publish IG for the same JSONs posted to FB
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          CHANGED=$(git show --name-only --pretty="" "$SHA" || true)
+          JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
+          if [ -z "$JSONS" ]; then
+            JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          fi
+          if [ -z "$JSONS" ]; then
+            echo "No JSON files to publish to IG; exiting."
+            exit 0
+          fi
+          printf "%s\n" "$JSONS" | while read -r jf; do
+            [ -z "$jf" ] && continue
+            if [ ! -f "$jf" ]; then
+              echo "Skipping missing $jf"
+              continue
+            fi
+            echo "Publishing (IG) file: $jf"
+            python3 -u scripts/publish_fb_insta.py "$jf" --mode ig || true
+          done
+
+      - name: Done
+        run: echo "full_verify_and_post job completed."
