@@ -65,11 +65,10 @@ try:
 except Exception as e:
     print("requests import failed:", e); sys.exit(2)
 
+# prefer a test JSON; fallback to any available article JSON
 fn = "articles/test-automation.json"
 if not Path(fn).exists():
-    # try to detect changed JSONs from the commit head of upstream
     print("[DIAG] primary test JSON not found:", fn)
-    # fallback - attempt to list known JSON locations
     candidates = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
     if candidates:
         fn = str(candidates[0])
@@ -185,7 +184,6 @@ PY
         id: run_fb
         run: |
           set -euo pipefail
-          # select JSONs changed by the upstream commit (head_sha)
           SHA="${{ github.event.workflow_run.head_sha }}"
           CHANGED=$(git show --name-only --pretty="" "$SHA" || true)
           JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
@@ -205,10 +203,7 @@ PY
       - name: Decide & run IG publisher (only if resolved URL reachable)
         id: run_ig
         run: |
-          # We will inspect the diagnostic output for HEAD_OK and resolved_url
-          # to decide whether IG can run (IG requires a public image URL).
           DIAG_LOG=$(mktemp)
-          # re-run the diagnostic minimally to capture HEAD_OK & resolved_url for the first JSON found
           python3 - <<'PY' > $DIAG_LOG
 import os, json
 from pathlib import Path
@@ -218,7 +213,6 @@ try:
 except Exception as e:
     print("requests import failed:", e); sys.exit(2)
 
-# find a JSON to test
 cands = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
 if not cands:
     print("NO_JSON")
@@ -267,7 +261,6 @@ PY
             exit 0
           fi
           echo "Running IG publisher using public URL: $RESOLVED_URL"
-          # Run IG publisher for the same JSONs we published to FB
           SHA="${{ github.event.workflow_run.head_sha }}"
           CHANGED=$(git show --name-only --pretty="" "$SHA" || true)
           JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
