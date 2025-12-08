@@ -3,7 +3,7 @@ name: Post changed article JSONs to Facebook (staging) - minimal strict
 on:
   workflow_run:
     workflows:
-      - "post-to-x.yml"
+      - "Post changed article JSONs to X (staging)"
     types:
       - completed
 
