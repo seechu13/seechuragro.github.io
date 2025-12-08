@@ -16,33 +16,24 @@ concurrency:
   group: post-fb-${{ github.ref }}
   cancel-in-progress: false
 
-# Workflow-level environment (jobs inherit these automatically)
 env:
   BASE_URL: "https://seechuragro.in"
   SLEEP_SECONDS: "0"
 
-  # FB credentials — set as repo secrets
-  # These values are *secrets* in GitHub; do NOT hardcode here.
-  FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
-  FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-
 jobs:
   detect:
-    name: Detect changed JSONs
     runs-on: ubuntu-latest
     outputs:
       json_files: ${{ steps.detect.outputs.json_files }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install jq
+      - name: Install jq/git
         run: sudo apt-get update -y && sudo apt-get install -y jq git
 
       - id: detect
-        name: Detect changed JSONs
         run: |
           set -euo pipefail
           CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
@@ -62,20 +53,30 @@ jobs:
           fi
 
   post-fb:
-    name: Facebook — Post changed article JSONs
-    runs-on: ubuntu-latest
     needs: detect
+    runs-on: ubuntu-latest
     if: needs.detect.outputs.json_files != ''
+    env:
+      # explicit mapping of secrets to environment variables the script expects
+      FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+      FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+      BASE_URL: ${{ env.BASE_URL }}
+      SLEEP_SECONDS: ${{ env.SLEEP_SECONDS }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install deps
+      - name: Quick debug — confirm secrets presence (no values printed)
+        run: |
+          set -euo pipefail
+          [ -n "${FB_PAGE_ID:-}" ] && echo "FB_PAGE_ID: PRESENT" || echo "FB_PAGE_ID: MISSING"
+          [ -n "${FB_PAGE_ACCESS_TOKEN:-}" ] && echo "FB_PAGE_ACCESS_TOKEN: PRESENT" || echo "FB_PAGE_ACCESS_TOKEN: MISSING"
+
+      - name: Install deps (ImageMagick included)
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y jq curl git
+          sudo apt-get install -y jq curl git imagemagick
           python3 -m pip install --upgrade pip
           pip install requests Pillow
 
@@ -89,12 +90,6 @@ jobs:
           fi
 
       - name: Post each JSON to Facebook (runner script)
-        env:
-          # If you want, you can explicitly expose secrets here too; not required because
-          # workflow-level env already sets FB_PAGE_ID and FB_PAGE_ACCESS_TOKEN
-          # FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
-          # FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          BASE_URL: ${{ env.BASE_URL }}
         run: |
           set -euo pipefail
           RAW="${{ needs.detect.outputs.json_files }}"
@@ -105,6 +100,7 @@ jobs:
               continue
             fi
             echo "Posting to FB: $jf"
-            python3 scripts/send_fb.py "$jf"
+            # Run script and capture stdout/stderr
+            python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
             echo "--------------------------------"
           done
