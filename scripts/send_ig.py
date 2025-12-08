@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-import os
-import sys
-import json
-import time
-import requests
+import os, sys, json, time, requests, traceback
 from urllib.parse import urljoin
-import traceback
+from common_utils import extract_images_from_json
 
 IG_USER_ID = os.environ.get("IG_USER_ID")
 IG_TOKEN = os.environ.get("IG_ACCESS_TOKEN")
@@ -35,7 +31,7 @@ def build_message(j):
     title = j.get("title", "")
     excerpt = j.get("excerpt") or j.get("summary", "")
     slug = j.get("slug") or j.get("path") or ""
-    url = urljoin(BASE_URL, slug)
+    url = slug if slug.startswith("http") else urljoin(BASE_URL, slug)
     text = f"{title}\n\n{excerpt}\n\nRead more: {url}"
     return text, url
 
@@ -55,7 +51,7 @@ def main(path):
             j = json.load(f)
 
         caption, link = build_message(j)
-        images = j.get("images") or j.get("media") or []
+        images = extract_images_from_json(j, base_url=BASE_URL)
 
         if not images:
             print("No images found in JSON; IG requires an image. Skipping.")
