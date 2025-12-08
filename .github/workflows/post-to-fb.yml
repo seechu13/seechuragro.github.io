@@ -1,4 +1,4 @@
-name: Post changed article JSONs to Facebook (staging) - full strict
+name: Post changed article JSONs to Facebook (staging) - minimal strict
 
 on:
   workflow_run:
@@ -11,27 +11,20 @@ permissions:
   contents: read
 
 env:
-  UPSTREAM_WORKFLOW_FILE: "post-to-x.yml"
-  SLEEP_SECONDS: "30"
-
   FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
   FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
-  IG_USER_ID: ${{ secrets.IG_USER_ID }}
   SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
   ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  full_verify_and_post:
-    name: Full verify → Post to FB and IG (strict)
+  post_fb:
+    name: Verify upstream success → Post to Facebook
     runs-on: ubuntu-latest
     env:
       FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
-      IG_USER_ID: ${{ secrets.IG_USER_ID }}
       SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
       ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Show trigger / upstream info
@@ -39,7 +32,6 @@ jobs:
           echo "Triggered by workflow_run: ${{ github.event.workflow_run.name }}"
           echo "Upstream conclusion: ${{ github.event.workflow_run.conclusion }}"
           echo "Upstream head SHA: ${{ github.event.workflow_run.head_sha }}"
-          echo "Actor: ${{ github.actor }}"
 
       - name: Ensure upstream concluded successfully
         run: |
@@ -49,201 +41,44 @@ jobs:
           fi
           echo "Upstream workflow succeeded. Proceeding."
 
-      - name: Checkout repo (full)
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install system tools and python deps
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests || true
+
+      - name: Detect changed JSONs and run publisher
         run: |
           set -euo pipefail
-          sudo apt-get update -y
-          sudo apt-get install -y jq curl imagemagick git
-          convert -version || true
-          python3 -m pip install --upgrade pip
-          pip install requests python-dateutil || true
-
-      - name: Debug — show files and script (first look)
-        run: |
-          set -x
-          echo "Working dir: $(pwd)"
-          python3 --version || true
-          echo "Contents of scripts/:"
-          ls -la scripts || true
-          echo "First 120 lines of scripts/publish_fb_insta.py (if present):"
-          if [ -f scripts/publish_fb_insta.py ]; then
-            sed -n '1,120p' scripts/publish_fb_insta.py || true
-            chmod +x scripts/publish_fb_insta.py || true
-          else
-            echo "scripts/publish_fb_insta.py not found!"
-          fi
-          echo "List articles/ and assets/:"
-          ls -la articles || true
-          ls -la assets || true
-          set +x
-
-      - name: Diagnostic — detect image and resolved URL (prints diagnostic)
-        id: diag
-        run: |
-          python3 - <<'PY'
-import os, json
-from pathlib import Path
-import sys
-try:
-    import requests
-except Exception as e:
-    print("requests import failed:", e); sys.exit(2)
-
-# prefer test JSON; fallback to candidate JSONs
-fn = "articles/test-automation.json"
-if not Path(fn).exists():
-    candidates = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
-    if candidates:
-        fn = str(candidates[0])
-    else:
-        print("IMAGE_FOUND=False")
-        sys.exit(0)
-
-print("---- DIAGNOSTIC START ----")
-print("Checking article file:", fn)
-a = json.load(open(fn, encoding="utf-8"))
-print("Article keys:", list(a.keys()))
-img = None
-for k in ("cover_image","image","featured_image","hero"):
-    if a.get(k):
-        img = a.get(k); print("Found image key:", k, "->", img); break
-print("SITE_URL_BASE:", os.getenv("SITE_URL_BASE"))
-ASSETS_PATH = os.getenv("ASSETS_PATH","").strip("/")
-print("ASSETS_PATH:", repr(ASSETS_PATH))
-
-def build_public_url(val):
-    if not os.getenv("SITE_URL_BASE"):
-        return None
-    v = val.lstrip("/")
-    base = os.getenv("SITE_URL_BASE").rstrip("/")
-    if ASSETS_PATH and v.startswith(ASSETS_PATH):
-        return f"{base}/{v}"
-    if v.startswith("assets/"):
-        return f"{base}/{v}"
-    if ASSETS_PATH:
-        return f"{base}/{ASSETS_PATH}/{Path(v).name}"
-    return f"{base}/{v}"
-
-if not img:
-    print("IMAGE_FOUND=False")
-    print("No image found in article.")
-else:
-    is_pub = isinstance(img, str) and (img.startswith("http://") or img.startswith("https://"))
-    resolved = img if is_pub else build_public_url(img)
-    print("IMAGE_FOUND=True")
-    print("raw_image:", img)
-    print("is_public_url:", is_pub)
-    print("resolved_url:", resolved)
-    if resolved:
-        try:
-            r = requests.head(resolved, timeout=10, allow_redirects=True)
-            print("HEAD status:", r.status_code, "content-type:", r.headers.get("content-type"))
-            print("HEAD_OK=" + ("1" if r.status_code == 200 else "0"))
-        except Exception as e:
-            print("HEAD_ERROR:", e)
-            print("HEAD_OK=0")
-    else:
-        print("HEAD_OK=0")
-print("---- DIAGNOSTIC END ----")
-PY
-
-      - name: Safety sleep before posting
-        run: |
-          echo "Sleeping ${SLEEP_SECONDS}s for safety…"
-          sleep ${SLEEP_SECONDS}
-
-      - name: Patch publisher for local file uploads (runner-side)
-        id: patch
-        run: |
-          PYFILE="scripts/publish_fb_insta.py"
-          if [ ! -f "$PYFILE" ]; then
-            echo "No publisher script at $PYFILE; skipping patch."
-            echo "PATCH_APPLIED=false"
-            exit 0
-          fi
-          python3 - <<'PY'
-from pathlib import Path
-p = Path("scripts/publish_fb_insta.py")
-s = p.read_text(encoding="utf-8")
-old_snip = (
-    "        if is_public_url(img):\n"
-    "            print(f\"[FB] Uploading by URL: {img}\")\n"
-    "            payload = {\"url\": img, \"caption\": caption, \"access_token\": token}\n"
-    "            resp = requests.post(url, data=payload, timeout=TIMEOUT)\n"
-    "            print_resp_summary(resp, \"FB_UPLOAD\")\n"
-    "            resp.raise_for_status()\n"
-    "            return resp.json()\n"
-)
-if old_snip in s:
-    new_snip = old_snip + (
-        "        else:\n"
-        "            # Upload local file binary when image is a repo/local path\n"
-        "            print(f\"[FB] Uploading local file: {img}\")\n"
-        "            fp = Path(img)\n"
-        "            if not fp.exists():\n"
-        "                fp = Path.cwd() / img\n"
-        "            if not fp.exists():\n"
-        "                print(f\"[FB] Local file not found ({img}); falling back to URL upload\")\n"
-        "                payload = {\"url\": img, \"caption\": caption, \"access_token\": token}\n"
-        "                resp = requests.post(url, data=payload, timeout=TIMEOUT)\n"
-        "                print_resp_summary(resp, \"FB_UPLOAD\")\n"
-        "                resp.raise_for_status()\n"
-        "                return resp.json()\n"
-        "            with fp.open('rb') as fh:\n"
-        "                files = {'source': fh}\n"
-        "                payload = {'caption': caption, 'access_token': token}\n"
-        "                resp = requests.post(url, data=payload, files=files, timeout=TIMEOUT)\n"
-        "                print_resp_summary(resp, 'FB_UPLOAD')\n"
-        "                resp.raise_for_status()\n"
-        "                return resp.json()\n"
-    )
-    s2 = s.replace(old_snip, new_snip)
-    p.write_text(s2, encoding="utf-8")
-    print("PATCH_APPLIED=true")
-    print("Patched scripts/publish_fb_insta.py with local-upload fallback.")
-else:
-    print("PATCH_APPLIED=false")
-    print("Expected snippet not found; no patch applied.")
-PY
-
-      - name: Detect changed JSONs and run FB publisher
-        id: detect_and_run
-        run: |
-          set -euo pipefail
-
-          # Get the head SHA from upstream workflow event
           SHA="${{ github.event.workflow_run.head_sha }}"
-          echo "Using upstream head SHA: $SHA"
 
+          # get changed files for the upstream commit
           CHANGED=$(git show --name-only --pretty="" "$SHA" || true)
           if [ -z "$CHANGED" ]; then
             CHANGED=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
           fi
 
           JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
-          CLEAN=$(printf "%s\n" "$JSONS" | sed '/^\s*$/d' || true)
-
-          if [ -z "$CLEAN" ]; then
+          if [ -z "$JSONS" ]; then
             echo "No JSON files detected; nothing to post."
             exit 0
           fi
 
-          printf "%s\n" "$CLEAN" | while read -r jf; do
-            [ -z "$jf" ] && continue
+          for jf in $JSONS; do
             if [ ! -f "$jf" ]; then
               echo "Skipping missing file: $jf"
               continue
             fi
             echo "Publishing (FB) file: $jf"
-            if [ ! -f "scripts/publish_fb_insta.py" ]; then
-              echo "ERROR: publisher script missing at scripts/publish_fb_insta.py"
-              exit 12
-            fi
             python3 -u scripts/publish_fb_insta.py "$jf" --mode fb
             rc=$?
             if [ $rc -ne 0 ]; then
@@ -253,92 +88,5 @@ PY
             echo "Published $jf successfully."
           done
 
-      - name: Debug — show FB publish result (tail)
-        run: |
-          echo "FB publish step finished; check previous logs for upload lines."
-
-      - name: Decide & run IG publisher (only if resolved URL reachable)
-        id: run_ig
-        run: |
-          # Re-check one candidate JSON to get resolved URL & HEAD_OK
-          DIAG_LOG=$(mktemp)
-          python3 - <<'PY' > $DIAG_LOG
-import os, json, sys
-from pathlib import Path
-try:
-    import requests
-except Exception as e:
-    print("requests import failed:", e); sys.exit(2)
-
-cands = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
-if not cands:
-    print("RESOLVED_URL=")
-    print("HEAD_OK=0")
-    sys.exit(0)
-fn = str(cands[0])
-a = json.load(open(fn, encoding="utf-8"))
-img = None
-for k in ("cover_image","image","featured_image","hero"):
-    if a.get(k):
-        img = a.get(k); break
-def build_public_url(val):
-    v = val.lstrip("/")
-    base = os.getenv("SITE_URL_BASE","").rstrip("/")
-    AS = os.getenv("ASSETS_PATH","").strip("/")
-    if not base:
-        return ""
-    if AS and v.startswith(AS): return f"{base}/{v}"
-    if v.startswith("assets/"): return f"{base}/{v}"
-    if AS: return f"{base}/{AS}/{Path(v).name}"
-    return f"{base}/{v}"
-if not img:
-    print("RESOLVED_URL=")
-    print("HEAD_OK=0")
-    sys.exit(0)
-is_pub = isinstance(img, str) and (img.startswith("http://") or img.startswith("https://"))
-resolved = img if is_pub else build_public_url(img)
-ok = 0
-if resolved:
-    try:
-        r = requests.head(resolved, timeout=10, allow_redirects=True)
-        if r.status_code == 200:
-            ok = 1
-    except:
-        ok = 0
-print("RESOLVED_URL=" + (resolved or ""))
-print("HEAD_OK=" + str(ok))
-PY
-
-          RESOLVED_URL=$(cat $DIAG_LOG | sed -n 's/^RESOLVED_URL=//p' | tr -d '\r\n')
-          HEAD_OK=$(cat $DIAG_LOG | sed -n 's/^HEAD_OK=//p' | tr -d '\r\n')
-          echo "IG decision: RESOLVED_URL=${RESOLVED_URL}  HEAD_OK=${HEAD_OK}"
-          if [ -z "$RESOLVED_URL" ] || [ "$HEAD_OK" != "1" ]; then
-            echo "Skipping IG publish: no publicly reachable image URL (IG requires image_url)."
-            exit 0
-          fi
-
-          echo "Running IG publisher using public URL: $RESOLVED_URL"
-
-          # publish IG for the same JSONs posted to FB
-          SHA="${{ github.event.workflow_run.head_sha }}"
-          CHANGED=$(git show --name-only --pretty="" "$SHA" || true)
-          JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
-          if [ -z "$JSONS" ]; then
-            JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
-          fi
-          if [ -z "$JSONS" ]; then
-            echo "No JSON files to publish to IG; exiting."
-            exit 0
-          fi
-          printf "%s\n" "$JSONS" | while read -r jf; do
-            [ -z "$jf" ] && continue
-            if [ ! -f "$jf" ]; then
-              echo "Skipping missing $jf"
-              continue
-            fi
-            echo "Publishing (IG) file: $jf"
-            python3 -u scripts/publish_fb_insta.py "$jf" --mode ig || true
-          done
-
       - name: Done
-        run: echo "full_verify_and_post job completed."
+        run: echo "post_fb job completed."
