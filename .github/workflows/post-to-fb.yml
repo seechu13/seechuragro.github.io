@@ -9,15 +9,6 @@ on:
       - 'articles/**'
       - 'content/articles/**'
 
-# Optional: uncomment if you ever want FB to run only after the X workflow completes.
-# Make sure the workflow name below exactly matches the X workflow display name.
-# on:
-#   workflow_run:
-#     workflows:
-#       - "Post changed article JSONs to X (staging)"
-#     types:
-#       - completed
-
 permissions:
   contents: read
 
@@ -25,11 +16,13 @@ concurrency:
   group: post-fb-${{ github.ref }}
   cancel-in-progress: false
 
+# Workflow-level environment (jobs inherit these automatically)
 env:
   BASE_URL: "https://seechuragro.in"
   SLEEP_SECONDS: "0"
 
   # FB credentials — set as repo secrets
+  # These values are *secrets* in GitHub; do NOT hardcode here.
   FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
   FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
 
@@ -73,10 +66,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect
     if: needs.detect.outputs.json_files != ''
-    env:
-      BASE_URL: ${{ env.BASE_URL }}
-      FB_PAGE_ID: ${{ env.FB_PAGE_ID }}
-      FB_PAGE_ACCESS_TOKEN: ${{ env.FB_PAGE_ACCESS_TOKEN }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -100,6 +89,12 @@ jobs:
           fi
 
       - name: Post each JSON to Facebook (runner script)
+        env:
+          # If you want, you can explicitly expose secrets here too; not required because
+          # workflow-level env already sets FB_PAGE_ID and FB_PAGE_ACCESS_TOKEN
+          # FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          # FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          BASE_URL: ${{ env.BASE_URL }}
         run: |
           set -euo pipefail
           RAW="${{ needs.detect.outputs.json_files }}"
