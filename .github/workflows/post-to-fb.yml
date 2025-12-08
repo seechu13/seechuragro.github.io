@@ -1,92 +1,115 @@
-name: Post changed article JSONs to Facebook (staging) - minimal strict
+name: Post changed article JSONs to Facebook (staging)
 
 on:
-  workflow_run:
-    workflows:
-      - "Post changed article JSONs to X (staging)"
-    types:
-      - completed
+  push:
+    branches:
+      - staging
+    paths:
+      - 'assets/articles/**'
+      - 'articles/**'
+      - 'content/articles/**'
+
+# Optional: uncomment if you ever want FB to run only after the X workflow completes.
+# Make sure the workflow name below exactly matches the X workflow display name.
+# on:
+#   workflow_run:
+#     workflows:
+#       - "Post changed article JSONs to X (staging)"
+#     types:
+#       - completed
 
 permissions:
   contents: read
 
+concurrency:
+  group: post-fb-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
-  FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+  BASE_URL: "https://seechuragro.in"
+  SLEEP_SECONDS: "0"
+
+  # FB credentials — set as repo secrets
   FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
-  SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
-  ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
+  FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
 
 jobs:
-  post_fb:
-    name: Verify upstream success → Post to Facebook
+  detect:
+    name: Detect changed JSONs
     runs-on: ubuntu-latest
-    env:
-      FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
-      FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
-      SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
-      ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
-
+    outputs:
+      json_files: ${{ steps.detect.outputs.json_files }}
     steps:
-      - name: Show trigger / upstream info
-        run: |
-          echo "Triggered by workflow_run: ${{ github.event.workflow_run.name }}"
-          echo "Upstream conclusion: ${{ github.event.workflow_run.conclusion }}"
-          echo "Upstream head SHA: ${{ github.event.workflow_run.head_sha }}"
-
-      - name: Ensure upstream concluded successfully
-        run: |
-          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
-            echo "Upstream workflow did not finish with success. Exiting."
-            exit 1
-          fi
-          echo "Upstream workflow succeeded. Proceeding."
-
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
+      - name: Install jq
+        run: sudo apt-get update -y && sudo apt-get install -y jq git
 
-      - name: Install Python deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests || true
-
-      - name: Detect changed JSONs and run publisher
+      - id: detect
+        name: Detect changed JSONs
         run: |
           set -euo pipefail
-          SHA="${{ github.event.workflow_run.head_sha }}"
-
-          # get changed files for the upstream commit
-          CHANGED=$(git show --name-only --pretty="" "$SHA" || true)
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
           if [ -z "$CHANGED" ]; then
-            CHANGED=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+            CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
           fi
-
           JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
           if [ -z "$JSONS" ]; then
-            echo "No JSON files detected; nothing to post."
-            exit 0
+            JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          fi
+          CLEAN=$(printf "%s\n" "$JSONS" | sed '/^\s*$/d' || true)
+          if [ -z "$CLEAN" ]; then
+            echo "json_files=" >> $GITHUB_OUTPUT
+          else
+            ENC=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
           fi
 
-          for jf in $JSONS; do
+  post-fb:
+    name: Facebook — Post changed article JSONs
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.json_files != ''
+    env:
+      BASE_URL: ${{ env.BASE_URL }}
+      FB_PAGE_ID: ${{ env.FB_PAGE_ID }}
+      FB_PAGE_ACCESS_TOKEN: ${{ env.FB_PAGE_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl git
+          python3 -m pip install --upgrade pip
+          pip install requests Pillow
+
+      - name: (Optional) Safety sleep
+        run: |
+          if [ "${SLEEP_SECONDS}" != "0" ]; then
+            echo "Sleeping ${SLEEP_SECONDS}s..."
+            sleep "${SLEEP_SECONDS}"
+          else
+            echo "No safety sleep"
+          fi
+
+      - name: Post each JSON to Facebook (runner script)
+        run: |
+          set -euo pipefail
+          RAW="${{ needs.detect.outputs.json_files }}"
+          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+          for jf in $LIST; do
             if [ ! -f "$jf" ]; then
               echo "Skipping missing file: $jf"
               continue
             fi
-            echo "Publishing (FB) file: $jf"
-            python3 -u scripts/publish_fb_insta.py "$jf" --mode fb
-            rc=$?
-            if [ $rc -ne 0 ]; then
-              echo "Publisher script exited with code $rc"
-              exit $rc
-            fi
-            echo "Published $jf successfully."
+            echo "Posting to FB: $jf"
+            python3 scripts/send_fb.py "$jf"
+            echo "--------------------------------"
           done
-
-      - name: Done
-        run: echo "post_fb job completed."
