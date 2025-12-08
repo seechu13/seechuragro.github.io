@@ -1,85 +1,48 @@
-name: Post changed article JSONs to Instagram (staging)
+name: Post to Instagram
 
 on:
-  workflow_run:
-    workflows:
-      - "Post changed article JSONs to Facebook (staging)"
-    types:
-      - completed
-
-permissions:
-  contents: read
-
-concurrency:
-  group: post-ig-${{ github.ref }}
-  cancel-in-progress: false
-
-env:
-  SLEEP_BEFORE_IG: "20"       # wait so URLs become public
-  MAX_URL_CHECK_RETRIES: "6"
-  URL_CHECK_INTERVAL: "5"
-
-  FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
-  FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
-  IG_USER_ID: ${{ secrets.IG_USER_ID }}
-  SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
-  ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
 
 jobs:
-  post-ig:
-    name: Post to Instagram (staging)
+  publish-ig:
+    name: Publish to Instagram
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
-    # ensure GITHUB_TOKEN available to any future shell checks (safe)
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    if: >
-      github.event.workflow_run.conclusion == 'success'
-      && github.event.workflow_run.head_branch == 'staging'
+      FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+      FB_PAGE_ID:    ${{ secrets.FB_PAGE_ID }}
+      IG_USER_ID:    ${{ secrets.IG_USER_ID }}
+      SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
+      ASSETS_PATH:   ${{ secrets.ASSETS_PATH }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          fetch-depth: 0
+          python-version: "3.12"
 
-      - name: Install tools + ImageMagick + Python deps
+      - name: Install Python deps
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq curl imagemagick git
-          convert -version
-          python3 -m pip install --upgrade pip
-          pip install requests python-dateutil
+          python -m pip install --upgrade pip
+          pip install requests
 
-      - name: Sleep before IG
+      - name: Show env presence (IG)
         run: |
-          echo "Sleeping ${SLEEP_BEFORE_IG}s before IG publish..."
-          sleep ${SLEEP_BEFORE_IG}
+          echo "ENV FB_PAGE_ID=${FB_PAGE_ID}"
+          if [ -z "${FB_PAGE_TOKEN}" ]; then echo "[ENV] FB_PAGE_TOKEN present: False"; else echo "[ENV] FB_PAGE_TOKEN present: True"; fi
+          if [ -z "${FB_PAGE_ID}" ]; then echo "[ENV] FB_PAGE_ID present: False"; else echo "[ENV] FB_PAGE_ID present: True"; fi
+          if [ -z "${IG_USER_ID}" ]; then echo "[ENV] IG_USER_ID present: False"; else echo "[ENV] IG_USER_ID present: True"; fi
+          if [ -z "${SITE_URL_BASE}" ]; then echo "[ENV] SITE_URL_BASE present: False"; else echo "[ENV] SITE_URL_BASE present: True"; fi
+          if [ -z "${ASSETS_PATH}" ]; then echo "[ENV] ASSETS_PATH present: False"; else echo "[ENV] ASSETS_PATH present: True"; fi
 
-      - name: Detect JSONs (use all article JSONs)
-        id: changes
+      - name: Run IG publisher
         run: |
-          JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
-          if [ -z "$JSONS" ]; then
-            echo "json_files=" >> $GITHUB_OUTPUT
-          else
-            ENC=$(printf "%s" "$JSONS" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
-            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Post each JSON to Instagram
-        if: steps.changes.outputs.json_files != ''
-        run: |
-          RAW="${{ steps.changes.outputs.json_files }}"
-          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
-
-          for jf in $LIST; do
-            echo "Posting to IG → $jf"
-            python3 scripts/publish_fb_insta.py "$jf" --mode ig --max-retries ${MAX_URL_CHECK_RETRIES} --retry-interval ${URL_CHECK_INTERVAL}
-            echo "--------------------------------"
-          done
-
-      - name: No JSONs
-        if: steps.changes.outputs.json_files == ''
-        run: echo "No JSON files found."
+          python3 scripts/publish_fb_insta.py articles/test-automation.json --mode ig
