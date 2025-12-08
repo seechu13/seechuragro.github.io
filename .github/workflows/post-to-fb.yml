@@ -16,17 +16,20 @@ concurrency:
   group: post-fb-${{ github.ref }}
   cancel-in-progress: false
 
+# workflow-level env — jobs will inherit these automatically
 env:
   BASE_URL: "https://seechuragro.in"
   SLEEP_SECONDS: "0"
 
 jobs:
   detect:
+    name: Detect changed JSONs
     runs-on: ubuntu-latest
     outputs:
       json_files: ${{ steps.detect.outputs.json_files }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -34,6 +37,7 @@ jobs:
         run: sudo apt-get update -y && sudo apt-get install -y jq git
 
       - id: detect
+        name: Detect changed JSONs
         run: |
           set -euo pipefail
           CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
@@ -53,17 +57,17 @@ jobs:
           fi
 
   post-fb:
+    name: Facebook — Post changed article JSONs
     needs: detect
     runs-on: ubuntu-latest
     if: needs.detect.outputs.json_files != ''
+    # only map secrets here (no ${ { env.* } } usage)
     env:
-      # explicit mapping of secrets to environment variables the script expects
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
       FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-      BASE_URL: ${{ env.BASE_URL }}
-      SLEEP_SECONDS: ${{ env.SLEEP_SECONDS }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -100,7 +104,6 @@ jobs:
               continue
             fi
             echo "Posting to FB: $jf"
-            # Run script and capture stdout/stderr
             python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
             echo "--------------------------------"
           done
