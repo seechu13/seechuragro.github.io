@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-import os
-import sys
-import json
-import requests
+import os, sys, json, requests, traceback
 from urllib.parse import urljoin
-import traceback
+from common_utils import extract_images_from_json
 
 FB_PAGE_ID = os.environ.get("FB_PAGE_ID")
 FB_TOKEN = os.environ.get("FB_PAGE_ACCESS_TOKEN")
@@ -39,7 +36,7 @@ def build_message(j):
     title = j.get("title","")
     excerpt = j.get("excerpt") or j.get("summary","")
     slug = j.get("slug") or j.get("path") or ""
-    url = urljoin(BASE_URL, slug)
+    url = slug if slug.startswith("http") else urljoin(BASE_URL, slug)
     text = f"{title}\n\n{excerpt}\n\nRead more: {url}"
     return text, url
 
@@ -59,9 +56,10 @@ def main(path):
             j = json.load(f)
 
         message, link = build_message(j)
-        images = j.get("images") or j.get("media") or []
+        images = extract_images_from_json(j, base_url=BASE_URL)
         attached = []
 
+        # try up to 2 images
         for i, img in enumerate(images[:2]):
             try:
                 print("Checking image url:", img)
