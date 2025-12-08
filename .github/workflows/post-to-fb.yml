@@ -30,6 +30,7 @@ env:
   FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
   SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
   ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
+  IG_USER_ID: ${{ secrets.IG_USER_ID }}
 
 jobs:
   post-fb:
@@ -41,6 +42,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
 
     steps:
       - name: Checkout repo
