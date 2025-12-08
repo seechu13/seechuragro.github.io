@@ -3,10 +3,10 @@
   "excerpt": "This is a test run for Telegram With image.",
   "slug": "Article automation-test-2025-12-05",
   "url": "https://www.seechuragro.in/articles.html",
-
-  "cover_image": "/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/image1 - Srivatsan Renga.jpg",
-
-  "cover_image_url": "https://seechuragro.in/assets/articles/why-hydroponic-farming-isnt-common-but-why-it-is-a-good-solution-20251123-141613/cover.jpg"
+  "cover_image": [
+    "https://seechuragro.in/assets/articles/why-hydroponic-farming-isnt-common-but-why-it-is-a-good-solution-20251123-141613/cover.jpg",
+    "https://seechuragro.in/assets/articles/lakadong-turmeric-from-farm-to-pure-gold-20251114-124445/image1%20-%20Srivatsan%20Renga.jpg"
+  ]
 }
 
 
