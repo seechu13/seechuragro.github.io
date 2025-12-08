@@ -36,7 +36,7 @@ IG_USER_ID = os.getenv("IG_USER_ID")
 SITE_URL_BASE = os.getenv("SITE_URL_BASE", "").rstrip("/")
 ASSETS_PATH = os.getenv("ASSETS_PATH", "").strip("/")
 
-GRAPH_VER = "v16.0"
+GRAPH_VER = "v19.0"
 FB_PHOTO_URL = f"https://graph.facebook.com/{GRAPH_VER}/{{page_id}}/photos"
 FB_FEED_URL = f"https://graph.facebook.com/{GRAPH_VER}/{{page_id}}/feed"
 IG_MEDIA_URL = f"https://graph.facebook.com/{GRAPH_VER}/{{ig_user_id}}/media"
