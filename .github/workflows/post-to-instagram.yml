@@ -3,7 +3,7 @@ name: Post to Instagram after FB (strict)
 on:
   workflow_run:
     workflows:
-      - "Post changed article JSONs to Facebook (staging) - strict"
+      - "Post changed article JSONs to Facebook (staging) - full strict"
     types:
       - completed
 
@@ -21,12 +21,6 @@ jobs:
   publish_ig:
     name: Publish to Instagram (after FB)
     runs-on: ubuntu-latest
-    env:
-      FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
-      FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
-      IG_USER_ID: ${{ secrets.IG_USER_ID }}
-      SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
-      ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
 
     steps:
       - name: Ensure upstream FB succeeded
@@ -52,129 +46,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests || true
 
-      - name: Determine resolved image URL and reachability
-        id: ig_check
+      - name: Detect JSONs and run IG publisher
         run: |
-          python3 - <<'PY'
-import os, json, sys
-from pathlib import Path
-try:
-    import requests
-except Exception as e:
-    print("requests import failed:", e); sys.exit(2)
+          set -euo pipefail
+          SHA="${{ github.event.workflow_run.head_sha }}"
 
-# pick first candidate JSON
-cands = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
-if not cands:
-    print("RESOLVED_URL=")
-    print("HEAD_OK=0")
-    sys.exit(0)
+          CHANGED=$(git show --name-only --pretty="" "$SHA" || true)
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
+          fi
 
-fn = str(cands[0])
-a = json.load(open(fn, encoding="utf-8"))
-img = None
-for k in ("cover_image","image","featured_image","hero"):
-    if a.get(k):
-        img = a.get(k); break
-if not img:
-    print("RESOLVED_URL=")
-    print("HEAD_OK=0")
-    sys.exit(0)
+          JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
+          if [ -z "$JSONS" ]; then
+            echo "No JSON files detected; nothing to post."
+            exit 0
+          fi
 
-ASSETS_PATH = os.getenv("ASSETS_PATH","").strip("/")
-def build_public_url(val):
-    v = val.lstrip("/")
-    base = os.getenv("SITE_URL_BASE","").rstrip("/")
-    if not base:
-        return ""
-    if ASSETS_PATH and v.startswith(ASSETS_PATH):
-        return f"{base}/{v}"
-    if v.startswith("assets/"):
-        return f"{base}/{v}"
-    if ASSETS_PATH:
-        return f"{base}/{ASSETS_PATH}/{Path(v).name}"
-    return f"{base}/{v}"
-
-is_pub = isinstance(img, str) and (img.startswith("http://") or img.startswith("https://"))
-resolved = img if is_pub else build_public_url(img)
-ok = 0
-if resolved:
-    try:
-        r = requests.head(resolved, timeout=10, allow_redirects=True)
-        if r.status_code == 200:
-            ok = 1
-    except:
-        ok = 0
-
-print("RESOLVED_URL=" + (resolved or ""))
-print("HEAD_OK=" + str(ok))
-PY
-
-      - name: Show IG decision
-        run: |
-          RESOLVED_URL=$(sed -n 's/^RESOLVED_URL=//p' $GITHUB_WORKSPACE/.git/logs/HEAD 2>/dev/null || true)
-          # fallback: read stdout file from previous step (GitHub doesn't persist step stdout to env).
-          echo "Note: check the previous step's logs (Determine resolved image URL and reachability) for RESOLVED_URL and HEAD_OK."
-          echo "Proceeding to check and run IG publisher if image URL is reachable."
-
-      - name: Run IG publisher (only if image URL reachable)
-        run: |
-          # re-run small check to obtain resolved_url & head_ok
-          python3 - <<'PY'
-import os, json, sys
-from pathlib import Path
-try:
-    import requests
-except Exception as e:
-    print("requests import failed:", e); sys.exit(2)
-
-cands = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
-if not cands:
-    print("NO_JSON"); sys.exit(0)
-fn = str(cands[0])
-a = json.load(open(fn, encoding="utf-8"))
-img = None
-for k in ("cover_image","image","featured_image","hero"):
-    if a.get(k):
-        img = a.get(k); break
-if not img:
-    print("NO_IMAGE"); sys.exit(0)
-ASSETS_PATH = os.getenv("ASSETS_PATH","").strip("/")
-def build_public_url(val):
-    v = val.lstrip("/")
-    base = os.getenv("SITE_URL_BASE","").rstrip("/")
-    if not base:
-        return ""
-    if ASSETS_PATH and v.startswith(ASSETS_PATH):
-        return f"{base}/{v}"
-    if v.startswith("assets/"):
-        return f"{base}/{v}"
-    if ASSETS_PATH:
-        return f"{base}/{ASSETS_PATH}/{Path(v).name}"
-    return f"{base}/{v}"
-
-is_pub = isinstance(img, str) and (img.startswith("http://") or img.startswith("https://"))
-resolved = img if is_pub else build_public_url(img)
-ok = 0
-if resolved:
-    try:
-        r = requests.head(resolved, timeout=10, allow_redirects=True)
-        ok = 1 if r.status_code==200 else 0
-    except:
-        ok = 0
-if ok != 1:
-    print("IMAGE_NOT_PUBLIC; skipping IG publish")
-    sys.exit(0)
-
-# run IG publisher for all detected JSONs
-import subprocess, shlex
-JSONS = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
-for jf in JSONS:
-    jf = str(jf)
-    print("Running IG publisher for", jf)
-    rc = subprocess.call(["python3", "-u", "scripts/publish_fb_insta.py", jf, "--mode", "ig"])
-    print("Exit code:", rc)
-PY
+          for jf in $JSONS; do
+            if [ ! -f "$jf" ]; then
+              echo "Skipping missing file: $jf"
+              continue
+            fi
+            echo "Publishing (IG) file: $jf"
+            python3 -u scripts/publish_fb_insta.py "$jf" --mode ig || true
+          done
 
       - name: Done
         run: echo "publish_ig job completed."
