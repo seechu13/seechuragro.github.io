@@ -16,14 +16,10 @@ concurrency:
   group: post-ig-${{ github.ref }}
   cancel-in-progress: false
 
-# Workflow-level environment (jobs inherit these)
+# workflow-level env — jobs will inherit these automatically
 env:
   BASE_URL: "https://seechuragro.in"
   SLEEP_SECONDS: "0"
-
-  # IG credentials — set as repo secrets
-  IG_USER_ID: ${{ secrets.IG_USER_ID }}
-  IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
 
 jobs:
   detect:
@@ -62,19 +58,29 @@ jobs:
 
   post-ig:
     name: Instagram — Post changed article JSONs
-    runs-on: ubuntu-latest
     needs: detect
+    runs-on: ubuntu-latest
     if: needs.detect.outputs.json_files != ''
+    # only map secrets here (no ${ { env.* } } usage)
+    env:
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install deps
+      - name: Quick debug — confirm secrets presence (no values printed)
+        run: |
+          set -euo pipefail
+          [ -n "${IG_USER_ID:-}" ] && echo "IG_USER_ID: PRESENT" || echo "IG_USER_ID: MISSING"
+          [ -n "${IG_ACCESS_TOKEN:-}" ] && echo "IG_ACCESS_TOKEN: PRESENT" || echo "IG_ACCESS_TOKEN: MISSING"
+
+      - name: Install deps (ImageMagick included)
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y jq curl git
+          sudo apt-get install -y jq curl git imagemagick
           python3 -m pip install --upgrade pip
           pip install requests Pillow
 
@@ -98,6 +104,6 @@ jobs:
               continue
             fi
             echo "Posting to IG: $jf"
-            python3 scripts/send_ig.py "$jf"
+            python3 scripts/send_ig.py "$jf" || { echo "send_ig.py failed for $jf"; exit 1; }
             echo "--------------------------------"
           done
