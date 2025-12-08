@@ -1,28 +1,46 @@
-name: Post to Instagram
+name: Post to Instagram after FB (strict)
 
 on:
-  push:
-    branches:
-      - staging
-  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "Post changed article JSONs to Facebook (staging) - strict"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+env:
+  FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+  FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+  IG_USER_ID: ${{ secrets.IG_USER_ID }}
+  SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
+  ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
 
 jobs:
-  publish-ig:
-    name: Publish to Instagram
+  publish_ig:
+    name: Publish to Instagram (after FB)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     env:
       FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
-      FB_PAGE_ID:    ${{ secrets.FB_PAGE_ID }}
-      IG_USER_ID:    ${{ secrets.IG_USER_ID }}
+      FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
       SITE_URL_BASE: ${{ secrets.SITE_URL_BASE }}
-      ASSETS_PATH:   ${{ secrets.ASSETS_PATH }}
+      ASSETS_PATH: ${{ secrets.ASSETS_PATH }}
 
     steps:
+      - name: Ensure upstream FB succeeded
+        run: |
+          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+            echo "Upstream FB workflow did not succeed; exiting."
+            exit 1
+          fi
+          echo "Upstream FB succeeded; proceeding."
+
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -32,17 +50,131 @@ jobs:
       - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install requests || true
 
-      - name: Show env presence (IG)
+      - name: Determine resolved image URL and reachability
+        id: ig_check
         run: |
-          echo "ENV FB_PAGE_ID=${FB_PAGE_ID}"
-          if [ -z "${FB_PAGE_TOKEN}" ]; then echo "[ENV] FB_PAGE_TOKEN present: False"; else echo "[ENV] FB_PAGE_TOKEN present: True"; fi
-          if [ -z "${FB_PAGE_ID}" ]; then echo "[ENV] FB_PAGE_ID present: False"; else echo "[ENV] FB_PAGE_ID present: True"; fi
-          if [ -z "${IG_USER_ID}" ]; then echo "[ENV] IG_USER_ID present: False"; else echo "[ENV] IG_USER_ID present: True"; fi
-          if [ -z "${SITE_URL_BASE}" ]; then echo "[ENV] SITE_URL_BASE present: False"; else echo "[ENV] SITE_URL_BASE present: True"; fi
-          if [ -z "${ASSETS_PATH}" ]; then echo "[ENV] ASSETS_PATH present: False"; else echo "[ENV] ASSETS_PATH present: True"; fi
+          python3 - <<'PY'
+import os, json, sys
+from pathlib import Path
+try:
+    import requests
+except Exception as e:
+    print("requests import failed:", e); sys.exit(2)
 
-      - name: Run IG publisher
+# pick first candidate JSON
+cands = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
+if not cands:
+    print("RESOLVED_URL=")
+    print("HEAD_OK=0")
+    sys.exit(0)
+
+fn = str(cands[0])
+a = json.load(open(fn, encoding="utf-8"))
+img = None
+for k in ("cover_image","image","featured_image","hero"):
+    if a.get(k):
+        img = a.get(k); break
+if not img:
+    print("RESOLVED_URL=")
+    print("HEAD_OK=0")
+    sys.exit(0)
+
+ASSETS_PATH = os.getenv("ASSETS_PATH","").strip("/")
+def build_public_url(val):
+    v = val.lstrip("/")
+    base = os.getenv("SITE_URL_BASE","").rstrip("/")
+    if not base:
+        return ""
+    if ASSETS_PATH and v.startswith(ASSETS_PATH):
+        return f"{base}/{v}"
+    if v.startswith("assets/"):
+        return f"{base}/{v}"
+    if ASSETS_PATH:
+        return f"{base}/{ASSETS_PATH}/{Path(v).name}"
+    return f"{base}/{v}"
+
+is_pub = isinstance(img, str) and (img.startswith("http://") or img.startswith("https://"))
+resolved = img if is_pub else build_public_url(img)
+ok = 0
+if resolved:
+    try:
+        r = requests.head(resolved, timeout=10, allow_redirects=True)
+        if r.status_code == 200:
+            ok = 1
+    except:
+        ok = 0
+
+print("RESOLVED_URL=" + (resolved or ""))
+print("HEAD_OK=" + str(ok))
+PY
+
+      - name: Show IG decision
         run: |
-          python3 scripts/publish_fb_insta.py articles/test-automation.json --mode ig
+          RESOLVED_URL=$(sed -n 's/^RESOLVED_URL=//p' $GITHUB_WORKSPACE/.git/logs/HEAD 2>/dev/null || true)
+          # fallback: read stdout file from previous step (GitHub doesn't persist step stdout to env).
+          echo "Note: check the previous step's logs (Determine resolved image URL and reachability) for RESOLVED_URL and HEAD_OK."
+          echo "Proceeding to check and run IG publisher if image URL is reachable."
+
+      - name: Run IG publisher (only if image URL reachable)
+        run: |
+          # re-run small check to obtain resolved_url & head_ok
+          python3 - <<'PY'
+import os, json, sys
+from pathlib import Path
+try:
+    import requests
+except Exception as e:
+    print("requests import failed:", e); sys.exit(2)
+
+cands = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
+if not cands:
+    print("NO_JSON"); sys.exit(0)
+fn = str(cands[0])
+a = json.load(open(fn, encoding="utf-8"))
+img = None
+for k in ("cover_image","image","featured_image","hero"):
+    if a.get(k):
+        img = a.get(k); break
+if not img:
+    print("NO_IMAGE"); sys.exit(0)
+ASSETS_PATH = os.getenv("ASSETS_PATH","").strip("/")
+def build_public_url(val):
+    v = val.lstrip("/")
+    base = os.getenv("SITE_URL_BASE","").rstrip("/")
+    if not base:
+        return ""
+    if ASSETS_PATH and v.startswith(ASSETS_PATH):
+        return f"{base}/{v}"
+    if v.startswith("assets/"):
+        return f"{base}/{v}"
+    if ASSETS_PATH:
+        return f"{base}/{ASSETS_PATH}/{Path(v).name}"
+    return f"{base}/{v}"
+
+is_pub = isinstance(img, str) and (img.startswith("http://") or img.startswith("https://"))
+resolved = img if is_pub else build_public_url(img)
+ok = 0
+if resolved:
+    try:
+        r = requests.head(resolved, timeout=10, allow_redirects=True)
+        ok = 1 if r.status_code==200 else 0
+    except:
+        ok = 0
+if ok != 1:
+    print("IMAGE_NOT_PUBLIC; skipping IG publish")
+    sys.exit(0)
+
+# run IG publisher for all detected JSONs
+import subprocess, shlex
+JSONS = list(Path("articles").glob("*.json")) + list(Path("content/articles").glob("*.json")) + list(Path("assets/articles").glob("*.json"))
+for jf in JSONS:
+    jf = str(jf)
+    print("Running IG publisher for", jf)
+    rc = subprocess.call(["python3", "-u", "scripts/publish_fb_insta.py", jf, "--mode", "ig"])
+    print("Exit code:", rc)
+PY
+
+      - name: Done
+        run: echo "publish_ig job completed."
