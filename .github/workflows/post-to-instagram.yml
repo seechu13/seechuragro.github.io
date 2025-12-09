@@ -49,5 +49,5 @@ jobs:
         run: |
           for jf in ${{ needs.detect.outputs.json_files }}; do
             echo "--- Processing $jf ---"
-            python3 scripts/ig.py "$jf"
+            python3 scripts/send_ig.py "$jf"
           done
