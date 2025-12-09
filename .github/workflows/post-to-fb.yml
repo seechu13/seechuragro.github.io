@@ -25,7 +25,7 @@ jobs:
           fi
           # convert newlines to <<NL>> so outputs are single-line-safe
           OUT=$(printf "%s" "$RAW" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
-          echo "::set-output name=json_files::$OUT"
+          echo "json_files=$OUT" >> "$GITHUB_OUTPUT"
 
   post-fb:
     name: Post each JSON to Facebook
@@ -34,7 +34,7 @@ jobs:
     env:
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
       FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-      BASE_URL: ${{ secrets.BASE_URL || 'https://seechuragro.in' }}
+      BASE_URL: ${{ secrets.BASE_URL }}
       SLEEP_SECONDS: "0"
     steps:
       - name: Checkout
@@ -89,13 +89,12 @@ jobs:
 
             echo "--- Extracted images ---"
             export CURRENT_JSON="$jf"
-            export BASE_URL="${BASE_URL}"
+            # provide a default BASE_URL if secret absent
+            export BASE_URL="${BASE_URL:-https://seechuragro.in}"
             python3 - <<'PY'
-import os, sys, json, urllib.parse
-
+import os, json, urllib.parse
 path = os.environ.get("CURRENT_JSON")
 base = os.environ.get("BASE_URL", "").rstrip('/') + '/'
-
 with open(path, 'r', encoding='utf-8') as f:
     j = json.load(f)
 
