@@ -31,7 +31,7 @@ def die(msg, code=1):
     sys.exit(code)
 
 def post_photo_by_url(image_url, caption=""):
-    """Use the Graph API url= param (fast)"""
+    """Use the Graph API url= param (fast) and publish the photo (visible)."""
     url = f"{GRAPH}/{FB_PAGE_ID}/photos"
     params = {"url": image_url, "caption": caption, "access_token": FB_TOKEN}
     r = requests.post(url, data=params, timeout=60)
@@ -39,7 +39,7 @@ def post_photo_by_url(image_url, caption=""):
     return r.json().get("id")
 
 def post_photo_by_file(filepath, caption=""):
-    """Upload photo file (multipart 'source')"""
+    """Upload photo file (multipart 'source') and publish it."""
     url = f"{GRAPH}/{FB_PAGE_ID}/photos"
     with open(filepath, "rb") as fh:
         files = {"source": fh}
@@ -47,6 +47,48 @@ def post_photo_by_file(filepath, caption=""):
         r = requests.post(url, files=files, data=data, timeout=120)
     r.raise_for_status()
     return r.json().get("id")
+
+def upload_photo_unpublished_by_url(image_url):
+    """
+    Upload photo by URL but keep it unpublished (published=false) to get media_fbid
+    which can be used in attached_media when creating a feed post.
+    """
+    url = f"{GRAPH}/{FB_PAGE_ID}/photos"
+    params = {"url": image_url, "published": "false", "access_token": FB_TOKEN}
+    r = requests.post(url, data=params, timeout=60)
+    r.raise_for_status()
+    return r.json().get("id")
+
+def upload_photo_unpublished_by_file(filepath):
+    """
+    Upload photo file as unpublished (published=false) to receive media_fbid.
+    """
+    url = f"{GRAPH}/{FB_PAGE_ID}/photos"
+    with open(filepath, "rb") as fh:
+        files = {"source": fh}
+        data = {"published": "false", "access_token": FB_TOKEN}
+        r = requests.post(url, files=files, data=data, timeout=120)
+    r.raise_for_status()
+    return r.json().get("id")
+
+def post_feed(message, attached_media_ids=None, link=None):
+    """
+    Create a feed post on the Page.
+    - If attached_media_ids is provided (list of media fbids), create a media post.
+    - Else if link is provided, post message + link.
+    - Else post message only.
+    """
+    url = f"{GRAPH}/{FB_PAGE_ID}/feed"
+    data = {"message": message, "access_token": FB_TOKEN}
+    if attached_media_ids:
+        # attached_media must be an array of {"media_fbid": id} objects (as JSON string)
+        attached = [{"media_fbid": mid} for mid in attached_media_ids]
+        data["attached_media"] = json.dumps(attached)
+    elif link:
+        data["link"] = link
+    r = requests.post(url, data=data, timeout=60)
+    r.raise_for_status()
+    return r.json()
 
 def build_message(j):
     title = j.get("title","")
@@ -80,13 +122,12 @@ def download_image_to_bytes(url):
     for chunk in r.iter_content(8192):
         if chunk:
             buf.write(chunk)
-            # quick guard: if massive size we still allow download but we detect later
     return buf.getvalue()
 
 def compress_image_bytes_to_file(img_bytes, out_path, max_bytes=MAX_BYTES):
     """
     Open image bytes with Pillow, iteratively downscale / reduce quality
-    until under max_bytes and write to out_path as JPEG (or original format).
+    until under max_bytes and write to out_path as JPEG.
     """
     try:
         im = Image.open(BytesIO(img_bytes))
@@ -97,35 +138,29 @@ def compress_image_bytes_to_file(img_bytes, out_path, max_bytes=MAX_BYTES):
     if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
         im = im.convert("RGB")
 
-    # Starting parameters
     quality = 85
     width, height = im.size
-    # Try loop: reduce quality first, then shrink dimensions if needed
+
     for attempt in range(12):
         buf = BytesIO()
         save_kwargs = {"format": "JPEG", "quality": quality, "optimize": True}
         try:
             im.save(buf, **save_kwargs)
         except Exception:
-            # fallback without optimize
             im.save(buf, format="JPEG", quality=quality)
         data = buf.getvalue()
         if len(data) <= max_bytes or (quality <= 30 and (width < 400 or height < 400)):
             with open(out_path, "wb") as f:
                 f.write(data)
             return out_path
-        # reduce quality
         if quality > 30:
             quality -= 10
             continue
-        # reduce size
         width = int(width * 0.85)
         height = int(height * 0.85)
         im = im.resize((max(1, width), max(1, height)), Image.LANCZOS)
-        # reset quality for next attempt
         quality = max(30, quality - 5)
 
-    # final save (best attempt)
     buf = BytesIO()
     im.save(buf, format="JPEG", quality=30)
     with open(out_path, "wb") as f:
@@ -134,8 +169,8 @@ def compress_image_bytes_to_file(img_bytes, out_path, max_bytes=MAX_BYTES):
 
 def prepare_image_for_upload(image_url):
     """
-    If image URL size <= MAX_BYTES (by HEAD), return ('url', image_url).
-    Otherwise download & compress and return ('file', tmp_filepath).
+    If image URL size <= MAX_BYTES (by HEAD), return ('url', image_url, None).
+    Otherwise download & compress and return ('file', None, tmp_filepath).
     """
     ok, size = check_url_head(image_url)
     if not ok:
@@ -145,20 +180,17 @@ def prepare_image_for_upload(image_url):
         except Exception as e:
             raise RuntimeError(f"Failed to download image for check: {e}")
         if len(b) <= MAX_BYTES:
-            return ("bytes_url", image_url, None)  # still post by url
-        # else compress and write
+            return ("url", image_url, None)
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
         tmp.close()
         compress_image_bytes_to_file(b, tmp.name, max_bytes=MAX_BYTES)
         return ("file", None, tmp.name)
     else:
-        # HEAD succeeded
         if size is not None and size <= MAX_BYTES:
-            return ("bytes_url", image_url, None)
-        # need to download & compress
+            return ("url", image_url, None)
         b = download_image_to_bytes(image_url)
         if len(b) <= MAX_BYTES:
-            return ("bytes_url", image_url, None)
+            return ("url", image_url, None)
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
         tmp.close()
         compress_image_bytes_to_file(b, tmp.name, max_bytes=MAX_BYTES)
@@ -184,26 +216,26 @@ def main(path):
         attached = []
         tmp_files = []
 
-        # try up to 2 images
+        # Upload up to 2 images as unpublished media_fbid (for attached_media)
         for i, img in enumerate(images[:2]):
             try:
                 print("Checking image url:", img)
                 prep_type, url_for_upload, file_path = prepare_image_for_upload(img)
-                if prep_type == "bytes_url":
-                    # use direct URL param
-                    print("Uploading by URL:", img)
-                    pid = post_photo_by_url(img, caption=message if i == 0 else "")
-                    attached.append(pid)
+                if prep_type == "url":
+                    # upload as unpublished by URL
+                    print("Uploading unpublished by URL:", img)
+                    mid = upload_photo_unpublished_by_url(img)
+                    attached.append(mid)
                 elif prep_type == "file":
-                    print("Uploading by file (resized):", file_path)
-                    pid = post_photo_by_file(file_path, caption=message if i == 0 else "")
-                    attached.append(pid)
+                    print("Uploading unpublished by file (resized):", file_path)
+                    mid = upload_photo_unpublished_by_file(file_path)
+                    attached.append(mid)
                     tmp_files.append(file_path)
                 else:
-                    # fallback to URL post
-                    print("Fallback: uploading by URL:", img)
-                    pid = post_photo_by_url(img, caption=message if i == 0 else "")
-                    attached.append(pid)
+                    # fallback
+                    print("Fallback: uploading unpublished by URL:", img)
+                    mid = upload_photo_unpublished_by_url(img)
+                    attached.append(mid)
             except Exception as e:
                 print("Photo upload failed for", img, ":", repr(e))
 
