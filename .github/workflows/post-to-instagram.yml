@@ -2,39 +2,24 @@ name: Post to Instagram
 
 on:
   push:
-    branches:
-      - staging
+    branches: [ "staging" ]
   workflow_dispatch:
 
 jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
-      json_files: ${{ steps.find.outputs.json_files }}
+      json_files: ${{ steps.detect_json.outputs.json_files }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - id: find
-        name: Find JSON files
+      - id: detect_json
+        name: Detect JSON files
         run: |
-          RAW1=$(find posts -type f -name '*.json' 2>/dev/null || true)
-          RAW2=$(find .github/test-posts -type f -name '*.json' 2>/dev/null || true)
-          RAW3=$(find articles -type f -name '*.json' 2>/dev/null || true)
-          
-          ALL="$RAW1
-$RAW2
-$RAW3"
-
-          CLEAN=$(printf "%s\n" "$ALL" | sed '/^\s*$/d')
-
-          if [ -z "$CLEAN" ]; then
-            echo "json_files=" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          OUT=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
-          echo "json_files=$OUT" >> "$GITHUB_OUTPUT"
+          FILES=$(find articles posts .github/test-posts -type f -name "*.json" 2>/dev/null | tr '\n' ' ')
+          echo "json_files=$FILES" >> $GITHUB_OUTPUT
 
   post-instagram:
     needs: detect
@@ -43,90 +28,26 @@ $RAW3"
       IG_USER_ID: ${{ secrets.IG_USER_ID }}
       IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
       BASE_URL: ${{ secrets.BASE_URL }}
-      SLEEP_SECONDS: "0"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Secret presence debug
+      - name: Check secrets
         run: |
-          [ -n "${IG_USER_ID}" ] && echo "IG_USER_ID: PRESENT" || echo "IG_USER_ID: MISSING"
-          [ -n "${IG_ACCESS_TOKEN}" ] && echo "IG_ACCESS_TOKEN: PRESENT" || echo "IG_ACCESS_TOKEN: MISSING"
+          [ -n "$IG_USER_ID" ] && echo "IG_USER_ID: PRESENT" || echo "IG_USER_ID: MISSING"
+          [ -n "$IG_ACCESS_TOKEN" ] && echo "IG_ACCESS_TOKEN: PRESENT" || echo "IG_ACCESS_TOKEN: MISSING"
 
       - name: Install deps
         run: |
           sudo apt-get update -y
           sudo apt-get install -y jq curl
           python3 -m pip install --upgrade pip
-          python3 -m pip install --user requests Pillow
+          python3 -m pip install requests Pillow
 
-      - name: (Optional) Safety sleep
+      - name: Process JSON files
         run: |
-          if [ "${SLEEP_SECONDS}" != "0" ]; then
-            echo "Sleeping ${SLEEP_SECONDS}s..."
-            sleep "${SLEEP_SECONDS}"
-          else
-            echo "No safety sleep"
-          fi
-
-      - name: Post each JSON to Instagram
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          RAW="${{ needs.detect.outputs.json_files }}"
-
-          if [ -z "$RAW" ]; then
-            echo "No JSON files detected."
-            exit 0
-          fi
-
-          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
-
-          for jf in $LIST; do
-            [ ! -f "$jf" ] && echo "Missing file $jf" && continue
-
-            echo "----------------------------------------"
-            echo "Posting: $jf"
-            sed -n '1,200p' "$jf" || true
-
-            echo "--- Extracted images ---"
-            python3 - <<'PY' "$jf" "${BASE_URL:-https://seechuragro.in}"
-import sys, json, urllib.parse
-path=sys.argv[1]
-base=sys.argv[2].rstrip('/')+'/'
-
-with open(path,'r',encoding='utf-8') as f:
-    j=json.load(f)
-
-imgs=[]
-if isinstance(j.get('images'),list) and j.get('images'):
-    imgs=j['images']
-elif j.get('cover_image') is not None:
-    ci=j['cover_image']
-    if isinstance(ci,list): imgs=ci
-    elif isinstance(ci,str) and ci.strip(): imgs=[ci]
-elif isinstance(j.get('media'),list):
-    imgs=j['media']
-
-def norm(u):
-    if not u: return None
-    u=u.strip()
-    if u.startswith('http'): return u
-    if u.startswith('/'): return urllib.parse.urljoin(base,u.lstrip('/'))
-    return urllib.parse.urljoin(base,u)
-
-normd=[norm(u) for u in imgs if norm(u)]
-print("EXTRACTED_IMAGES_COUNT:",len(normd))
-for i,u in enumerate(normd,1): print(f"IMAGE_{i}:",u)
-PY
-
-            echo "--- run ig.py ---"
-            python3 scripts/ig.py "$jf" || {
-              echo "ig.py failed for $jf"
-              exit 1
-            }
-
-            echo "----------------------------------------"
+          for jf in ${{ needs.detect.outputs.json_files }}; do
+            echo "--- Processing $jf ---"
+            python3 scripts/ig.py "$jf"
           done
