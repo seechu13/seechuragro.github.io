@@ -19,21 +19,17 @@ jobs:
       - name: Find JSON files
         id: find
         run: |
-          RAW=$(find posts -type f -name '*.json' 2>/dev/null || true)
+          RAW1=$(find posts -type f -name '*.json' 2>/dev/null || true)
           RAW2=$(find .github/test-posts -type f -name '*.json' 2>/dev/null || true)
           RAW3=$(find articles -type f -name '*.json' 2>/dev/null || true)
-
-          ALL="$RAW
+          ALL="$RAW1
 $RAW2
 $RAW3"
-
           CLEAN=$(printf "%s" "$ALL" | sed '/^\s*$/d')
-
           if [ -z "$CLEAN" ]; then
             echo "json_files=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           OUT=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
           echo "json_files=$OUT" >> "$GITHUB_OUTPUT"
 
@@ -52,75 +48,67 @@ $RAW3"
 
       - name: Secret presence debug
         run: |
-          echo "DEBUG: Checking secrets presence"
-          [ -n "${FB_PAGE_ID:-}" ] && echo "FB_PAGE_ID: PRESENT" || echo "FB_PAGE_ID: MISSING"
-          [ -n "${FB_PAGE_ACCESS_TOKEN:-}" ] && echo "FB_PAGE_ACCESS_TOKEN: PRESENT" || echo "FB_PAGE_ACCESS_TOKEN: MISSING"
+          if [ -n "${FB_PAGE_ID:-}" ]; then echo "FB_PAGE_ID: PRESENT"; else echo "FB_PAGE_ID: MISSING"; fi
+          if [ -n "${FB_PAGE_ACCESS_TOKEN:-}" ]; then echo "FB_PAGE_ACCESS_TOKEN: PRESENT"; else echo "FB_PAGE_ACCESS_TOKEN: MISSING"; fi
 
-      - name: Install dependencies
+      - name: Install deps
         run: |
           sudo apt-get update -y
           sudo apt-get install -y imagemagick jq curl
           python3 -m pip install --upgrade pip
           python3 -m pip install requests Pillow
 
-      - name: Create image extractor script (YAML-safe)
+      - name: Create image extractor script (YAML-safe echoes)
         run: |
-          echo '#!/usr/bin/env python3' > /tmp/extract_images.py
-          echo 'import sys, json, urllib.parse, os' >> /tmp/extract_images.py
-          echo 'path = sys.argv[1]' >> /tmp/extract_images.py
-          echo 'base = sys.argv[2].rstrip(\"/\") + \"/\"' >> /tmp/extract_images.py
-          echo 'with open(path, \"r\", encoding=\"utf-8\") as f:' >> /tmp/extract_images.py
-          echo '    j = json.load(f)' >> /tmp/extract_images.py
-          echo 'imgs = []' >> /tmp/extract_images.py
-          echo 'if isinstance(j.get(\"images\"), list) and j.get(\"images\"):' >> /tmp/extract_images.py
-          echo '    imgs = j.get(\"images\")' >> /tmp/extract_images.py
-          echo 'elif j.get(\"cover_image\") is not None:' >> /tmp/extract_images.py
-          echo '    ci = j.get(\"cover_image\")' >> /tmp/extract_images.py
-          echo '    if isinstance(ci, list):' >> /tmp/extract_images.py
-          echo '        imgs = ci' >> /tmp/extract_images.py
-          echo '    elif isinstance(ci, str) and ci.strip() != \"\":' >> /tmp/extract_images.py
-          echo '        imgs = [ci]' >> /tmp/extract_images.py
-          echo 'elif isinstance(j.get(\"media\"), list) and j.get(\"media\"):' >> /tmp/extract_images.py
-          echo '    imgs = j.get(\"media\")' >> /tmp/extract_images.py
-          echo 'def normalize(u):' >> /tmp/extract_images.py
-          echo '    if not u: return None' >> /tmp/extract_images.py
-          echo '    u = u.strip()' >> /tmp/extract_images.py
-          echo '    if u.startswith(\"http://\") or u.startswith(\"https://\"): return u' >> /tmp/extract_images.py
-          echo '    if u.startswith(\"/\"): return urllib.parse.urljoin(base, u.lstrip(\"/\"))' >> /tmp/extract_images.py
-          echo '    return urllib.parse.urljoin(base, u)' >> /tmp/extract_images.py
-          echo 'norm = [normalize(u) for u in imgs if normalize(u)]' >> /tmp/extract_images.py
-          echo 'print(\"EXTRACTED_IMAGES_COUNT:\", len(norm))' >> /tmp/extract_images.py
-          echo 'for i,u in enumerate(norm,1):' >> /tmp/extract_images.py
-          echo '    print(f\"IMAGE_{i}:\", u)' >> /tmp/extract_images.py
+          printf '%s\n' '#!/usr/bin/env python3' > /tmp/extract_images.py
+          printf '%s\n' 'import sys, json, urllib.parse' >> /tmp/extract_images.py
+          printf '%s\n' 'path = sys.argv[1]' >> /tmp/extract_images.py
+          printf '%s\n' 'base = sys.argv[2].rstrip("/") + "/"' >> /tmp/extract_images.py
+          printf '%s\n' 'with open(path, "r", encoding="utf-8") as f:' >> /tmp/extract_images.py
+          printf '%s\n' '    j = json.load(f)' >> /tmp/extract_images.py
+          printf '%s\n' 'imgs = []' >> /tmp/extract_images.py
+          printf '%s\n' 'if isinstance(j.get("images"), list) and j.get("images"):' >> /tmp/extract_images.py
+          printf '%s\n' '    imgs = j.get("images")' >> /tmp/extract_images.py
+          printf '%s\n' 'elif j.get("cover_image") is not None:' >> /tmp/extract_images.py
+          printf '%s\n' '    ci = j.get("cover_image")' >> /tmp/extract_images.py
+          printf '%s\n' '    if isinstance(ci, list):' >> /tmp/extract_images.py
+          printf '%s\n' '        imgs = ci' >> /tmp/extract_images.py
+          printf '%s\n' '    elif isinstance(ci, str) and ci.strip() != "":' >> /tmp/extract_images.py
+          printf '%s\n' '        imgs = [ci]' >> /tmp/extract_images.py
+          printf '%s\n' 'elif isinstance(j.get("media"), list) and j.get("media"):' >> /tmp/extract_images.py
+          printf '%s\n' '    imgs = j.get("media")' >> /tmp/extract_images.py
+          printf '%s\n' 'def normalize(u):' >> /tmp/extract_images.py
+          printf '%s\n' '    if not u: return None' >> /tmp/extract_images.py
+          printf '%s\n' '    u = u.strip()' >> /tmp/extract_images.py
+          printf '%s\n' '    if u.startswith("http://") or u.startswith("https://"): return u' >> /tmp/extract_images.py
+          printf '%s\n' '    if u.startswith("/"):' >> /tmp/extract_images.py
+          printf '%s\n' '        return urllib.parse.urljoin(base, u.lstrip("/"))' >> /tmp/extract_images.py
+          printf '%s\n' '    return urllib.parse.urljoin(base, u)' >> /tmp/extract_images.py
+          printf '%s\n' 'norm = [normalize(u) for u in imgs if normalize(u)]' >> /tmp/extract_images.py
+          printf '%s\n' 'print("EXTRACTED_IMAGES_COUNT:", len(norm))' >> /tmp/extract_images.py
+          printf '%s\n' 'for i, u in enumerate(norm, 1): print(f"IMAGE_{i}:", u)' >> /tmp/extract_images.py
           chmod +x /tmp/extract_images.py
 
-      - name: Post each JSON to Facebook (runner + debug)
+      - name: Post JSONs to Facebook (runner script)
         shell: bash
         run: |
           set -euo pipefail
-
           RAW="${{ needs.detect.outputs.json_files }}"
           if [ -z "$RAW" ]; then
             echo "No JSON files detected. Exiting."
             exit 0
           fi
-
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
-
           for jf in $LIST; do
             if [ ! -f "$jf" ]; then
               echo "Skipping missing file: $jf"
               continue
             fi
-
             echo "----------------------------------------"
             echo "Posting: $jf"
-            echo "--- JSON preview (first 200 lines) ---"
             sed -n '1,200p' "$jf" || true
-
             echo "--- Extracted images ---"
             python3 /tmp/extract_images.py "$jf" "${BASE_URL:-https://seechuragro.in}"
-
             echo "--- run send_fb.py ---"
             python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
             echo "----------------------------------------"
