@@ -1,81 +1,48 @@
-name: Post changed article JSONs to Facebook (staging)
+name: Post to Facebook
 
 on:
   push:
-    branches:
-      - staging
-    paths:
-      - 'assets/articles/**'
-      - 'articles/**'
-      - 'content/articles/**'
-
-permissions:
-  contents: read
-
-concurrency:
-  group: post-fb-${{ github.ref }}
-  cancel-in-progress: false
-
-# workflow-level env — jobs will inherit these automatically
-env:
-  BASE_URL: "https://seechuragro.in"
-  SLEEP_SECONDS: "0"
+    branches: [ "staging" ]
+  workflow_dispatch:
 
 jobs:
   detect:
-    name: Detect changed JSONs
+    name: Detect JSON posts
     runs-on: ubuntu-latest
     outputs:
-      json_files: ${{ steps.detect.outputs.json_files }}
+      json_files: ${{ steps.set.outputs.json_files }}
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Install jq/git
-        run: sudo apt-get update -y && sudo apt-get install -y jq git
-
-      - id: detect
-        name: Detect changed JSONs
+      - name: Find JSON files
+        id: set
         run: |
-          set -euo pipefail
-          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
-          if [ -z "$CHANGED" ]; then
-            CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
+          # Find JSONs in posts/ or .github/test-posts/ as example; adapt pattern if needed
+          RAW=$(find posts -type f -name '*.json' -maxdepth 2 2>/dev/null || true)
+          if [ -z "$RAW" ]; then
+            RAW=$(find .github/test-posts -type f -name '*.json' -maxdepth 2 2>/dev/null || true)
           fi
-          JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
-          if [ -z "$JSONS" ]; then
-            JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
-          fi
-          CLEAN=$(printf "%s\n" "$JSONS" | sed '/^\s*$/d' || true)
-          if [ -z "$CLEAN" ]; then
-            echo "json_files=" >> $GITHUB_OUTPUT
-          else
-            ENC=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
-            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
-          fi
+          # Convert newlines to <<NL>> so outputs are single-line safe
+          OUT=$(printf "%s" "$RAW" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+          echo "::set-output name=json_files::$OUT"
 
   post-fb:
-    name: Facebook — Post changed article JSONs
-    needs: detect
+    name: Post each JSON to Facebook
     runs-on: ubuntu-latest
-    if: needs.detect.outputs.json_files != ''
+    needs: detect
     env:
-      # map secrets explicitly here (no ${ { env.* } } usage)
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
       FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-      BASE_URL: ${{ env.BASE_URL }}
-      SLEEP_SECONDS: ${{ env.SLEEP_SECONDS }}
+      BASE_URL: ${{ secrets.BASE_URL || 'https://seechuragro.in' }}
+      SLEEP_SECONDS: "0"
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Quick debug — confirm secrets presence (no secret values printed)
+      - name: Secret presence debug
         run: |
-          set -euo pipefail
+          echo "DEBUG: Checking secrets presence"
           [ -n "${FB_PAGE_ID:-}" ] && echo "FB_PAGE_ID: PRESENT" || echo "FB_PAGE_ID: MISSING"
           [ -n "${FB_PAGE_ACCESS_TOKEN:-}" ] && echo "FB_PAGE_ACCESS_TOKEN: PRESENT" || echo "FB_PAGE_ACCESS_TOKEN: MISSING"
 
@@ -84,7 +51,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y jq curl git imagemagick
           python3 -m pip install --upgrade pip
-          pip install --user requests Pillow
+          python3 -m pip install --user requests Pillow
 
       - name: (Optional) Safety sleep
         run: |
@@ -96,9 +63,15 @@ jobs:
           fi
 
       - name: Post each JSON to Facebook (runner script + debug)
+        shell: bash
         run: |
           set -euo pipefail
           RAW="${{ needs.detect.outputs.json_files }}"
+          if [ -z "$RAW" ]; then
+            echo "No JSON files detected. Exiting."
+            exit 0
+          fi
+          # Restore newline separators
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
 
           for jf in $LIST; do
@@ -113,7 +86,7 @@ jobs:
             sed -n '1,200p' "$jf" || true
 
             echo "--- Extracted images ---"
-            python3 - <<'PY' "$jf" "${BASE_URL:-https://seechuragro.in}"
+            python3 - <<'PY' "$jf" "${BASE_URL}"
 import sys, json, urllib.parse
 path = sys.argv[1]
 base = sys.argv[2].rstrip('/') + '/'
@@ -145,8 +118,8 @@ for i,u in enumerate(norm,1):
     print(f"IMAGE_{i}:", u)
 PY
 
-            # run the script and capture stdout/stderr; fail fast if script fails
             echo "--- run send_fb.py ---"
+            # Ensure script is executable and uses python3
             python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
             echo "----------------------------------------"
           done
