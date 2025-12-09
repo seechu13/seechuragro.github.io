@@ -2,12 +2,12 @@ name: Post to Facebook
 
 on:
   push:
-    branches: [ "staging" ]
-  workflow_dispatch:
+    branches:
+      - staging
+  workflow_dispatch: {}
 
 jobs:
   detect:
-    name: Detect JSON posts
     runs-on: ubuntu-latest
     outputs:
       json_files: ${{ steps.find.outputs.json_files }}
@@ -26,45 +26,39 @@ jobs:
           echo "json_files=$OUT" >> "$GITHUB_OUTPUT"
 
   post-fb:
-    name: Post each JSON to Facebook
-    runs-on: ubuntu-latest
     needs: detect
+    runs-on: ubuntu-latest
     env:
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
       FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
       BASE_URL: ${{ secrets.BASE_URL }}
       SLEEP_SECONDS: "0"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Debug secrets
+      - name: Secret presence debug
         run: |
           [ -n "${FB_PAGE_ID:-}" ] && echo "FB_PAGE_ID: PRESENT" || echo "FB_PAGE_ID: MISSING"
           [ -n "${FB_PAGE_ACCESS_TOKEN:-}" ] && echo "FB_PAGE_ACCESS_TOKEN: PRESENT" || echo "FB_PAGE_ACCESS_TOKEN: MISSING"
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
           sudo apt-get update -y
           sudo apt-get install -y imagemagick jq curl
           python3 -m pip install --upgrade pip
           python3 -m pip install requests Pillow
 
-      - name: Create extract-images script
+      - name: Create image extractor script
         run: |
-          cat > /tmp/extract_images.py << 'EOF'
+          cat > /tmp/extract_images.py <<'PY'
 #!/usr/bin/env python3
 import sys, json, urllib.parse, os
-
 path = sys.argv[1]
 base = sys.argv[2].rstrip('/') + '/'
-
 with open(path, 'r', encoding='utf-8') as f:
     j = json.load(f)
-
 imgs = []
-
 if isinstance(j.get('images'), list) and j.get('images'):
     imgs = j.get('images')
 elif j.get('cover_image') is not None:
@@ -75,54 +69,43 @@ elif j.get('cover_image') is not None:
         imgs = [ci]
 elif isinstance(j.get('media'), list) and j.get('media'):
     imgs = j.get('media')
-
 def normalize(u):
     if not u:
         return None
     u = u.strip()
-    if u.startswith("http://") or u.startswith("https://"):
+    if u.startswith('http://') or u.startswith('https://'):
         return u
-    if u.startswith("/"):
-        return urllib.parse.urljoin(base, u.lstrip("/"))
+    if u.startswith('/'):
+        return urllib.parse.urljoin(base, u.lstrip('/'))
     return urllib.parse.urljoin(base, u)
-
 norm = [normalize(u) for u in imgs if normalize(u)]
-
 print("EXTRACTED_IMAGES_COUNT:", len(norm))
 for i, u in enumerate(norm, 1):
     print(f"IMAGE_{i}:", u)
-EOF
-
+PY
           chmod +x /tmp/extract_images.py
 
-      - name: Post JSON to Facebook
+      - name: Post JSON files to Facebook
         shell: bash
         run: |
           set -euo pipefail
-
           RAW="${{ needs.detect.outputs.json_files }}"
           if [ -z "$RAW" ]; then
-            echo "No JSON files found"
+            echo "No JSON files"
             exit 0
           fi
-
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
-
           for jf in $LIST; do
-            echo "----------------------------------------"
+            if [ ! -f "$jf" ]; then
+              echo "Skipping missing: $jf"
+              continue
+            fi
             echo "Posting: $jf"
-
-            echo "--- JSON Preview ---"
-            sed -n '1,200p' "$jf"
-
-            echo "--- Extracted Images ---"
+            sed -n '1,200p' "$jf" || true
             python3 /tmp/extract_images.py "$jf" "${BASE_URL:-https://seechuragro.in}"
-
-            echo "--- Running send_fb.py ---"
             python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
-
-            echo "----------------------------------------"
           done
 
       - name: Cleanup
+        if: always()
         run: rm -f /tmp/extract_images.py || true
