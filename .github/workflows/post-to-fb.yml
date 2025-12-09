@@ -18,12 +18,12 @@ jobs:
       - name: Find JSON files
         id: set
         run: |
-          # Find JSONs in posts/ or .github/test-posts/ as example; adapt pattern if needed
+          # look in posts/ first, then fallback to .github/test-posts/
           RAW=$(find posts -type f -name '*.json' -maxdepth 2 2>/dev/null || true)
           if [ -z "$RAW" ]; then
             RAW=$(find .github/test-posts -type f -name '*.json' -maxdepth 2 2>/dev/null || true)
           fi
-          # Convert newlines to <<NL>> so outputs are single-line safe
+          # convert newlines to <<NL>> so outputs are single-line-safe
           OUT=$(printf "%s" "$RAW" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
           echo "::set-output name=json_files::$OUT"
 
@@ -66,12 +66,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           RAW="${{ needs.detect.outputs.json_files }}"
           if [ -z "$RAW" ]; then
             echo "No JSON files detected. Exiting."
             exit 0
           fi
-          # Restore newline separators
+
+          # restore newline separators
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
 
           for jf in $LIST; do
@@ -86,12 +88,17 @@ jobs:
             sed -n '1,200p' "$jf" || true
 
             echo "--- Extracted images ---"
-            python3 - <<'PY' "$jf" "${BASE_URL}"
-import sys, json, urllib.parse
-path = sys.argv[1]
-base = sys.argv[2].rstrip('/') + '/'
+            export CURRENT_JSON="$jf"
+            export BASE_URL="${BASE_URL}"
+            python3 - <<'PY'
+import os, sys, json, urllib.parse
+
+path = os.environ.get("CURRENT_JSON")
+base = os.environ.get("BASE_URL", "").rstrip('/') + '/'
+
 with open(path, 'r', encoding='utf-8') as f:
     j = json.load(f)
+
 imgs = []
 if isinstance(j.get('images'), list) and j.get('images'):
     imgs = j.get('images')
@@ -105,21 +112,22 @@ elif isinstance(j.get('media'), list) and j.get('media'):
     imgs = j.get('media')
 
 def normalize(u):
-    if not u: return None
+    if not u:
+        return None
     u = u.strip()
     if u.startswith('http://') or u.startswith('https://'):
         return u
     if u.startswith('/'):
         return urllib.parse.urljoin(base, u.lstrip('/'))
     return urllib.parse.urljoin(base, u)
+
 norm = [normalize(u) for u in imgs if normalize(u)]
 print("EXTRACTED_IMAGES_COUNT:", len(norm))
-for i,u in enumerate(norm,1):
+for i, u in enumerate(norm, 1):
     print(f"IMAGE_{i}:", u)
 PY
 
             echo "--- run send_fb.py ---"
-            # Ensure script is executable and uses python3
             python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
             echo "----------------------------------------"
           done
