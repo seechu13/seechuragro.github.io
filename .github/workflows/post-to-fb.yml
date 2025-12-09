@@ -61,28 +61,30 @@ jobs:
     needs: detect
     runs-on: ubuntu-latest
     if: needs.detect.outputs.json_files != ''
-    # only map secrets here (no ${ { env.* } } usage)
     env:
+      # map secrets explicitly here (no ${ { env.* } } usage)
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
       FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+      BASE_URL: ${{ env.BASE_URL }}
+      SLEEP_SECONDS: ${{ env.SLEEP_SECONDS }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Quick debug — confirm secrets presence (no values printed)
+      - name: Quick debug — confirm secrets presence (no secret values printed)
         run: |
           set -euo pipefail
           [ -n "${FB_PAGE_ID:-}" ] && echo "FB_PAGE_ID: PRESENT" || echo "FB_PAGE_ID: MISSING"
           [ -n "${FB_PAGE_ACCESS_TOKEN:-}" ] && echo "FB_PAGE_ACCESS_TOKEN: PRESENT" || echo "FB_PAGE_ACCESS_TOKEN: MISSING"
 
-      - name: Install deps (ImageMagick included)
+      - name: Install deps (ImageMagick, Pillow, requests)
         run: |
           sudo apt-get update -y
           sudo apt-get install -y jq curl git imagemagick
           python3 -m pip install --upgrade pip
-          pip install requests Pillow
+          pip install --user requests Pillow
 
       - name: (Optional) Safety sleep
         run: |
@@ -93,17 +95,58 @@ jobs:
             echo "No safety sleep"
           fi
 
-      - name: Post each JSON to Facebook (runner script)
+      - name: Post each JSON to Facebook (runner script + debug)
         run: |
           set -euo pipefail
           RAW="${{ needs.detect.outputs.json_files }}"
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
           for jf in $LIST; do
             if [ ! -f "$jf" ]; then
               echo "Skipping missing file: $jf"
               continue
             fi
-            echo "Posting to FB: $jf"
+
+            echo "----------------------------------------"
+            echo "Posting: $jf"
+            echo "--- JSON preview (first 200 lines) ---"
+            sed -n '1,200p' "$jf" || true
+
+            echo "--- Extracted images ---"
+            python3 - <<'PY' "$jf" "${BASE_URL:-https://seechuragro.in}"
+import sys, json, urllib.parse
+path = sys.argv[1]
+base = sys.argv[2].rstrip('/') + '/'
+with open(path, 'r', encoding='utf-8') as f:
+    j = json.load(f)
+imgs = []
+if isinstance(j.get('images'), list) and j.get('images'):
+    imgs = j.get('images')
+elif j.get('cover_image') is not None:
+    ci = j.get('cover_image')
+    if isinstance(ci, list):
+        imgs = ci
+    elif isinstance(ci, str) and ci.strip() != '':
+        imgs = [ci]
+elif isinstance(j.get('media'), list) and j.get('media'):
+    imgs = j.get('media')
+
+def normalize(u):
+    if not u: return None
+    u = u.strip()
+    if u.startswith('http://') or u.startswith('https://'):
+        return u
+    if u.startswith('/'):
+        return urllib.parse.urljoin(base, u.lstrip('/'))
+    return urllib.parse.urljoin(base, u)
+norm = [normalize(u) for u in imgs if normalize(u)]
+print("EXTRACTED_IMAGES_COUNT:", len(norm))
+for i,u in enumerate(norm,1):
+    print(f"IMAGE_{i}:", u)
+PY
+
+            # run the script and capture stdout/stderr; fail fast if script fails
+            echo "--- run send_fb.py ---"
             python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
-            echo "--------------------------------"
+            echo "----------------------------------------"
           done
