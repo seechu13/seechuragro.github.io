@@ -28,19 +28,20 @@ jobs:
   post-fb:
     needs: detect
     runs-on: ubuntu-latest
+
     env:
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
       FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
       BASE_URL: ${{ secrets.BASE_URL }}
-      SLEEP_SECONDS: "0"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Secret presence debug
+      - name: Debug secrets
         run: |
-          [ -n "${FB_PAGE_ID:-}" ] && echo "FB_PAGE_ID: PRESENT" || echo "FB_PAGE_ID: MISSING"
-          [ -n "${FB_PAGE_ACCESS_TOKEN:-}" ] && echo "FB_PAGE_ACCESS_TOKEN: PRESENT" || echo "FB_PAGE_ACCESS_TOKEN: MISSING"
+          if [ -n "${FB_PAGE_ID}" ]; then echo "FB_PAGE_ID: PRESENT"; else echo "FB_PAGE_ID: MISSING"; fi
+          if [ -n "${FB_PAGE_ACCESS_TOKEN}" ]; then echo "FB_PAGE_ACCESS_TOKEN: PRESENT"; else echo "FB_PAGE_ACCESS_TOKEN: MISSING"; fi
 
       - name: Install dependencies
         run: |
@@ -49,63 +50,53 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install requests Pillow
 
-      - name: Create image extractor script
+      - name: Create Python extractor (line by line, YAML-safe)
         run: |
-          cat > /tmp/extract_images.py <<'PY'
-#!/usr/bin/env python3
-import sys, json, urllib.parse, os
-path = sys.argv[1]
-base = sys.argv[2].rstrip('/') + '/'
-with open(path, 'r', encoding='utf-8') as f:
-    j = json.load(f)
-imgs = []
-if isinstance(j.get('images'), list) and j.get('images'):
-    imgs = j.get('images')
-elif j.get('cover_image') is not None:
-    ci = j.get('cover_image')
-    if isinstance(ci, list):
-        imgs = ci
-    elif isinstance(ci, str) and ci.strip():
-        imgs = [ci]
-elif isinstance(j.get('media'), list) and j.get('media'):
-    imgs = j.get('media')
-def normalize(u):
-    if not u:
-        return None
-    u = u.strip()
-    if u.startswith('http://') or u.startswith('https://'):
-        return u
-    if u.startswith('/'):
-        return urllib.parse.urljoin(base, u.lstrip('/'))
-    return urllib.parse.urljoin(base, u)
-norm = [normalize(u) for u in imgs if normalize(u)]
-print("EXTRACTED_IMAGES_COUNT:", len(norm))
-for i, u in enumerate(norm, 1):
-    print(f"IMAGE_{i}:", u)
-PY
+          echo '#!/usr/bin/env python3' > /tmp/extract_images.py
+          echo 'import sys, json, urllib.parse' >> /tmp/extract_images.py
+          echo 'path=sys.argv[1]' >> /tmp/extract_images.py
+          echo 'base=sys.argv[2].rstrip("/") + "/"' >> /tmp/extract_images.py
+          echo 'j=json.load(open(path,"r",encoding="utf-8"))' >> /tmp/extract_images.py
+          echo 'imgs=[]' >> /tmp/extract_images.py
+          echo 'if isinstance(j.get("images"),list) and j.get("images"): imgs=j["images"]' >> /tmp/extract_images.py
+          echo 'elif j.get("cover_image"):' >> /tmp/extract_images.py
+          echo '    ci=j.get("cover_image")' >> /tmp/extract_images.py
+          echo '    if isinstance(ci,list): imgs=ci' >> /tmp/extract_images.py
+          echo '    elif isinstance(ci,str) and ci.strip(): imgs=[ci]' >> /tmp/extract_images.py
+          echo 'elif isinstance(j.get("media"),list) and j.get("media"): imgs=j["media"]' >> /tmp/extract_images.py
+          echo 'def norm(u):' >> /tmp/extract_images.py
+          echo '    if not u: return None' >> /tmp/extract_images.py
+          echo '    u=u.strip()' >> /tmp/extract_images.py
+          echo '    if u.startswith("http"): return u' >> /tmp/extract_images.py
+          echo '    if u.startswith("/"): return urllib.parse.urljoin(base,u[1:])' >> /tmp/extract_images.py
+          echo '    return urllib.parse.urljoin(base,u)' >> /tmp/extract_images.py
+          echo 'images=[norm(u) for u in imgs if norm(u)]' >> /tmp/extract_images.py
+          echo 'print("EXTRACTED_IMAGES_COUNT:",len(images))' >> /tmp/extract_images.py
+          echo 'for i,u in enumerate(images,1): print(f"IMAGE_{i}:",u)' >> /tmp/extract_images.py
           chmod +x /tmp/extract_images.py
 
       - name: Post JSON files to Facebook
         shell: bash
         run: |
-          set -euo pipefail
           RAW="${{ needs.detect.outputs.json_files }}"
           if [ -z "$RAW" ]; then
             echo "No JSON files"
             exit 0
           fi
-          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
-          for jf in $LIST; do
-            if [ ! -f "$jf" ]; then
-              echo "Skipping missing: $jf"
-              continue
-            fi
-            echo "Posting: $jf"
-            sed -n '1,200p' "$jf" || true
-            python3 /tmp/extract_images.py "$jf" "${BASE_URL:-https://seechuragro.in}"
-            python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
-          done
 
-      - name: Cleanup
-        if: always()
-        run: rm -f /tmp/extract_images.py || true
+          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
+          for jf in $LIST; do
+            echo "----------------------------------------"
+            echo "Posting: $jf"
+            sed -n '1,200p' "$jf"
+
+            python3 /tmp/extract_images.py "$jf" "${BASE_URL:-https://seechuragro.in}"
+
+            python3 scripts/send_fb.py "$jf" || {
+              echo "send_fb.py failed for $jf"
+              exit 1
+            }
+
+            echo "----------------------------------------"
+          done
