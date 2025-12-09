@@ -65,13 +65,13 @@ def post_feed(message, attached_media_ids=None, link=None):
     return r.json()
 
 
-# ----------------- BUILD MESSAGE (WITH FIXED URL LOGIC) ----------------- #
+# ----------------- BUILD MESSAGE ----------------- #
 
 def build_message(j):
     title = j.get("title", "")
     excerpt = j.get("excerpt") or j.get("summary", "")
 
-    # NEW LOGIC — ALWAYS USE "url" IF PRESENT
+    # Strong URL logic
     if j.get("url") and isinstance(j["url"], str) and j["url"].startswith("http"):
         full_url = j["url"]
     else:
@@ -85,7 +85,7 @@ def build_message(j):
     return text, full_url
 
 
-# ----------------- IMAGE CHECK + PREP ----------------- #
+# ----------------- IMAGE PREP ----------------- #
 
 def check_url_head(url):
     try:
@@ -202,7 +202,8 @@ def main(path):
         attached = []
         tmp_files = []
 
-        for img in images[:2]:
+        # We now support **4 images max**
+        for img in images[:4]:
             try:
                 print("Checking image:", img)
                 prep_type, url_for_upload, file_path = prepare_image_for_upload(img)
