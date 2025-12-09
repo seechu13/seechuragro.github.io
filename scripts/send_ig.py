@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
-import os, sys, json, time, requests, traceback
+import os
+import sys
+
+# Ensure the scripts/ directory is on Python path so imports like
+# `from common_utils import ...` work when running `python3 scripts/send_ig.py`
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+
+import json
+import time
+import traceback
 from urllib.parse import urljoin
+import requests
+
 from common_utils import extract_images_from_json
 
 IG_USER_ID = os.environ.get("IG_USER_ID")
@@ -31,7 +44,7 @@ def build_message(j):
     title = j.get("title", "")
     excerpt = j.get("excerpt") or j.get("summary", "")
     slug = j.get("slug") or j.get("path") or ""
-    url = slug if slug.startswith("http") else urljoin(BASE_URL, slug)
+    url = slug if isinstance(slug, str) and slug.startswith("http") else urljoin(BASE_URL, str(slug))
     text = f"{title}\n\n{excerpt}\n\nRead more: {url}"
     return text, url
 
@@ -69,7 +82,7 @@ def main(path):
         resp = publish_container(container)
         print("Published to IG:", resp)
 
-    except Exception as e:
+    except Exception:
         print("Exception in send_ig.py:", file=sys.stderr)
         traceback.print_exc()
         sys.exit(1)
