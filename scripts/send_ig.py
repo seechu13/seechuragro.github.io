@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
 """
-Robust Instagram poster for Seechur Agro (drop-in replacement).
-
-- Uses processed_map if present.
-- If processed not present: downloads, normalizes, commits processed image & map.
-- Handles single-image posts and multi-image carousels (2+ images).
-- Prints full Graph API responses for debugging.
+Final robust send_ig.py — handles:
+- single-image posts (1 image)
+- carousel posts (2-4 images)
+- downloads & normalizes images if needed, commits processed image to assets/processed/
+- updates processed_map.json in repo
+- prints Graph API responses for debugging
 """
 
-import os
-import sys
-import time
-import json
-import base64
-import hashlib
-import urllib.parse
+import os, sys, time, json, base64, hashlib, urllib.parse
 from io import BytesIO
 from pathlib import Path
 from datetime import datetime
@@ -22,7 +16,7 @@ from datetime import datetime
 import requests
 from PIL import Image
 
-# ===== CONFIG - adjust via env if needed =====
+# CONFIG
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "seechu13/seechuragro.github.io")
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "staging")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -34,7 +28,6 @@ PROCESSED_MAP = f"{PROCESSED_DIR}/processed_map.json"
 IG_USER_ID = os.environ.get("IG_USER_ID")
 IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN")
 
-# processing params
 MAX_SIDE = 1080
 JPEG_QUALITY = 85
 DOWNLOAD_TIMEOUT = 30
@@ -90,7 +83,7 @@ def process_to_jpeg_bytes(bts):
     im.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True)
     return out.getvalue()
 
-# ---- GitHub contents API helpers ----
+# GitHub helpers
 def github_get_file(path):
     url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/contents/{urllib.parse.quote(path, safe='')}"
     params = {"ref": GITHUB_BRANCH}
@@ -161,7 +154,6 @@ def ensure_processed_url_for(original_url):
     parsed = urllib.parse.urlparse(original_url)
     base = os.path.basename(parsed.path) or "img"
     name = _slugify(base) if '_slugify' in globals() else base
-    # fallback slugify
     def _fallback(n):
         keep = []
         for ch in n:
@@ -268,15 +260,10 @@ def main():
             print("ERROR preparing image:", u, e, file=sys.stderr)
             sys.exit(1)
 
-    # ============================
-    # POST LOGIC BASED ON IMAGE COUNT
-    # ============================
-
+    # POST LOGIC
     if len(processed_urls) == 1:
-        # SINGLE IMAGE POST
         single_url = processed_urls[0]
         print("Creating SINGLE image container for:", single_url)
-
         resp = requests.post(
             f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media",
             data={
@@ -286,17 +273,14 @@ def main():
             },
             timeout=30
         )
-
         print("Single image CREATE returned", resp.status_code, "->", resp.text)
         if resp.status_code not in (200, 201):
             print("Single image creation failed:", resp.status_code, resp.text, file=sys.stderr)
             sys.exit(1)
-
         parent_id = resp.json().get("id")
         if not parent_id:
             print("Could not get creation_id for single image:", resp.text)
             sys.exit(1)
-
         pub_resp = requests.post(
             f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media_publish",
             data={
@@ -305,16 +289,13 @@ def main():
             },
             timeout=30
         )
-
         print("Publish response:", pub_resp.status_code, pub_resp.text)
         if pub_resp.status_code not in (200, 201):
             print("Publish failed:", pub_resp.status_code, pub_resp.text, file=sys.stderr)
             sys.exit(1)
-
         print("Published IG SINGLE image post:", pub_resp.text)
         return 0
 
-    # MULTIPLE IMAGES → CAROUSEL (IG requires 2+ images)
     child_ids = []
     for idx, pu in enumerate(processed_urls):
         print(f"Creating child container for: {pu}")
@@ -332,15 +313,12 @@ def main():
     if parent_resp.status_code not in (200, 201):
         print("Parent creation failed:", parent_resp.status_code, parent_resp.text, file=sys.stderr)
         sys.exit(1)
-
     parent_id = parent_resp.json().get("id")
     pub_resp = publish_parent_container(parent_id)
     print("Publish response:", pub_resp.status_code, pub_resp.text)
-
     if pub_resp.status_code not in (200, 201):
         print("Publish failed:", pub_resp.status_code, pub_resp.text, file=sys.stderr)
         sys.exit(1)
-
     print("Published IG CAROUSEL:", pub_resp.text)
     return 0
 
