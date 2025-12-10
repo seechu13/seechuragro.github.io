@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
 """
-Robust Instagram poster for Seechur Agro (drop-in replacement for scripts/send_ig.py).
+Robust Instagram poster for Seechur Agro (drop-in replacement).
 
-Behavior:
-- For each image URL to be posted:
-  1) try processed_map lookup at assets/processed/processed_map.json (raw.githubusercontent URL)
-  2) if not found: download -> normalize JPEG -> commit to repo at assets/processed/<sha>-<name>.jpg
-     and update processed_map.json in repo (non-destructive)
-  3) use raw.githubusercontent URL of processed file as image_url for IG child media creation
-
-- Creates child containers, parent container (carousel) and publishes.
-- Prints full Graph API responses (success or failure).
-- Retries downloads with backoff.
+- Uses processed_map if present.
+- If processed not present: downloads, normalizes, commits processed image & map.
+- Handles single-image posts and multi-image carousels (2+ images).
+- Prints full Graph API responses for debugging.
 """
 
 import os
@@ -29,9 +23,9 @@ import requests
 from PIL import Image
 
 # ===== CONFIG - adjust via env if needed =====
-GITHUB_REPO = os.environ.get("GITHUB_REPO", "seechuragro/seechuragro.github.io")
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "seechu13/seechuragro.github.io")
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "staging")
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")  # MUST be set in workflow secrets
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 RAW_BASE = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{GITHUB_BRANCH}"
 GITHUB_API_BASE = "https://api.github.com"
 PROCESSED_DIR = "assets/processed"
@@ -47,23 +41,18 @@ DOWNLOAD_TIMEOUT = 30
 DOWNLOAD_RETRIES = 3
 SLEEP_BETWEEN_RETRIES = 2
 
-if not IG_USER_ID or not IG_ACCESS_TOKEN:
-    print("ERROR: IG_USER_ID and IG_ACCESS_TOKEN must be set in env", file=sys.stderr)
-    # do not exit here so script can be syntax-checked in other contexts
-
 HEADERS_GITHUB = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
 
-def slugify_filename(name):
-    name = name.strip()
-    name = urllib.parse.unquote(name)
+def _slugify(n):
+    n = urllib.parse.unquote(n.strip())
     keep = []
-    for ch in name:
+    for ch in n:
         if ch.isalnum() or ch in "-_.":
             keep.append(ch)
         else:
             keep.append("_")
     s = "".join(keep)
-    if not s.lower().endswith(".jpg") and not s.lower().endswith(".jpeg"):
+    if not s.lower().endswith(".jpg"):
         s = os.path.splitext(s)[0] + ".jpg"
     return s
 
@@ -85,7 +74,6 @@ def download_bytes(url, retries=DOWNLOAD_RETRIES):
 
 def process_to_jpeg_bytes(bts):
     im = Image.open(BytesIO(bts))
-    # flatten transparency if present
     if im.mode in ("RGBA","LA") or (im.mode == "P" and "transparency" in im.info):
         bg = Image.new("RGB", im.size, (255,255,255))
         rgba = im.convert("RGBA")
@@ -172,9 +160,9 @@ def ensure_processed_url_for(original_url):
     jb = process_to_jpeg_bytes(bts)
     parsed = urllib.parse.urlparse(original_url)
     base = os.path.basename(parsed.path) or "img"
-    name = slugify_filename(base) if 'slugify_filename' in globals() else base
-    # ensure slugify function exists
-    def _slugify(n):
+    name = _slugify(base) if '_slugify' in globals() else base
+    # fallback slugify
+    def _fallback(n):
         keep = []
         for ch in n:
             if ch.isalnum() or ch in "-_.":
@@ -185,7 +173,8 @@ def ensure_processed_url_for(original_url):
         if not s.lower().endswith(".jpg"):
             s = os.path.splitext(s)[0] + ".jpg"
         return s
-    name = _slugify(name)
+    if not name:
+        name = _fallback(base)
     h = hashlib.sha256(jb).hexdigest()[:10]
     final_name = f"{h}-{name}"
     target_repo_path = f"{PROCESSED_DIR}/{final_name}"
@@ -205,7 +194,6 @@ def ensure_processed_url_for(original_url):
     commit_processed_image_and_map(jb, target_repo_path, newmap)
     return raw_url
 
-# ---- IG Graph API helpers ----
 def create_image_container(image_url, is_carousel_item=False):
     url = f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media"
     params = {"image_url": image_url, "access_token": IG_ACCESS_TOKEN}
@@ -280,40 +268,80 @@ def main():
             print("ERROR preparing image:", u, e, file=sys.stderr)
             sys.exit(1)
 
+    # ============================
+    # POST LOGIC BASED ON IMAGE COUNT
+    # ============================
+
+    if len(processed_urls) == 1:
+        # SINGLE IMAGE POST
+        single_url = processed_urls[0]
+        print("Creating SINGLE image container for:", single_url)
+
+        resp = requests.post(
+            f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media",
+            data={
+                "image_url": single_url,
+                "caption": caption,
+                "access_token": IG_ACCESS_TOKEN
+            },
+            timeout=30
+        )
+
+        print("Single image CREATE returned", resp.status_code, "->", resp.text)
+        if resp.status_code not in (200, 201):
+            print("Single image creation failed:", resp.status_code, resp.text, file=sys.stderr)
+            sys.exit(1)
+
+        parent_id = resp.json().get("id")
+        if not parent_id:
+            print("Could not get creation_id for single image:", resp.text)
+            sys.exit(1)
+
+        pub_resp = requests.post(
+            f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media_publish",
+            data={
+                "creation_id": parent_id,
+                "access_token": IG_ACCESS_TOKEN
+            },
+            timeout=30
+        )
+
+        print("Publish response:", pub_resp.status_code, pub_resp.text)
+        if pub_resp.status_code not in (200, 201):
+            print("Publish failed:", pub_resp.status_code, pub_resp.text, file=sys.stderr)
+            sys.exit(1)
+
+        print("Published IG SINGLE image post:", pub_resp.text)
+        return 0
+
+    # MULTIPLE IMAGES → CAROUSEL (IG requires 2+ images)
     child_ids = []
     for idx, pu in enumerate(processed_urls):
         print(f"Creating child container for: {pu}")
         resp = create_image_container(pu, is_carousel_item=True)
         print("CREATE container returned", resp.status_code, "->", resp.text)
-        if resp.status_code not in (200,201):
-            print("create_image_container attempt failed:", resp.status_code, resp.text, file=sys.stderr)
+        if resp.status_code not in (200, 201):
+            print("create_image_container failed:", resp.status_code, resp.text, file=sys.stderr)
             sys.exit(1)
-        j = resp.json()
-        cid = j.get("id") or j.get("creation_id") or j.get("media_id") or j.get("name")
-        if not cid:
-            print("Could not find creation id in response:", j, file=sys.stderr)
-            sys.exit(1)
+        cid = resp.json().get("id")
         child_ids.append(cid)
 
-    print("Creating parent container with children:", child_ids)
+    print("Creating parent CAROUSEL container with children:", child_ids)
     parent_resp = create_parent_container(child_ids, caption=caption)
     print("Parent create response:", parent_resp.status_code, parent_resp.text)
-    if parent_resp.status_code not in (200,201):
+    if parent_resp.status_code not in (200, 201):
         print("Parent creation failed:", parent_resp.status_code, parent_resp.text, file=sys.stderr)
         sys.exit(1)
-    parent_json = parent_resp.json()
-    parent_id = parent_json.get("id") or parent_json.get("creation_id")
-    if not parent_id:
-        print("No parent creation id returned:", parent_json, file=sys.stderr)
-        sys.exit(1)
 
+    parent_id = parent_resp.json().get("id")
     pub_resp = publish_parent_container(parent_id)
     print("Publish response:", pub_resp.status_code, pub_resp.text)
-    if pub_resp.status_code not in (200,201):
+
+    if pub_resp.status_code not in (200, 201):
         print("Publish failed:", pub_resp.status_code, pub_resp.text, file=sys.stderr)
         sys.exit(1)
 
-    print("Published IG carousel:", pub_resp.text)
+    print("Published IG CAROUSEL:", pub_resp.text)
     return 0
 
 if __name__ == "__main__":
