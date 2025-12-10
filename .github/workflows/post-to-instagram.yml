@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # repo & branch used by scripts/send_ig.py (can be overridden)
-      GITHUB_REPO: seechuragro/seechuragro.github.io
+      GITHUB_REPO: seechu13/seechuragro.github.io
       GITHUB_BRANCH: staging
       # Path to the article JSON to post (defaults to articles/test-automation.json)
       IG_POST_JSON: ${{ github.event.inputs.json_path || 'articles/test-automation.json' }}
