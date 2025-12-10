@@ -1,53 +1,95 @@
-name: Post to Instagram
+name: Post to Instagram (auto-processed images)
 
 on:
-  push:
-    branches: [ "staging" ]
   workflow_dispatch:
+    inputs:
+      json_path:
+        description: 'Article JSON path to post (optional)'
+        required: false
+        default: 'articles/test-automation.json'
+  push:
+    branches:
+      - staging
+    # only run when article JSONs or assets change (avoid running on unrelated pushes)
+    paths:
+      - 'articles/**'
+      - 'assets/articles/**'
+      - '.github/workflows/post-to-instagram.yml'
+
+concurrency:
+  group: post-to-instagram-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write   # needed so the job can commit processed images & update processed_map.json
 
 jobs:
-  detect:
-    runs-on: ubuntu-latest
-    outputs:
-      json_files: ${{ steps.detect_json.outputs.json_files }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - id: detect_json
-        name: Detect JSON files
-        run: |
-          FILES=$(find articles posts .github/test-posts -type f -name "*.json" 2>/dev/null | tr '\n' ' ')
-          echo "json_files=$FILES" >> $GITHUB_OUTPUT
-
-  post-instagram:
-    needs: detect
+  post:
+    name: Post to Instagram
     runs-on: ubuntu-latest
     env:
-      IG_USER_ID: ${{ secrets.IG_USER_ID }}
-      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-      BASE_URL: ${{ secrets.BASE_URL }}
-
+      # repo & branch used by scripts/send_ig.py (can be overridden)
+      GITHUB_REPO: seechuragro/seechuragro.github.io
+      GITHUB_BRANCH: staging
+      # Path to the article JSON to post (defaults to articles/test-automation.json)
+      IG_POST_JSON: ${{ github.event.inputs.json_path || 'articles/test-automation.json' }}
+      # Optional: override number of images or caption using IMAGES / CAPTION env if desired
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # allow the default GITHUB_TOKEN to be used for commits
 
-      - name: Check secrets
-        run: |
-          [ -n "$IG_USER_ID" ] && echo "IG_USER_ID: PRESENT" || echo "IG_USER_ID: MISSING"
-          [ -n "$IG_ACCESS_TOKEN" ] && echo "IG_ACCESS_TOKEN: PRESENT" || echo "IG_ACCESS_TOKEN: MISSING"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-      - name: Install deps
+      - name: Validate JSON (fast fail)
+        # quick safety check: ensure the target JSON is parseable
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq curl
-          python3 -m pip install --upgrade pip
-          python3 -m pip install requests Pillow
+          if [ -f "${{ env.IG_POST_JSON }}" ]; then
+            python -m json.tool "${{ env.IG_POST_JSON }}"
+            echo "JSON valid: ${{ env.IG_POST_JSON }}"
+          else
+            echo "JSON not found at ${{ env.IG_POST_JSON }} — aborting"
+            exit 1
+          fi
 
-      - name: Process JSON files
+      - name: Install Python deps
         run: |
-          for jf in ${{ needs.detect.outputs.json_files }}; do
-            echo "--- Processing $jf ---"
-            python3 scripts/send_ig.py "$jf"
-          done
+          python -m pip install --upgrade pip
+          pip install requests pillow
+
+      - name: Configure env (secrets)
+        # Map the secrets into env for the send_ig.py script
+        run: |
+          echo "Configured runtime env"
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Instagram poster
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          # Use GITHUB_TOKEN to allow send_ig.py to commit processed images & map
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ env.GITHUB_REPO }}
+          GITHUB_BRANCH: ${{ env.GITHUB_BRANCH }}
+          IG_POST_JSON: ${{ env.IG_POST_JSON }}
+        run: |
+          set -euo pipefail
+          echo "Posting using JSON: $IG_POST_JSON"
+          python3 scripts/send_ig.py
+
+      - name: Upload workflow log (artifact)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-to-instagram-failure-logs
+          path: |
+            # capture runner logs if you want — keep empty to avoid large uploads
+            ./  # (no-op placeholder; edit if you want to upload specific debug files)
