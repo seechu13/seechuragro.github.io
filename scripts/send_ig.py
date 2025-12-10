@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Final robust send_ig.py — handles:
-- single-image posts (1 image)
-- carousel posts (2-4 images)
-- downloads & normalizes images if needed, commits processed image to assets/processed/
-- updates processed_map.json in repo
-- prints Graph API responses for debugging
+Final robust send_ig.py — updated:
+- Always appends PERMANENT_CAPTION to captions (single & carousel)
+- Prints IG_USER_ID at startup for verification (does NOT print tokens)
+- Prints publish response and extracted post id on success
+- Clearer error reporting for single vs carousel flows
+Based on uploaded file. Source: user-provided file. :contentReference[oaicite:1]{index=1}
 """
 
 import os, sys, time, json, base64, hashlib, urllib.parse
@@ -16,7 +16,9 @@ from datetime import datetime
 import requests
 from PIL import Image
 
-# CONFIG
+# ===========================
+# CONFIG / CONSTANTS
+# ===========================
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "seechu13/seechuragro.github.io")
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "staging")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -25,9 +27,16 @@ GITHUB_API_BASE = "https://api.github.com"
 PROCESSED_DIR = "assets/processed"
 PROCESSED_MAP = f"{PROCESSED_DIR}/processed_map.json"
 
+# Permanent caption and website
+PERMANENT_CAPTION = "Read the full article: https://www.seechuragro.in/articles.html\n(Link also in bio 👆)"
+PERMANENT_WEBSITE = "https://www.seechuragro.in/articles.html"
+
+# IG / Graph
 IG_USER_ID = os.environ.get("IG_USER_ID")
 IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN")
+GRAPH_VERSION = os.environ.get("GRAPH_API_VERSION", "v24.0")
 
+# Image processing
 MAX_SIDE = 1080
 JPEG_QUALITY = 85
 DOWNLOAD_TIMEOUT = 30
@@ -36,6 +45,9 @@ SLEEP_BETWEEN_RETRIES = 2
 
 HEADERS_GITHUB = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
 
+# ===========================
+# Helpers
+# ===========================
 def _slugify(n):
     n = urllib.parse.unquote(n.strip())
     keep = []
@@ -67,6 +79,7 @@ def download_bytes(url, retries=DOWNLOAD_RETRIES):
 
 def process_to_jpeg_bytes(bts):
     im = Image.open(BytesIO(bts))
+    # handle transparency
     if im.mode in ("RGBA","LA") or (im.mode == "P" and "transparency" in im.info):
         bg = Image.new("RGB", im.size, (255,255,255))
         rgba = im.convert("RGBA")
@@ -141,12 +154,15 @@ def commit_processed_image_and_map(image_bytes, target_repo_path, processed_map)
     return True
 
 def ensure_processed_url_for(original_url):
+    # Check local map
     map_local = load_processed_map_local()
     if map_local and original_url in map_local:
         return map_local[original_url].get("processed")
+    # Check remote map
     map_remote = load_processed_map_remote()
     if map_remote and original_url in map_remote:
         return map_remote[original_url].get("processed")
+    # Fallback: process and commit
     if not GITHUB_TOKEN:
         raise RuntimeError("GITHUB_TOKEN not set; cannot commit processed image automatically.")
     bts = download_bytes(original_url)
@@ -154,19 +170,16 @@ def ensure_processed_url_for(original_url):
     parsed = urllib.parse.urlparse(original_url)
     base = os.path.basename(parsed.path) or "img"
     name = _slugify(base) if '_slugify' in globals() else base
-    def _fallback(n):
+    if not name:
+        # fallback slugify
         keep = []
-        for ch in n:
+        for ch in base:
             if ch.isalnum() or ch in "-_.":
                 keep.append(ch)
             else:
                 keep.append("_")
         s = "".join(keep)
-        if not s.lower().endswith(".jpg"):
-            s = os.path.splitext(s)[0] + ".jpg"
-        return s
-    if not name:
-        name = _fallback(base)
+        name = s if s else "image.jpg"
     h = hashlib.sha256(jb).hexdigest()[:10]
     final_name = f"{h}-{name}"
     target_repo_path = f"{PROCESSED_DIR}/{final_name}"
@@ -181,13 +194,16 @@ def ensure_processed_url_for(original_url):
         "generated_at": datetime.utcnow().isoformat() + "Z",
         "repo_path": target_repo_path
     }
-    newmap = map_remote if (map_remote := load_processed_map_remote()) else (map_local if map_local else {})
+    newmap = load_processed_map_remote() or load_processed_map_local() or {}
     newmap[original_url] = entry
     commit_processed_image_and_map(jb, target_repo_path, newmap)
     return raw_url
 
+# ===========================
+# Graph API helpers (media)
+# ===========================
 def create_image_container(image_url, is_carousel_item=False):
-    url = f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media"
+    url = f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media"
     params = {"image_url": image_url, "access_token": IG_ACCESS_TOKEN}
     if is_carousel_item:
         params["is_carousel_item"] = "true"
@@ -195,34 +211,43 @@ def create_image_container(image_url, is_carousel_item=False):
     return r
 
 def create_parent_container(creation_id_list, caption=""):
-    url = f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media"
+    url = f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media"
     children = ",".join(creation_id_list)
     params = {"media_type": "CAROUSEL", "children": children, "caption": caption, "access_token": IG_ACCESS_TOKEN}
     r = requests.post(url, data=params, timeout=30)
     return r
 
 def publish_parent_container(parent_id):
-    url = f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media_publish"
+    url = f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media_publish"
     params = {"creation_id": parent_id, "access_token": IG_ACCESS_TOKEN}
     r = requests.post(url, data=params, timeout=30)
     return r
 
+# ===========================
+# Main flow
+# ===========================
 def main():
+    # Basic checks
     if not IG_USER_ID or not IG_ACCESS_TOKEN:
         print("ERROR: IG_USER_ID or IG_ACCESS_TOKEN not set", file=sys.stderr)
         sys.exit(2)
 
+    # Print IG_USER_ID so user can verify which account is targeted
+    print("IG_USER_ID in environment:", IG_USER_ID)
+
+    # Read JSON path from env or default file
     json_path = os.environ.get("IG_POST_JSON", "articles/test-automation.json")
     raw = None
     try:
         raw_text = Path(json_path).read_text(encoding="utf-8")
         raw = json.loads(raw_text)
     except Exception:
-        pass
+        raw = None
 
     images = []
     caption = ""
     if raw:
+        # Walk object to find image URLs (jpg/png/webp)
         def walk(obj):
             if isinstance(obj, dict):
                 for v in obj.values():
@@ -236,8 +261,9 @@ def main():
                     if any(low.endswith(ext) for ext in (".jpg",".jpeg",".png",".webp")):
                         images.append(obj)
         walk(raw)
+        # Prefer explicit caption, else title/excerpt
         if isinstance(raw, dict):
-            caption = raw.get("title") or raw.get("excerpt") or raw.get("caption") or ""
+            caption = raw.get("caption") or raw.get("title") or raw.get("excerpt") or ""
     else:
         env_imgs = os.environ.get("IMAGES")
         if env_imgs:
@@ -248,10 +274,13 @@ def main():
         print("No images found to post.", file=sys.stderr)
         sys.exit(0)
 
+    # Limit to 4 images (IG carousel)
+    images = images[:4]
     print("Posting to IG with images:", images)
 
+    # Ensure each image has a processed (raw.githubusercontent) URL
     processed_urls = []
-    for u in images[:4]:
+    for u in images:
         try:
             purl = ensure_processed_url_for(u)
             print("USING PROCESSED URL:", purl)
@@ -260,12 +289,25 @@ def main():
             print("ERROR preparing image:", u, e, file=sys.stderr)
             sys.exit(1)
 
+    # Ensure caption always contains PERMANENT_CAPTION
+    caption = (caption or "").strip()
+    if PERMANENT_CAPTION not in caption:
+        if caption:
+            caption = caption + "\n\n" + PERMANENT_CAPTION
+        else:
+            caption = PERMANENT_CAPTION
+
+    print("\nFinal caption preview:\n", caption, "\n")
+
     # POST LOGIC
+    published_post_id = None
+
     if len(processed_urls) == 1:
+        # Single image flow
         single_url = processed_urls[0]
         print("Creating SINGLE image container for:", single_url)
         resp = requests.post(
-            f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media",
+            f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media",
             data={
                 "image_url": single_url,
                 "caption": caption,
@@ -277,14 +319,14 @@ def main():
         if resp.status_code not in (200, 201):
             print("Single image creation failed:", resp.status_code, resp.text, file=sys.stderr)
             sys.exit(1)
-        parent_id = resp.json().get("id")
-        if not parent_id:
-            print("Could not get creation_id for single image:", resp.text)
+        creation_id = resp.json().get("id")
+        if not creation_id:
+            print("Could not get creation_id for single image:", resp.text, file=sys.stderr)
             sys.exit(1)
         pub_resp = requests.post(
-            f"https://graph.facebook.com/v24.0/{IG_USER_ID}/media_publish",
+            f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media_publish",
             data={
-                "creation_id": parent_id,
+                "creation_id": creation_id,
                 "access_token": IG_ACCESS_TOKEN
             },
             timeout=30
@@ -293,18 +335,25 @@ def main():
         if pub_resp.status_code not in (200, 201):
             print("Publish failed:", pub_resp.status_code, pub_resp.text, file=sys.stderr)
             sys.exit(1)
-        print("Published IG SINGLE image post:", pub_resp.text)
+        # pub_resp.json() often contains the published post id; print it plainly
+        pub_json = pub_resp.json()
+        published_post_id = pub_json.get("id") or pub_json.get("post_id") or json.dumps(pub_json)
+        print("Published IG SINGLE image post id:", published_post_id)
         return 0
 
+    # Carousel flow
     child_ids = []
-    for idx, pu in enumerate(processed_urls):
-        print(f"Creating child container for: {pu}")
+    for pu in processed_urls:
+        print("Creating child container for:", pu)
         resp = create_image_container(pu, is_carousel_item=True)
-        print("CREATE container returned", resp.status_code, "->", resp.text)
+        print("CREATE child returned", resp.status_code, "->", resp.text)
         if resp.status_code not in (200, 201):
             print("create_image_container failed:", resp.status_code, resp.text, file=sys.stderr)
             sys.exit(1)
         cid = resp.json().get("id")
+        if not cid:
+            print("No child id returned in response:", resp.text, file=sys.stderr)
+            sys.exit(1)
         child_ids.append(cid)
 
     print("Creating parent CAROUSEL container with children:", child_ids)
@@ -314,19 +363,27 @@ def main():
         print("Parent creation failed:", parent_resp.status_code, parent_resp.text, file=sys.stderr)
         sys.exit(1)
     parent_id = parent_resp.json().get("id")
+    if not parent_id:
+        print("No parent creation id returned:", parent_resp.text, file=sys.stderr)
+        sys.exit(1)
+
     pub_resp = publish_parent_container(parent_id)
     print("Publish response:", pub_resp.status_code, pub_resp.text)
     if pub_resp.status_code not in (200, 201):
         print("Publish failed:", pub_resp.status_code, pub_resp.text, file=sys.stderr)
         sys.exit(1)
-    print("Published IG CAROUSEL:", pub_resp.text)
+
+    pub_json = pub_resp.json()
+    published_post_id = pub_json.get("id") or pub_json.get("post_id") or json.dumps(pub_json)
+    print("Published IG CAROUSEL post id:", published_post_id)
     return 0
 
 if __name__ == "__main__":
     try:
-        sys.exit(main() or 0)
+        rc = main() or 0
+        sys.exit(rc)
     except Exception as e:
-        print("Exception in ig.py:", file=sys.stderr)
+        print("Exception in send-ig.py:", file=sys.stderr)
         import traceback
         traceback.print_exc()
         sys.exit(1)
