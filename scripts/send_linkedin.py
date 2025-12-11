@@ -9,6 +9,8 @@ Environment variables required:
   LINKEDIN_ACCESS_TOKEN  (string)
   LINKEDIN_PERSON        (string)  # numeric LinkedIn person id, e.g. grQXp0KaKF
   BASE_URL               (optional) fallback when JSON lacks absolute URL
+  LINKEDIN_KEEP_URL_WITH_IMAGE: "true" or "false"
+  LINKEDIN_POST_IMAGE: "true" or "false"
 """
 
 import os
@@ -41,7 +43,6 @@ def make_caption(article, base_url=None):
     title = article.get("title", "").strip()
     excerpt = article.get("excerpt", "").strip()
     url = article.get("url", "")
-    # support 'path' fallback
     if not url and base_url and article.get("path"):
         url = urljoin(base_url.rstrip("/") + "/", article.get("path").lstrip("/"))
     hashtags = article.get("hashtags")
@@ -72,6 +73,35 @@ def make_caption(article, base_url=None):
         parts.append(tagline)
     return "\n\n".join(parts)
 
+def make_caption_no_url(article, base_url=None):
+    title = article.get("title", "").strip()
+    excerpt = article.get("excerpt", "").strip()
+    hashtags = article.get("hashtags")
+    if not hashtags:
+        words = (title + " " + excerpt).split()
+        tags = []
+        for w in words:
+            w = ''.join(ch for ch in w if ch.isalnum())
+            if len(w) > 3:
+                tag = w.lower()
+                if tag not in tags:
+                    tags.append(tag)
+            if len(tags) >= 4:
+                break
+        hashtags = ["#" + t for t in tags]
+    if isinstance(hashtags, list):
+        tagline = " ".join(hashtags)
+    else:
+        tagline = str(hashtags).strip()
+    parts = []
+    if title:
+        parts.append(title)
+    if excerpt:
+        parts.append(excerpt)
+    if tagline:
+        parts.append(tagline)
+    return "\n\n".join(parts)
+
 def is_remote(url):
     p = urlparse(url)
     return p.scheme in ("http", "https")
@@ -95,10 +125,6 @@ def process_image_bytes(img_bytes, max_px=1200):
     return out
 
 def register_upload(owner_urn, access_token):
-    """
-    Register an upload for feedshare-image and return (asset_urn, upload_url).
-    owner_urn must be like 'urn:li:person:grQXp0KaKF'
-    """
     url = f"{LINKEDIN_API_BASE}/assets?action=registerUpload"
     body = {
       "registerUploadRequest": {
@@ -188,11 +214,19 @@ def main():
     person_id = get_env("LINKEDIN_PERSON")
     base_url = os.getenv("BASE_URL", "").strip() or None
 
+    keep_url_with_image = os.getenv("LINKEDIN_KEEP_URL_WITH_IMAGE", "true").lower() in ("1","true","yes")
+    post_image_env = os.getenv("LINKEDIN_POST_IMAGE", "true").lower()
+    post_image = post_image_env not in ("0","false","no")
+
     author_urn = f"urn:li:person:{person_id}"
 
     article = read_json(args.json)
-    caption = make_caption(article, base_url=base_url)
+    full_caption = make_caption(article, base_url=base_url)
+    caption_no_url = make_caption_no_url(article, base_url=base_url)
     title = article.get("title", "")
+
+    # pick default caption (we will re-select if image present)
+    caption_to_send = full_caption
 
     images = article.get("images") or article.get("image") or []
     if isinstance(images, str):
@@ -203,11 +237,17 @@ def main():
     asset_urn = None
 
     try:
-        if images:
+        if post_image and images:
             first = images[0]
             if not first:
                 logger.info("First image is empty. Posting text-only.")
             else:
+                # decide caption when image present
+                if keep_url_with_image:
+                    caption_to_send = full_caption
+                else:
+                    caption_to_send = caption_no_url
+
                 if is_remote(first):
                     logger.info("Downloading remote image: %s", first)
                     img_bytes = download_image(first)
@@ -234,6 +274,9 @@ def main():
                     logger.info("Registered asset: %s", asset_urn)
                     upload_image_to_url(upload_url, processed)
                     logger.info("Uploaded image to LinkedIn uploadUrl.")
+        else:
+            # no image or explicitly disabled: send full caption (includes URL)
+            caption_to_send = full_caption
     except requests.HTTPError as e:
         logger.error("HTTP error while handling image or LinkedIn endpoint: %s", e)
         logger.error("Posting text-only instead.")
@@ -244,7 +287,7 @@ def main():
         asset_urn = None
 
     try:
-        resp = create_ugc_post(author_urn, access_token, caption, asset_urn=asset_urn, title_text=title)
+        resp = create_ugc_post(author_urn, access_token, caption_to_send, asset_urn=asset_urn, title_text=title)
         logger.info("LinkedIn post created successfully: %s", resp.get("id", resp))
     except requests.HTTPError as e:
         if e.response is not None:
