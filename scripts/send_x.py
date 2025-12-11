@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 """
-send_x.py — Post title/excerpt + article URL + hashtags to X (text-only).
-Supports optional threading: if excerpt is longer than fits, post remainder as replies.
+Debuggable send_x.py — posts title/excerpt + URL + hashtags to X (text-only).
+This variant prints get_me() info and full error response on failure.
 
-Enable threading by setting:
-    X_USE_THREAD=true
-in your GitHub Actions workflow.
+Use exactly as before:
+  python3 scripts/send_x.py path/to/article.json
 
-Main tweet layout:
-    <Title + Excerpt (truncated)>
-    <URL>
-    <#tags>
+Env required (GitHub Actions secrets):
+  X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET, BASE_URL (optional)
 
-Replies (if enabled):
-    Remaining excerpt split into 260-char chunks.
-
+This file is safe to run in your workflow for debugging — it will still attempt the post.
 """
 
 import os
@@ -28,28 +23,22 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 try:
     import tweepy
-except Exception:
-    logging.error("tweepy not installed.")
+except Exception as e:
+    logging.error("tweepy not installed: %s", e)
     sys.exit(2)
 
-# Credentials
+# Credentials from env
 X_API_KEY = os.getenv("X_API_KEY")
 X_API_SECRET = os.getenv("X_API_SECRET")
 X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
 X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
-
 BASE_URL = os.getenv("BASE_URL", "https://seechuragro.in").rstrip('/')
 
 MAX_TAGS = 8
 MIN_WORD_LEN = 4
-MAX_TWEET_LEN = 280           # strict X limit
-URL_PLACEHOLDER_LEN = 23      # t.co shortener length
-USE_THREAD = os.getenv("X_USE_THREAD", "false").lower() in ("1", "true", "yes")
-
-
-# ----------------------------
-# Helpers
-# ----------------------------
+MAX_TWEET_LEN = 280
+URL_PLACEHOLDER_LEN = 23
+USE_THREAD = os.getenv("X_USE_THREAD", "false").lower() in ("1","true","yes")
 
 def normalize_hashtag_token(tok: str) -> str:
     t = re.sub(r'[^0-9A-Za-z]', '', tok)
@@ -73,18 +62,15 @@ def extract_hashtags_field(raw):
         items = raw
     else:
         items = re.split(r'[\s,]+', str(raw))
-
     cleaned = []
     for item in items:
         s = str(item).strip().lstrip("#")
         if s:
             cleaned.append("#" + normalize_hashtag_token(s))
-    seen = set()
-    out = []
+    seen = set(); out = []
     for h in cleaned:
         if h.lower() not in seen:
-            seen.add(h.lower())
-            out.append(h)
+            seen.add(h.lower()); out.append(h)
     return out
 
 def build_absolute_url(raw_url: str, slug: str) -> str:
@@ -111,30 +97,17 @@ def build_hashtags_list(article):
     return tags[:MAX_TAGS]
 
 def split_text_into_chunks(text: str, max_len: int):
-    """
-    Break large text into <= max_len pieces.
-    """
     words = text.strip().split()
     chunks = []
-    cur = []
-    cur_len = 0
+    cur = []; cur_len = 0
     for w in words:
         extra = len(w) + (1 if cur else 0)
         if cur_len + extra <= max_len:
-            cur.append(w)
-            cur_len += extra
+            cur.append(w); cur_len += extra
         else:
-            chunks.append(" ".join(cur))
-            cur = [w]
-            cur_len = len(w)
-    if cur:
-        chunks.append(" ".join(cur))
+            chunks.append(" ".join(cur)); cur = [w]; cur_len = len(w)
+    if cur: chunks.append(" ".join(cur))
     return chunks
-
-
-# ----------------------------
-# MAIN ASSEMBLY
-# ----------------------------
 
 def assemble_main_and_remainder(article):
     title = article.get("title", "") or ""
@@ -149,12 +122,8 @@ def assemble_main_and_remainder(article):
     url = build_absolute_url(raw_url, slug)
     tags_list = build_hashtags_list(article)
 
-    # truncate body to fit: body + newline + url + newline + tags
-    reserved = 0
-    reserved += 1 + URL_PLACEHOLDER_LEN   # "\n" + URL
-    if tags_list:
-        reserved += 1                     # "\n" before tags
-
+    reserved = 1 + URL_PLACEHOLDER_LEN
+    if tags_list: reserved += 1
     available = MAX_TWEET_LEN - reserved
     if available < 0:
         main_body = ""
@@ -162,47 +131,45 @@ def assemble_main_and_remainder(article):
         if len(body) <= available:
             main_body = body
         else:
-            # truncate without cutting mid-sentence too harshly
             if available > 3:
                 main_body = body[:available-3].rstrip() + "..."
             else:
                 main_body = body[:available].rstrip()
 
-    # Determine remainder from excerpt (not title)
-    if title and excerpt:
-        # compute how many chars of excerpt were used
-        consumed_excerpt = main_body.replace(title, "", 1).lstrip() if main_body.startswith(title) else ""
-        # fallback: simply compute difference
-        remainder = ""
-        if len(main_body) < len(body):
-            remainder = body[len(main_body):].lstrip()
-    else:
-        remainder = ""
-        if len(main_body) < len(body):
-            remainder = body[len(main_body):].lstrip()
+    remainder = ""
+    if len(main_body) < len(body):
+        remainder = body[len(main_body):].lstrip()
 
-    # Assemble main tweet
     parts = []
-    if main_body:
-        parts.append(main_body)
-    if url:
-        parts.append(url)
-    if tags_list:
-        parts.append(" ".join(tags_list))
+    if main_body: parts.append(main_body)
+    if url: parts.append(url)
+    if tags_list: parts.append(" ".join(tags_list))
     final_main = "\n".join(parts)
-
     return final_main, remainder
 
+# --- debug helper to dump full exception info ---
+def log_exception_details(e):
+    logging.error("Exception repr: %s", repr(e))
+    try:
+        # tweepy HTTP exceptions sometimes wrap response in e.response
+        if hasattr(e, "response") and e.response is not None:
+            try:
+                text = getattr(e.response, "text", None)
+                if text:
+                    logging.error("HTTP response text: %s", text)
+            except Exception:
+                logging.exception("Error printing e.response")
+        # some exceptions include args with body
+        if getattr(e, "args", None):
+            logging.error("Exception args: %s", e.args)
+    except Exception:
+        logging.exception("While logging exception details")
 
-# ----------------------------
-# POSTING
-# ----------------------------
-
+# --- posting with debug ---
 def post_text_and_thread(main_text: str, remainder: str):
     if not all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET]):
-        logging.error("Missing X credentials.")
+        logging.error("Missing one or more X credentials in env.")
         return False
-
     try:
         client = tweepy.Client(
             consumer_key=X_API_KEY,
@@ -212,47 +179,66 @@ def post_text_and_thread(main_text: str, remainder: str):
             wait_on_rate_limit=True
         )
 
-        # Main tweet
-        resp = client.create_tweet(text=main_text)
-        logging.info("Main tweet posted: %s", resp.data)
-        tweet_id = resp.data.get("id")
+        # DEBUG: whoami
+        try:
+            me = client.get_me()
+            logging.info("DEBUG get_me -> %s", getattr(me, "data", me))
+        except Exception as e:
+            logging.error("DEBUG get_me failed: %s", repr(e))
+            log_exception_details(e)
+            # don't bail yet; continue to try posting so we get full error body if any
+        # Post main tweet
+        try:
+            resp = client.create_tweet(text=main_text)
+            logging.info("Main tweet response: %s", getattr(resp, "data", resp))
+            tweet_id = None
+            # try to extract id safely
+            if hasattr(resp, "data") and isinstance(resp.data, dict):
+                tweet_id = resp.data.get("id")
+            elif getattr(resp, "data", None) and getattr(resp.data, "id", None):
+                tweet_id = resp.data.id
+        except Exception as e:
+            logging.error("Posting failed when creating main tweet: %s", repr(e))
+            log_exception_details(e)
+            return False
 
-        # Threading disabled or nothing left → stop
+        # Threading if needed
         if not USE_THREAD or not remainder:
             return True
 
-        # Replies for remainder
         chunks = split_text_into_chunks(remainder, 260)
         parent = tweet_id
         for chunk in chunks:
-            r = client.create_tweet(text=chunk, in_reply_to_tweet_id=parent)
-            logging.info("Reply posted: %s", r.data)
-            parent = r.data.get("id", parent)
+            try:
+                r = client.create_tweet(text=chunk, in_reply_to_tweet_id=parent)
+                logging.info("Reply posted: %s", getattr(r, "data", r))
+                if hasattr(r, "data") and isinstance(r.data, dict):
+                    parent = r.data.get("id", parent)
+                elif getattr(r, "data", None) and getattr(r.data, "id", None):
+                    parent = r.data.id or parent
+            except Exception as e:
+                logging.error("Reply posting failed: %s", repr(e))
+                log_exception_details(e)
+                return False
 
         return True
 
     except Exception as e:
-        logging.error("Failed posting to X: %s", e)
+        logging.error("Unexpected failure in post_text_and_thread: %s", repr(e))
+        log_exception_details(e)
         return False
 
-
-# ----------------------------
-# MAIN
-# ----------------------------
-
 def usage():
-    print("Usage: send_x.py <path/to/article.json>")
+    print("Usage: send_x.py <article.json>")
     sys.exit(2)
 
 def main():
     if len(sys.argv) < 2:
         usage()
-
     jf = Path(sys.argv[1])
     if not jf.exists():
         logging.error("JSON not found: %s", jf)
         sys.exit(2)
-
     try:
         data = json.loads(jf.read_text(encoding="utf-8"))
     except Exception as e:
@@ -260,12 +246,9 @@ def main():
         sys.exit(2)
 
     main_text, remainder = assemble_main_and_remainder(data)
-
-    logging.info("Posting main tweet:\n%s", main_text[:500])
+    logging.info("Posting (preview):\n%s", main_text[:1000] + ("..." if len(main_text) > 1000 else ""))
     ok = post_text_and_thread(main_text, remainder)
-
     sys.exit(0 if ok else 3)
-
 
 if __name__ == "__main__":
     main()
