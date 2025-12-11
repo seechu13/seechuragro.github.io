@@ -18,13 +18,18 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install requests
-        run: python3 -m pip install --upgrade pip && pip3 install requests
+      - name: Install dependencies (requests + pillow)
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install requests pillow
 
       - name: Run article processor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: |
           echo "Running process_articles.py"
-          export TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
-          export TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
-          export BASE_URL="${{ secrets.BASE_URL }}"
           python3 scripts/process_articles.py
