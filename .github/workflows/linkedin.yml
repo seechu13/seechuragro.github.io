@@ -58,6 +58,8 @@ jobs:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON: ${{ secrets.LINKEDIN_PERSON }} # numeric person id only, e.g. grQXp0KaKF
           BASE_URL: ${{ secrets.BASE_URL }} # optional fallback
+          LINKEDIN_KEEP_URL_WITH_IMAGE: "true"   # <--- keep URL even when posting an image
+          LINKEDIN_POST_IMAGE: "true"            # set to "false" to post text+URL only
         run: |
           set -euo pipefail
           IFS=$'\n'
