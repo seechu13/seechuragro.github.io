@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
-Telegram poster with robust image handling:
-- Downloads remote URLs
-- Opens with Pillow
-- Resizes to max 1280px (Telegram safe)
-- Converts to clean JPEG
-- Uploads as photo
-- Sends caption as text first (title, excerpt, URL, hashtags)
-"""
+scripts/send_telegram.py
 
+- Downloads remote images
+- Uses Pillow to resize/convert images to safe JPEGs (max 1280px)
+- Sends caption (title/excerpt/url/hashtags) as text first
+- Uploads images as photos
+"""
 import os
 import sys
 import json
@@ -41,9 +39,9 @@ STOPWORDS = {
     'your','you','our','seechuragro'
 }
 
-# =====================================================
-# HASHTAGS
-# =====================================================
+# --------------------------
+# Hashtags helpers
+# --------------------------
 def normalize_token(t):
     return re.sub(r'[^0-9A-Za-z]+', '', str(t)).strip().lower()
 
@@ -53,7 +51,7 @@ def gen_hashtags_from_text(title, excerpt, limit=4):
     words = [w for w in words if w not in STOPWORDS and len(w) > 2]
     ctr = Counter(words)
     tags = []
-    for w,_ in ctr.most_common(limit*2):
+    for w, _ in ctr.most_common(limit * 2):
         token = normalize_token(w)
         if token and token not in tags:
             tags.append(token)
@@ -64,17 +62,17 @@ def gen_hashtags_from_text(title, excerpt, limit=4):
 def hashtags_to_text(h, title=None, excerpt=None):
     if not h:
         tags = gen_hashtags_from_text(title, excerpt)
-        return " ".join("#"+t for t in tags)
+        return " ".join("#"+t for t in tags) if tags else ""
     if isinstance(h, list):
         tags = [str(x).strip().lstrip('#') for x in h if str(x).strip()]
     else:
         s = str(h).strip()
         tags = [p.strip().lstrip('#') for p in (s.split(",") if "," in s else s.split()) if p.strip()]
-    return " ".join("#" + t for t in tags)
+    return " ".join("#" + t for t in tags) if tags else ""
 
-# =====================================================
-# URL BUILDER
-# =====================================================
+# --------------------------
+# URL builder
+# --------------------------
 def build_url(raw_url, slug):
     if raw_url:
         s = raw_url.strip()
@@ -85,47 +83,38 @@ def build_url(raw_url, slug):
         return f"{BASE_URL}/{str(slug).lstrip('/')}"
     return ""
 
-# =====================================================
-# IMAGE DOWNLOAD + PILLOW RESIZE + JPEG CONVERSION
-# =====================================================
+# --------------------------
+# Image download + Pillow resize
+# --------------------------
 def download_and_prepare(url, max_size=1280):
-    """
-    Downloads the image → opens with Pillow → resizes → saves as JPEG.
-    Returns path to processed JPEG or None.
-    """
     try:
         logging.info("Downloading: %s", url)
         r = requests.get(url, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
         if r.status_code != 200:
             logging.error("Download failed (%s) for %s", r.status_code, url)
             return None
-
         img = Image.open(BytesIO(r.content)).convert("RGB")
         w, h = img.size
-
-        # Resize preserving aspect ratio
-        if max(w,h) > max_size:
+        if max(w, h) > max_size:
             img.thumbnail((max_size, max_size))
-
-        # Filename based on URL hash
         hsh = hashlib.sha256(url.encode()).hexdigest()[:16]
         out_path = TMP_DIR / f"{hsh}.jpg"
         img.save(out_path, "JPEG", quality=90)
-
         logging.info("Saved processed image: %s", out_path)
         return str(out_path)
-
     except Exception as e:
         logging.error("Image processing failed for %s : %s", url, e)
         return None
 
-# =====================================================
-# TELEGRAM API
-# =====================================================
+# --------------------------
+# Telegram API helpers
+# --------------------------
 def send_text(msg):
     url = f"{API_BASE}/sendMessage"
     r = requests.post(url, json={"chat_id": CHAT_ID, "text": msg, "parse_mode": "HTML"})
     logging.info("sendMessage: %s", r.status_code)
+    if not r.ok:
+        logging.error("sendMessage response: %s", r.text)
     return r.ok
 
 def send_photo(path):
@@ -143,16 +132,20 @@ def send_photo(path):
         logging.error("Photo upload failed: %s", e)
         return False
 
-# =====================================================
-# MAIN
-# =====================================================
+# --------------------------
+# Main
+# --------------------------
 def main():
     if len(sys.argv) < 2:
         print("Usage: send_telegram.py article.json")
         sys.exit(2)
 
     jf = Path(sys.argv[1])
-    data = json.loads(jf.read_text())
+    if not jf.exists():
+        logging.error("JSON file not found: %s", jf)
+        sys.exit(2)
+
+    data = json.loads(jf.read_text(encoding="utf-8"))
 
     title   = data.get("title","")
     excerpt = data.get("excerpt","") or data.get("description","")
@@ -166,31 +159,33 @@ def main():
 
     caption = "\n\n".join(x for x in [f"<b>{title}</b>", excerpt, url, tags_text] if x)
 
-    # 1️⃣ Always send caption first
-    send_text(caption)
+    # 1) Send caption first
+    if caption:
+        logging.info("Sending caption text message first.")
+        send_text(caption)
 
-    # 2️⃣ Process up to 4 images
+    # 2) Process up to 4 images
     local_imgs = []
     for img_url in images[:4]:
         if isinstance(img_url, str) and img_url.startswith("http"):
             processed = download_and_prepare(img_url)
             if processed:
                 local_imgs.append(processed)
+            else:
+                logging.warning("Skipping image (download/processing failed): %s", img_url)
         else:
-            # Local file
             p = Path(img_url)
             if p.exists():
-                # Process local file too
                 try:
                     img = Image.open(p).convert("RGB")
                     img.thumbnail((1280,1280))
                     out_path = TMP_DIR / (p.stem + "_resized.jpg")
                     img.save(out_path, "JPEG", quality=90)
                     local_imgs.append(str(out_path))
-                except:
-                    pass
+                except Exception as e:
+                    logging.warning("Failed processing local image %s: %s", p, e)
 
-    # 3️⃣ Upload each image
+    # 3) Upload each processed image
     ok = True
     for lp in local_imgs:
         if not send_photo(lp):
