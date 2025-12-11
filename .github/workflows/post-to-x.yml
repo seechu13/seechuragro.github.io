@@ -23,8 +23,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  MAX_WIDTH: "1280"
-  JPEG_QUALITY: "85"
   UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
   MAX_WAIT_SECONDS: "180"
   POLL_INTERVAL: "10"
@@ -39,8 +37,6 @@ env:
 
 jobs:
   post-x:
-    # Make sure GITHUB_TOKEN is defined for the shell and scripts,
-    # and provide BASE_URL used to build absolute article URLs.
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BASE_URL: "https://seechuragro.in"
@@ -63,9 +59,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y jq curl imagemagick git
+          sudo apt-get install -y jq curl git
           python3 -m pip install --upgrade pip
-          pip install tweepy Pillow requests
+          pip install tweepy requests
 
       - name: Wait for upstream workflow (push only)
         if: github.event_name == 'push'
@@ -156,7 +152,6 @@ jobs:
           if [ -z "$CLEAN" ]; then
             echo "json_files=" >> $GITHUB_OUTPUT
           else
-            # use <<NL>> separator to avoid issues with commas in filenames
             ENC=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
             echo "json_files=${ENC}" >> $GITHUB_OUTPUT
           fi
@@ -173,7 +168,7 @@ jobs:
               echo "Skipping: $jf"
               continue
             fi
-            echo "Posting: $jf"
+            echo "Posting (hashtags only): $jf"
             python3 scripts/send_x.py "$jf"
             echo "--------------------------------"
           done
