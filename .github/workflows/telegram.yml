@@ -10,119 +10,21 @@ jobs:
   telegram-post:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo (full history)
+      - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install requests
+        run: python3 -m pip install --upgrade pip && pip3 install requests
+
+      - name: Run article processor
         run: |
-          python3 -m pip install --upgrade pip
-          pip3 install requests
-
-      - name: Prepare and run article processor
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          BASE_URL: ${{ secrets.BASE_URL }}
-          GITHUB_SHA: ${{ github.sha }}
-          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
-        run: |
-          set -euo pipefail
-          cat > .github/actions/process_articles.py <<'PY'
-#!/usr/bin/env python3
-import os, subprocess, sys, json
-from pathlib import Path
-
-# env
-sha = os.environ.get("GITHUB_SHA")
-before = os.environ.get("GITHUB_EVENT_BEFORE", "")
-repo_root = Path(".").resolve()
-
-def git_changed_articles(before, sha):
-    try:
-        if before:
-            out = subprocess.check_output(["git", "diff", "--name-only", before, sha], stderr=subprocess.DEVNULL).decode().strip()
-        else:
-            out = subprocess.check_output(["git", "diff", "--name-only", "HEAD~1", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
-    except subprocess.CalledProcessError:
-        out = ""
-    files = [s.strip() for s in out.splitlines() if s.strip().startswith("articles/") and s.strip().endswith(".json")]
-    return files
-
-def fallback_all_articles():
-    p = repo_root / "articles"
-    if not p.exists():
-        return []
-    return [str(x) for x in sorted(p.glob("*.json"))]
-
-def images_ok(json_path):
-    try:
-        data = json.loads(Path(json_path).read_text(encoding="utf-8"))
-    except Exception as e:
-        print(f"ERROR: cannot read JSON {json_path}: {e}")
-        return False
-    imgs = data.get("images") or data.get("cover_image") or data.get("cover_images") or []
-    for im in imgs:
-        if not isinstance(im, str):
-            continue
-        s = im.strip()
-        if not s:
-            continue
-        low = s.lower()
-        if low.startswith("http://") or low.startswith("https://") or s.startswith("//"):
-            continue
-        p = Path(s.lstrip("/"))
-        if not p.exists():
-            print(f"MISSING local image for {json_path}: {s}")
-            return False
-    return True
-
-def post_via_script(json_path):
-    try:
-        print(f"Posting {json_path} via scripts/send_telegram.py")
-        r = subprocess.run(["python3","scripts/send_telegram.py", json_path], check=False)
-        return r.returncode == 0
-    except Exception as e:
-        print("ERROR running send_telegram.py:", e)
-        return False
-
-def main():
-    changed = git_changed_articles(before, sha)
-    if not changed:
-        changed = fallback_all_articles()
-    if not changed:
-        print("No article JSON files to process.")
-        return 0
-    print("Files to process:", changed)
-    overall_ok = True
-    for jf in changed:
-        jf = jf.strip()
-        if not jf:
-            continue
-        if not Path(jf).exists():
-            print(f"SKIP (not in workspace): {jf}")
-            continue
-        print(f"--- Processing {jf} ---")
-        ok = images_ok(jf)
-        if not ok:
-            print(f"SKIP due to missing local images: {jf}")
-            overall_ok = False
-            continue
-        posted = post_via_script(jf)
-        if not posted:
-            print(f"Posting failed for {jf}")
-            overall_ok = False
-            continue
-        print(f"Posted successfully: {jf}")
-    return 0 if overall_ok else 2
-
-if __name__ == '__main__':
-    sys.exit(main())
-PY
-          python3 .github/actions/process_articles.py
+          echo "Running process_articles.py"
+          export TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
+          export TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
+          export BASE_URL="${{ secrets.BASE_URL }}"
+          python3 scripts/process_articles.py
