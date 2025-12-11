@@ -25,26 +25,10 @@ jobs:
           python3 -m pip install --upgrade pip
           pip3 install requests
 
-      - name: Show changed files (debug)
+      - name: Show commit & changed files (debug)
         run: |
           echo "COMMIT: ${{ github.sha }}"
           git --no-pager show --name-only --pretty="" ${{ github.sha }} | sed -n '1,200p' || true
-
-      - name: Determine changed article JSONs
-        id: changed_files
-        run: |
-          # find JSON files under articles/ changed in this push (safe fallback if previous commit unavailable)
-          PREV="${{ github.sha }}~1"
-          CHANGED=$(git diff --name-only "$PREV" ${{ github.sha }} 2>/dev/null | grep '^articles/.*\.json$' || true)
-          if [ -z "$CHANGED" ]; then
-            # fallback: list all jsons in articles (useful for manual dispatch)
-            CHANGED=$(ls -1 articles/*.json 2>/dev/null || true)
-          fi
-          echo "Changed files: $CHANGED"
-          # put into env for next step
-          echo "CHANGED_FILES<<EOF" >> $GITHUB_OUTPUT
-          printf "%s\n" "$CHANGED" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Process changed article JSONs and post to Telegram
         env:
@@ -53,61 +37,73 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
         run: |
           set -euo pipefail
-          CHANGED_FILES="${{ steps.changed_files.outputs.CHANGED_FILES }}"
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "No changed article JSON files found - nothing to do."
+
+          # Determine changed JSON files under articles/
+          PREV="${{ github.sha }}~1"
+          CHANGED=$(git diff --name-only "$PREV" "${{ github.sha }}" 2>/dev/null | grep '^articles/.*\.json$' || true)
+          if [ -z "$CHANGED" ]; then
+            # fallback: if manual dispatch or unable to diff, use all jsons in articles/
+            CHANGED=$(ls -1 articles/*.json 2>/dev/null || true)
+          fi
+
+          if [ -z "$CHANGED" ]; then
+            echo "No article JSON files found under articles/ - nothing to do."
             exit 0
           fi
 
+          echo "Files to process:"
+          echo "$CHANGED"
+
           # iterate over each changed file
-          echo "$CHANGED_FILES" | while IFS= read -r jf || [ -n "$jf" ]; do
+          echo "$CHANGED" | while IFS= read -r jf || [ -n "$jf" ]; do
             jf_trimmed="$(echo "$jf" | tr -d '\r')"
             [ -z "$jf_trimmed" ] && continue
             if [ ! -f "$jf_trimmed" ]; then
               echo "Warning: $jf_trimmed does not exist in workspace - skipping."
               continue
             fi
-            echo "Processing article JSON: $jf_trimmed"
+            echo "---- Processing $jf_trimmed ----"
 
-            # Validate images presence for local paths (allow http/https)
+            # Validate non-HTTP images exist locally (allow http/https)
             python3 - "$jf_trimmed" <<'PY'
-import sys, json, re
+import sys, json
 from pathlib import Path
 jf=sys.argv[1]
 data=json.load(open(jf, encoding='utf-8'))
 imgs = data.get('images') or data.get('cover_image') or data.get('cover_images') or []
 missing=[]
 for im in imgs:
-    if not isinstance(im, str): continue
+    if not isinstance(im, str):
+        continue
     s=im.strip()
+    if not s:
+        continue
     if s.lower().startswith('http://') or s.lower().startswith('https://') or s.startswith('//'):
         continue
-    # remove leading slash if present
     p = Path(s.lstrip('/'))
     if not p.exists():
         missing.append(s)
 if missing:
     print("MISSING_IMAGES", missing)
-    # exit non-zero to prevent posting for this file
     sys.exit(2)
 print("ALL_IMAGES_PRESENT")
 PY
             RC=$? || true
             if [ $RC -ne 0 ]; then
-              echo "Image validation failed for $jf_trimmed — aborting this file (check assets committed)."
-              exit $RC
+              echo "Image validation failed for $jf_trimmed — ensure local images are committed or use absolute URLs. Skipping this file."
+              continue
             fi
 
-            # Post to Telegram using your existing script
+            # Post to Telegram using your script
             echo "Posting $jf_trimmed to Telegram..."
             python3 scripts/send_telegram.py "$jf_trimmed"
             POST_RC=$? || true
             if [ $POST_RC -ne 0 ]; then
               echo "Telegram post failed for $jf_trimmed (exit $POST_RC)."
-              exit $POST_RC
+              # continue to next file instead of failing entire job
+              continue
             fi
             echo "Posted $jf_trimmed successfully."
           done
 
-      - name: Done
-        run: echo "Telegram posting job completed."
+          echo "All done."
