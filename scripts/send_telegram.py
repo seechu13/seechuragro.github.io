@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """
-Minimal Telegram poster for article JSON.
+scripts/send_telegram.py
 
-Usage:
-  python3 scripts/send_telegram.py path/to/article.json
+Telegram poster for article JSON.
 
-Env (in Actions):
-  TELEGRAM_BOT_TOKEN
-  TELEGRAM_CHAT_ID
-  BASE_URL (optional)
+Changes in this version:
+- If 'hashtags' missing, auto-generate up to 4 tags from the title/excerpt.
+- When multiple image URLs are provided: try sendMediaGroup; if it fails, fallback to sending each photo individually.
+- Logs API responses (helpful for debugging).
 """
-import os, sys, json, logging
+import os
+import sys
+import json
+import logging
 from pathlib import Path
 import requests
+import re
+from collections import Counter
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -25,16 +29,46 @@ if not BOT_TOKEN or not CHAT_ID:
     logging.error("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID in environment.")
     sys.exit(2)
 
-def hashtags_to_text(h):
+
+STOPWORDS = {
+    'the','and','a','an','to','of','for','in','on','with','is','are','be','by','from',
+    'this','that','we','our','as','it','its','at','will','or','which','about','into',
+    'your','you','our','seechuragro'
+}
+
+
+def normalize_token(t):
+    s = re.sub(r'[^0-9A-Za-z]+', ' ', str(t)).strip().lower()
+    return s
+
+
+def gen_hashtags_from_text(title, excerpt, limit=4):
+    text = " ".join(filter(None, [title or "", excerpt or ""]))
+    words = re.findall(r"[A-Za-z0-9]+", text.lower())
+    words = [w for w in words if w not in STOPWORDS and len(w) > 2]
+    ctr = Counter(words)
+    tags = []
+    for w, _ in ctr.most_common(limit * 2):
+        token = normalize_token(w)
+        if not token or token in tags:
+            continue
+        tags.append(token)
+        if len(tags) >= limit:
+            break
+    return tags
+
+
+def hashtags_to_text(h, title=None, excerpt=None):
     if not h:
-        return ""
+        tags = gen_hashtags_from_text(title, excerpt, limit=4)
+        return " ".join("#" + t for t in tags) if tags else ""
     if isinstance(h, list):
-        tags = [str(x).strip() for x in h if str(x).strip()]
+        tags = [str(x).strip().lstrip('#') for x in h if str(x).strip()]
     else:
         s = str(h).strip()
-        tags = [p.strip() for p in (s.split(",") if "," in s else s.split()) if p.strip()]
-    tags = [t.lstrip('#') for t in tags]
+        tags = [p.strip().lstrip('#') for p in (s.split(",") if "," in s else s.split()) if p.strip()]
     return " ".join("#" + t for t in tags) if tags else ""
+
 
 def build_url(raw_url, slug):
     if raw_url:
@@ -48,6 +82,7 @@ def build_url(raw_url, slug):
         return f"{BASE_URL}/{str(slug).lstrip('/')}"
     return ""
 
+
 def send_text(chat_id, text):
     url = f"{API_BASE}/sendMessage"
     r = requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=30)
@@ -55,6 +90,7 @@ def send_text(chat_id, text):
     if not r.ok:
         logging.error("sendMessage response: %s", r.text)
     return r.ok
+
 
 def send_photo(chat_id, photo, caption=None):
     url = f"{API_BASE}/sendPhoto"
@@ -77,6 +113,7 @@ def send_photo(chat_id, photo, caption=None):
         logging.error("sendPhoto response: %s", r.text)
     return r.ok
 
+
 def send_media_group(chat_id, photos, caption=None):
     url = f"{API_BASE}/sendMediaGroup"
     media = []
@@ -91,6 +128,7 @@ def send_media_group(chat_id, photos, caption=None):
     if not r.ok:
         logging.error("sendMediaGroup response: %s", r.text)
     return r.ok
+
 
 def main():
     if len(sys.argv) < 2:
@@ -107,10 +145,12 @@ def main():
     raw_url = data.get("url") or data.get("link") or ""
     slug = data.get("slug") or ""
     images = data.get("images") or []
+    if not images:
+        images = data.get("cover_image") or data.get("cover_images") or []
     hashtags_raw = data.get("hashtags") or data.get("tags") or ""
 
     url = build_url(raw_url, slug)
-    tags_text = hashtags_to_text(hashtags_raw)
+    tags_text = hashtags_to_text(hashtags_raw, title=title, excerpt=excerpt)
 
     parts = []
     if title:
@@ -133,19 +173,48 @@ def main():
         logging.info("One image provided — sending photo with caption.")
         ok = send_photo(CHAT_ID, photos[0], caption=caption)
     else:
-        logging.info("Multiple images provided (%d) — sending media group or fallback uploads.", len(photos))
+        logging.info("Multiple images provided (%d) — trying media group.", len(photos))
+        # separate local vs remote
         local_paths = [p for p in photos if Path(p).exists()]
-        if local_paths:
+        remote_urls = [p for p in photos if not Path(p).exists()]
+
+        # if some local files exist, upload individually (first with caption)
+        if local_paths and remote_urls:
+            logging.info("Mixed local and remote images — uploading individually.")
             for i, p in enumerate(photos):
                 if i == 0:
                     ok = send_photo(CHAT_ID, p, caption=caption)
                 else:
                     ok = send_photo(CHAT_ID, p, caption=None)
                 if not ok:
+                    logging.error("Failed uploading image: %s", p)
+                    break
+        elif local_paths:
+            logging.info("All images are local — uploading individually.")
+            for i, p in enumerate(photos):
+                if i == 0:
+                    ok = send_photo(CHAT_ID, p, caption=caption)
+                else:
+                    ok = send_photo(CHAT_ID, p, caption=None)
+                if not ok:
+                    logging.error("Failed uploading local image: %s", p)
                     break
         else:
+            # all remote URLs — try media group first
             ok = send_media_group(CHAT_ID, photos, caption=caption)
+            if not ok:
+                logging.warning("media group failed — falling back to individual sends")
+                for i, p in enumerate(photos):
+                    if i == 0:
+                        ok = send_photo(CHAT_ID, p, caption=caption)
+                    else:
+                        ok = send_photo(CHAT_ID, p, caption=None)
+                    if not ok:
+                        logging.error("Failed sending photo URL: %s", p)
+                        break
+
     sys.exit(0 if ok else 3)
+
 
 if __name__ == "__main__":
     main()
