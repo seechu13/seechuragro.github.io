@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Send a single article JSON to LinkedIn (organization post), using only the FIRST image if present.
+Send a single article JSON to LinkedIn as a personal post (UGC) using the first image only.
 
 Usage:
   python scripts/send_linkedin.py --json articles/test-automation.json
 
 Environment variables required:
   LINKEDIN_ACCESS_TOKEN  (string)
-  LINKEDIN_ORGANIZATION  (numeric org id, e.g. 123456)
-  BASE_URL               (optional) fallback base URL to join relative URLs
+  LINKEDIN_PERSON        (string)  # numeric LinkedIn person id, e.g. grQXp0KaKF
+  BASE_URL               (optional) fallback when JSON lacks absolute URL
 """
 
 import os
@@ -41,11 +41,11 @@ def make_caption(article, base_url=None):
     title = article.get("title", "").strip()
     excerpt = article.get("excerpt", "").strip()
     url = article.get("url", "")
+    # support 'path' fallback
     if not url and base_url and article.get("path"):
         url = urljoin(base_url.rstrip("/") + "/", article.get("path").lstrip("/"))
     hashtags = article.get("hashtags")
     if not hashtags:
-        # simple idempotent hashtag generator (up to 4)
         words = (title + " " + excerpt).split()
         tags = []
         for w in words:
@@ -94,15 +94,15 @@ def process_image_bytes(img_bytes, max_px=1200):
     out.seek(0)
     return out
 
-def register_upload(org_urn, access_token):
+def register_upload(owner_urn, access_token):
     """
     Register an upload for feedshare-image and return (asset_urn, upload_url).
-    org_urn must be like 'urn:li:organization:12345'
+    owner_urn must be like 'urn:li:person:grQXp0KaKF'
     """
     url = f"{LINKEDIN_API_BASE}/assets?action=registerUpload"
     body = {
       "registerUploadRequest": {
-        "owner": org_urn,
+        "owner": owner_urn,
         "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
         "serviceRelationships": [
           {
@@ -120,10 +120,8 @@ def register_upload(org_urn, access_token):
     resp = requests.post(url, headers=headers, json=body, timeout=30)
     resp.raise_for_status()
     data = resp.json()
-    # parse asset and upload url
     asset = data.get("value", {}).get("asset")
     upload_mech = data.get("value", {}).get("uploadMechanism", {})
-    # the exact path to upload URL varies; try common places
     upload_url = None
     if isinstance(upload_mech, dict):
         for v in upload_mech.values():
@@ -136,12 +134,11 @@ def register_upload(org_urn, access_token):
 
 def upload_image_to_url(upload_url, image_bytes):
     headers = {"Content-Type": "image/jpeg"}
-    # LinkedIn expects PUT for the uploadUrl
     resp = requests.put(upload_url, data=image_bytes.read(), headers=headers, timeout=60)
     resp.raise_for_status()
     return resp.status_code
 
-def create_ugc_post(org_urn, access_token, caption, asset_urn=None, title_text=None):
+def create_ugc_post(author_urn, access_token, caption, asset_urn=None, title_text=None):
     url = f"{LINKEDIN_API_BASE}/ugcPosts"
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -160,7 +157,7 @@ def create_ugc_post(org_urn, access_token, caption, asset_urn=None, title_text=N
         share_media_category = "NONE"
 
     body = {
-      "author": org_urn,
+      "author": author_urn,
       "lifecycleState": "PUBLISHED",
       "specificContent": {
         "com.linkedin.ugc.ShareContent": {
@@ -188,10 +185,10 @@ def main():
     args = parser.parse_args()
 
     access_token = get_env("LINKEDIN_ACCESS_TOKEN")
-    org_id = get_env("LINKEDIN_ORGANIZATION")
+    person_id = get_env("LINKEDIN_PERSON")
     base_url = os.getenv("BASE_URL", "").strip() or None
 
-    org_urn = f"urn:li:organization:{org_id}"
+    author_urn = f"urn:li:person:{person_id}"
 
     article = read_json(args.json)
     caption = make_caption(article, base_url=base_url)
@@ -203,7 +200,6 @@ def main():
     if not isinstance(images, list):
         images = list(images)
 
-    # Use only the first image for LinkedIn (per your instruction)
     asset_urn = None
 
     try:
@@ -212,12 +208,10 @@ def main():
             if not first:
                 logger.info("First image is empty. Posting text-only.")
             else:
-                # resolve relative paths using base_url if needed, or local file
                 if is_remote(first):
                     logger.info("Downloading remote image: %s", first)
                     img_bytes = download_image(first)
                 else:
-                    # local file in repo
                     local_path = first
                     if local_path.startswith("/"):
                         local_path = local_path[1:]
@@ -225,7 +219,6 @@ def main():
                         logger.info("Opening local image: %s", local_path)
                         img_bytes = open(local_path, "rb")
                     else:
-                        # if the path looks like a relative path without file, try joining with articles dir
                         alternate = os.path.join(os.getcwd(), local_path)
                         if os.path.isfile(alternate):
                             logger.info("Opening local image (alternate): %s", alternate)
@@ -237,12 +230,10 @@ def main():
                 if img_bytes:
                     processed = process_image_bytes(img_bytes, max_px=1200)
                     logger.info("Processed image size: %d bytes", len(processed.getvalue()))
-                    # register upload
-                    asset_urn, upload_url = register_upload(org_urn, access_token)
+                    asset_urn, upload_url = register_upload(author_urn, access_token)
                     logger.info("Registered asset: %s", asset_urn)
-                    # upload bytes
                     upload_image_to_url(upload_url, processed)
-                    logger.info("Uploaded image to LinkedIn uploadUrl (HTTP 200/201 expected).")
+                    logger.info("Uploaded image to LinkedIn uploadUrl.")
     except requests.HTTPError as e:
         logger.error("HTTP error while handling image or LinkedIn endpoint: %s", e)
         logger.error("Posting text-only instead.")
@@ -252,12 +243,10 @@ def main():
         logger.error("Posting text-only instead.")
         asset_urn = None
 
-    # create the post
     try:
-        resp = create_ugc_post(org_urn, access_token, caption, asset_urn=asset_urn, title_text=title)
+        resp = create_ugc_post(author_urn, access_token, caption, asset_urn=asset_urn, title_text=title)
         logger.info("LinkedIn post created successfully: %s", resp.get("id", resp))
     except requests.HTTPError as e:
-        # try to surface LinkedIn error body if available
         if e.response is not None:
             try:
                 logger.error("LinkedIn responded with: %s", e.response.text)
