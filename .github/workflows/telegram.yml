@@ -1,0 +1,35 @@
+name: Test Telegram Posting
+
+on:
+  workflow_dispatch:
+
+jobs:
+  telegram-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install requests
+
+      - name: Show test JSON
+        run: |
+          echo "==== articles/test-automation.json ===="
+          cat articles/test-automation.json || true
+          echo "====================================="
+
+      - name: Post to Telegram (test)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BASE_URL: "https://seechuragro.in"
+        run: |
+          python3 scripts/send_telegram.py articles/test-automation.json
