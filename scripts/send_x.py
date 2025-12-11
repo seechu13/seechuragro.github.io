@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-scripts/send_x.py — Post ONLY hashtags to X (text-only) with BASE_URL fallback.
+scripts/send_x.py — Post hashtags + article URL to X (text-only) with BASE_URL fallback.
 
 Behavior:
 - Prefer 'hashtags' field in JSON (list or string).
-- If missing, auto-generate up to 5 hashtags from title + excerpt (alphanumeric, >3 chars).
-- Posts a single line made of hashtags (space-separated).
-- Uses tweepy.Client.create_tweet to post.
+- If missing, auto-generate up to MAX_TAGS hashtags from title + excerpt (alphanumeric, >3 chars).
+- Posts hashtags followed by the absolute article URL.
+- Ensures combined text fits within MAX_TWEET_LEN (truncates hashtags list if needed).
 Exit codes:
   0 = success
   2 = usage / missing args
@@ -34,12 +34,13 @@ X_API_SECRET = os.getenv("X_API_SECRET")
 X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
 X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
 
-# Fallback base URL (not used for hashtags but kept for consistency)
+# Fallback base URL used to build absolute URLs
 BASE_URL = os.getenv("BASE_URL", "https://seechuragro.in").rstrip('/')
 
-# Hashtag generation limits
-MAX_TAGS = 5
+# Hashtag generation limits and tweet length
+MAX_TAGS = 8
 MIN_WORD_LEN = 4  # only use words longer than this for tag generation
+MAX_TWEET_LEN = 2800  # conservative upper bound (adjust if you want stricter 280 char rule)
 
 def normalize_hashtag_token(tok: str) -> str:
     # keep only alphanumeric, lowercase
@@ -62,24 +63,19 @@ def extract_hashtags_field(raw):
     if not raw:
         return []
     if isinstance(raw, list):
-        # sanitize content, drop empties
         out = []
         for item in raw:
             if not item:
                 continue
             s = str(item).strip()
             if s.startswith("#"):
-                out.append(s)
+                out.append("#" + normalize_hashtag_token(s.lstrip("#")))
             else:
-                # convert spaces or commas into single-hashtag tokens
                 parts = re.split(r'[\s,]+', s)
                 for p in parts:
                     p2 = p.strip()
                     if p2:
-                        if p2.startswith("#"):
-                            out.append(p2)
-                        else:
-                            out.append("#" + normalize_hashtag_token(p2))
+                        out.append("#" + normalize_hashtag_token(p2))
         # dedupe while preserving order
         seen = set()
         res = []
@@ -89,20 +85,13 @@ def extract_hashtags_field(raw):
                 res.append(h)
         return res
     else:
-        # string
         s = str(raw).strip()
         parts = re.split(r'[\s,]+', s)
         res = []
         for p in parts:
             if not p:
                 continue
-            if p.startswith("#"):
-                token = "#" + normalize_hashtag_token(p.lstrip("#"))
-                res.append(token)
-            else:
-                token = "#" + normalize_hashtag_token(p)
-                res.append(token)
-        # dedupe
+            res.append("#" + normalize_hashtag_token(p.lstrip("#")))
         seen = set()
         out = []
         for h in res:
@@ -111,18 +100,54 @@ def extract_hashtags_field(raw):
                 out.append(h)
         return out
 
-def build_hashtag_text(article):
+def build_absolute_url(raw_url: str, slug: str) -> str:
+    """
+    Return an absolute https URL to include in the tweet.
+    raw_url: value from JSON 'url' or 'link' (may be empty or relative).
+    slug: value from JSON 'slug' (may be empty).
+    """
+    if raw_url:
+        s = raw_url.strip()
+        if s.startswith("http://") or s.startswith("https://"):
+            return s
+        if s.startswith("//"):
+            return f"https:{s}"
+        return f"{BASE_URL}/{s.lstrip('/')}"
+    if slug:
+        return f"{BASE_URL}/{str(slug).lstrip('/')}"
+    return ""
+
+def build_hashtags_list(article):
     raw_tags = article.get("hashtags") or article.get("tags") or article.get("hashtag")
     tags = extract_hashtags_field(raw_tags)
     if not tags:
         title = article.get("title", "") or ""
         excerpt = article.get("excerpt", "") or article.get("description", "") or ""
         tags = generate_hashtags(title, excerpt)
-    # ensure at least one tag; fallback to site name
     if not tags:
         tags = ["#seechuragro"]
-    # limit
-    return " ".join(tags[:MAX_TAGS])
+    # limit to MAX_TAGS
+    return tags[:MAX_TAGS]
+
+def assemble_text_with_url(tags_list, url):
+    """
+    Build final text: space-joined hashtags + ' ' + url.
+    Ensure length <= MAX_TWEET_LEN by dropping trailing hashtags if necessary.
+    """
+    if not url:
+        # if no url, just join tags
+        base = " ".join(tags_list)
+        return base[:MAX_TWEET_LEN]
+    # start with full list and drop from end until fits
+    tags = list(tags_list)
+    while tags:
+        text = " ".join(tags) + " " + url
+        if len(text) <= MAX_TWEET_LEN:
+            return text
+        # drop last tag and retry
+        tags.pop()
+    # if no tags fit, return just the url (should fit)
+    return url[:MAX_TWEET_LEN]
 
 def post_text_v2(text: str) -> bool:
     if not all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET]):
@@ -162,10 +187,16 @@ def main():
         logging.error("Failed to read/parse JSON: %s", e)
         sys.exit(2)
 
-    hashtag_text = build_hashtag_text(data)
-    logging.info("Hashtag text to post: %s", hashtag_text)
+    raw_url = data.get("url") or data.get("link") or ""
+    slug = data.get("slug") or ""
+    absolute_url = build_absolute_url(raw_url, slug)
 
-    ok = post_text_v2(hashtag_text)
+    tags_list = build_hashtags_list(data)
+    final_text = assemble_text_with_url(tags_list, absolute_url)
+
+    logging.info("Final text to post (len=%d): %s", len(final_text), final_text[:2000] + ("..." if len(final_text) > 2000 else ""))
+
+    ok = post_text_v2(final_text)
     sys.exit(0 if ok else 3)
 
 if __name__ == "__main__":
