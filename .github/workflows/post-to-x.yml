@@ -9,12 +9,6 @@ on:
       - 'articles/**'
       - 'content/articles/**'
 
-  workflow_run:
-    workflows:
-      - "Post changed article JSONs to social platforms (staging) — image resize & neutral doc name"
-    types:
-      - completed
-
 permissions:
   contents: read
 
@@ -23,11 +17,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # keep config simple for push-only runs
   UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
-  MAX_WAIT_SECONDS: "180"
   POLL_INTERVAL: "10"
-  PROCEED_IF_UPSTREAM_MISSING: "false"
-  SLEEP_SECONDS: "120"
+  SLEEP_SECONDS: "0"
 
   # X credentials from secrets (do NOT hardcode real keys here)
   X_API_KEY: ${{ secrets.X_API_KEY }}
@@ -40,11 +33,6 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BASE_URL: "https://seechuragro.in"
-
-    if: >
-      github.event_name != 'workflow_run' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'staging')
 
     name: X — Post changed article JSONs (staging)
     runs-on: ubuntu-latest
@@ -62,79 +50,6 @@ jobs:
           sudo apt-get install -y jq curl git
           python3 -m pip install --upgrade pip
           pip install tweepy requests
-
-      - name: Wait for upstream workflow (push only)
-        if: github.event_name == 'push'
-        id: upstream_wait
-        run: |
-          set -euo pipefail
-          REPO="${GITHUB_REPOSITORY}"
-          SHA="${GITHUB_SHA}"
-          WORKFLOW_FILE="${UPSTREAM_WORKFLOW_FILE}"
-          MAX_WAIT=${MAX_WAIT_SECONDS}
-          POLL=${POLL_INTERVAL}
-          PROCEED=${PROCEED_IF_UPSTREAM_MISSING}
-
-          API_URL="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?head_sha=${SHA}"
-
-          echo "Polling upstream workflow ${WORKFLOW_FILE} for commit ${SHA}..."
-
-          elapsed=0
-          found="false"
-
-          while [ "$elapsed" -le "$MAX_WAIT" ]; do
-            resp=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" "$API_URL")
-            run_id=$(echo "$resp" | jq -r '.workflow_runs[0].id // empty')
-
-            if [ -n "$run_id" ]; then
-              status=$(echo "$resp" | jq -r '.workflow_runs[0].status // empty')
-              conclusion=$(echo "$resp" | jq -r '.workflow_runs[0].conclusion // empty')
-
-              echo "Upstream run id=$run_id status=$status conclusion=$conclusion"
-
-              if [ "$status" = "completed" ] && [ "$conclusion" = "success" ]; then
-                echo "upstream_found=true" >> $GITHUB_OUTPUT
-                echo "upstream_conclusion=success" >> $GITHUB_OUTPUT
-                found="true"
-                break
-              fi
-
-              if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then
-                echo "upstream_found=false" >> $GITHUB_OUTPUT
-                echo "upstream_conclusion=$conclusion" >> $GITHUB_OUTPUT
-                found="false"
-                break
-              fi
-            else
-              echo "No upstream run yet…"
-            fi
-
-            sleep "$POLL"
-            elapsed=$((elapsed + POLL))
-          done
-
-          if [ "$found" = "false" ]; then
-            echo "upstream_found=false" >> $GITHUB_OUTPUT
-            if [ "$PROCEED" = "true" ]; then
-              echo "Proceeding anyway (PROCEED_IF_UPSTREAM_MISSING=true)"
-            else
-              echo "Upstream did not complete successfully within wait window."
-              exit 1
-            fi
-          fi
-
-      - name: Optional safety sleep
-        if: >
-          github.event_name == 'workflow_run' ||
-          (github.event_name == 'push' &&
-           steps.upstream_wait.outputs.upstream_found == 'true')
-        run: |
-          if [ "${SLEEP_SECONDS}" != "0" ]; then
-            echo "Sleeping ${SLEEP_SECONDS}s for safety..."
-            sleep "${SLEEP_SECONDS}"
-          else
-            echo "No safety sleep configured"
-          fi
 
       - name: Detect changed JSONs
         id: changes_x
