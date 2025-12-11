@@ -1,4 +1,4 @@
-name: LinkedIn - Post articles
+name: LinkedIn - Post articles (Personal)
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
   post-to-linkedin:
     runs-on: ubuntu-latest
     concurrency:
-      group: linkedin-posting
+      group: linkedin-personal-posting
       cancel-in-progress: false
 
     steps:
@@ -41,10 +41,6 @@ jobs:
             echo "Using json_path from workflow_dispatch: ${{ github.event.inputs.json_path }}"
             echo "::set-output name=jsons::${{ github.event.inputs.json_path }}"
           else
-            # list changed article JSONs in the push (if available). Fallback: all articles/*.json
-            if [ -n "${{ github.event.head_commit.message }}" ]; then
-              files=$(git diff --name-only ${{ github.sha }} ${{ github.sha }}~1 || true)
-            fi
             changed=$(git diff --name-only --diff-filter=AMR ${{ github.sha }} ${{ github.sha }}~1 2>/dev/null | grep '^articles/.*\.json$' || true)
             if [ -z "$changed" ]; then
               echo "No changed article JSONs detected; falling back to all articles/*.json"
@@ -57,10 +53,10 @@ jobs:
         run: |
           echo "JSONS=${{ steps.files.outputs.jsons }}"
 
-      - name: Run LinkedIn poster for each JSON
+      - name: Run LinkedIn personal poster for each JSON
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-          LINKEDIN_ORGANIZATION: ${{ secrets.LINKEDIN_ORGANIZATION }} # numeric org id, not urn
+          LINKEDIN_PERSON: ${{ secrets.LINKEDIN_PERSON }} # numeric person id only, e.g. grQXp0KaKF
           BASE_URL: ${{ secrets.BASE_URL }} # optional fallback
         run: |
           set -euo pipefail
