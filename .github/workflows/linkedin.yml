@@ -1,0 +1,78 @@
+name: LinkedIn - Post articles
+
+on:
+  push:
+    paths:
+      - 'articles/**'
+  workflow_dispatch:
+    inputs:
+      json_path:
+        description: 'Optional: path to a single article JSON to post (relative to repo root). If omitted, changed files from the push will be used.'
+        required: false
+
+jobs:
+  post-to-linkedin:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: linkedin-posting
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pillow
+
+      - name: Determine article JSONs to process
+        id: files
+        run: |
+          echo "GITHUB_EVENT_NAME=${GITHUB_EVENT_NAME}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.json_path }}" != "" ]; then
+            echo "Using json_path from workflow_dispatch: ${{ github.event.inputs.json_path }}"
+            echo "::set-output name=jsons::${{ github.event.inputs.json_path }}"
+          else
+            # list changed article JSONs in the push (if available). Fallback: all articles/*.json
+            if [ -n "${{ github.event.head_commit.message }}" ]; then
+              files=$(git diff --name-only ${{ github.sha }} ${{ github.sha }}~1 || true)
+            fi
+            changed=$(git diff --name-only --diff-filter=AMR ${{ github.sha }} ${{ github.sha }}~1 2>/dev/null | grep '^articles/.*\.json$' || true)
+            if [ -z "$changed" ]; then
+              echo "No changed article JSONs detected; falling back to all articles/*.json"
+              changed=$(ls articles/*.json 2>/dev/null || true)
+            fi
+            echo "::set-output name=jsons::${changed}"
+          fi
+
+      - name: Show JSONs to process
+        run: |
+          echo "JSONS=${{ steps.files.outputs.jsons }}"
+
+      - name: Run LinkedIn poster for each JSON
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_ORGANIZATION: ${{ secrets.LINKEDIN_ORGANIZATION }} # numeric org id, not urn
+          BASE_URL: ${{ secrets.BASE_URL }} # optional fallback
+        run: |
+          set -euo pipefail
+          IFS=$'\n'
+          for json in ${{ steps.files.outputs.jsons }}; do
+            if [ -z "$json" ]; then
+              continue
+            fi
+            if [ ! -f "$json" ]; then
+              echo "Skipping missing file: $json"
+              continue
+            fi
+            echo "Processing $json"
+            python scripts/send_linkedin.py --json "$json"
+          done
