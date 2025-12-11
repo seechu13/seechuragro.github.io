@@ -168,7 +168,7 @@ jobs:
               echo "Skipping: $jf"
               continue
             fi
-            echo "Posting (hashtags only): $jf"
+            echo "Posting (hashtags + URL): $jf"
             python3 scripts/send_x.py "$jf"
             echo "--------------------------------"
           done
