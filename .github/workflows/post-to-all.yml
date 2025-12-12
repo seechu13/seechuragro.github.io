@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REPO: ${{ github.repository }}
-      TOKEN: ${{ secrets.GITHUB_TOKEN }} # if your org blocks GITHUB_TOKEN for dispatch, replace with secrets.REPO_PAT
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REF: ${{ github.ref_name }}
     steps:
       - name: Checkout repo
@@ -26,39 +26,10 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Install deps
+      - name: Install deps (jq, curl)
         run: |
           sudo apt-get update -y
           sudo apt-get install -y jq curl
-
-      - name: Build small extractor script
-        run: |
-          cat > /tmp/extract_images.py <<'PY'
-#!/usr/bin/env python3
-# prints newline-separated list of image-like paths found in JSON
-import json,sys,re
-path=sys.argv[1]
-j=json.load(open(path, 'r', encoding='utf-8'))
-s=[]
-def walk(o):
-    if isinstance(o, dict):
-        for v in o.values(): walk(v)
-    elif isinstance(o, list):
-        for i in o: walk(i)
-    elif isinstance(o, str):
-        u=o.strip()
-        if re.search(r'\.(jpg|jpeg|png|webp)$', u, flags=re.I):
-            s.append(u)
-walk(j)
-seen=set()
-out=[]
-for x in s:
-    if x not in seen:
-        out.append(x); seen.add(x)
-for x in out:
-    print(x)
-PY
-          chmod +x /tmp/extract_images.py
 
       - name: Find article JSONs changed (or all) and validate
         id: validate
@@ -68,11 +39,11 @@ PY
           LISTFILE=/tmp/jsons_list.txt
           : > "$LISTFILE"
 
-          # Prefer changed files in this commit
+          # prefer changed files in this commit
           CHANGED=$(git show --name-only --pretty="" "$GITHUB_SHA" || true)
           printf "%s\n" "$CHANGED" | grep -E '^articles/.*\.json$' >> "$LISTFILE" || true
 
-          # Fallback: all articles
+          # fallback: all article JSONs
           if [ ! -s "$LISTFILE" ]; then
             ls articles/*.json 2>/dev/null >> "$LISTFILE" || true
           fi
@@ -82,7 +53,13 @@ PY
             exit 0
           fi
 
+          # Validation:
+          #  - JSON must parse (jq .)
+          #  - For every string value that ends with .jpg/.jpeg/.png/.webp (case-insensitive),
+          #    ensure either remote URL returns 200/301/302 or local file exists (or fallback in ./assets/articles/)
           ERR=0
+          > /tmp/validated_jsons.txt
+
           while IFS= read -r jf || [ -n "$jf" ]; do
             jf=$(echo "$jf" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
             [ -z "$jf" ] && continue
@@ -93,19 +70,26 @@ PY
               continue
             fi
 
-            if ! python3 -m json.tool "$jf" >/dev/null 2>&1; then
+            # parse check
+            if ! jq -e . "$jf" >/dev/null 2>&1; then
               echo "::error file=$jf::Invalid JSON"
               ERR=1
               continue
             fi
             echo "VALID JSON: $jf"
 
-            IMGS=$(/tmp/extract_images.py "$jf" || true)
+            # extract image-like strings using jq: scan all strings and filter by extension
+            IMGS=$(jq -r '.. | strings | select(test("\\.(jpg|jpeg|png|webp)$"; "i"))' "$jf" | awk '!x[$0]++' || true)
+
             if [ -z "$IMGS" ]; then
               echo "No image-like strings found in $jf (ok if intentional)"
+              # still consider JSON validated
+              printf "%s\n" "$jf" >> /tmp/validated_jsons.txt
               continue
             fi
 
+            # check each image candidate
+            MISSING=0
             while IFS= read -r u || [ -n "$u" ]; do
               u=$(echo "$u" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
               [ -z "$u" ] && continue
@@ -116,7 +100,7 @@ PY
                   echo "OK remote image: $u"
                 else
                   echo "::error file=$jf::Remote image not reachable: $u (HTTP $status)"
-                  ERR=1
+                  MISSING=1
                 fi
               else
                 if [ -f "$u" ]; then
@@ -127,12 +111,18 @@ PY
                   echo "OK local image (fallback): ./assets/articles/${u##*/}"
                 else
                   echo "::error file=$jf::Local image missing: $u"
-                  ERR=1
+                  MISSING=1
                 fi
               fi
             done <<EOF
 $IMGS
 EOF
+
+            if [ "$MISSING" -eq 1 ]; then
+              ERR=1
+            else
+              printf "%s\n" "$jf" >> /tmp/validated_jsons.txt
+            fi
 
           done < "$LISTFILE"
 
@@ -141,9 +131,8 @@ EOF
             exit 2
           fi
 
-          # Save validated JSON list for dispatch
-          cp "$LISTFILE" /tmp/validated_jsons.txt
           echo "Validation completed successfully."
+          echo "Validated list written to /tmp/validated_jsons.txt"
 
       - name: Dispatch wrappers for each validated JSON
         if: always()
@@ -179,7 +168,7 @@ EOF
                   ;;
               esac
 
-              # use TOKEN (GITHUB_TOKEN) — if this fails due to org policy, use a PAT in secrets.REPO_PAT and change TOKEN above
+              # fire the dispatch
               curl -s -X POST \
                 -H "Accept: application/vnd.github+json" \
                 -H "Authorization: Bearer ${TOKEN}" \
@@ -189,6 +178,4 @@ EOF
 
               echo " -> fired $wf for $jf"
             done
-
           done < /tmp/validated_jsons.txt
-
