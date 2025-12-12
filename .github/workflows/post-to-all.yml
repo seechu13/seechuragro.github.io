@@ -1,0 +1,175 @@
+name: Master — validate article assets & dispatch posts
+
+# runs when articles/ change
+on:
+  push:
+    paths:
+      - 'articles/**'
+
+concurrency:
+  group: master-post-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  workflows: write
+
+jobs:
+  prep-and-validate:
+    name: Validate article JSONs & assets (stop on any missing)
+    runs-on: ubuntu-latest
+    outputs:
+      json_list: ${{ steps.find-jsons.outputs.jsons }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Find article JSONs changed (or all)
+        id: find-jsons
+        run: |
+          set -euo pipefail
+          CHANGED="$(git diff --name-only ${{ github.sha }} ${{ github.sha }}~1 2>/dev/null | grep '^articles/.*\.json$' || true)"
+          if [ -n "$CHANGED" ]; then
+            JSONS="$CHANGED"
+          else
+            JSONS="$(ls articles/*.json 2>/dev/null || true)"
+          fi
+          # normalize to pipe-delimited single-line output
+          JSONS="$(printf "%s\n" $JSONS | tr '\n' '|' | sed 's/|$//')"
+          echo "Found JSONs: $JSONS"
+          echo "::set-output name=jsons::$JSONS"
+
+      - name: Validate JSON files and referenced images
+        if: steps.find-jsons.outputs.jsons != ''
+        run: |
+          set -euo pipefail
+          IFS='|'
+          ERR=0
+          for jf in ${{ steps.find-jsons.outputs.jsons }}; do
+            if [ -z "$jf" ] || [ ! -f "$jf" ]; then
+              echo "::error file=$jf::Article JSON missing: $jf"
+              ERR=1
+              continue
+            fi
+            python -m json.tool "$jf" >/dev/null || { echo "::error file=$jf::Invalid JSON"; ERR=1; continue; }
+            echo "VALID JSON: $jf"
+            imgs=$(python - <<'PY'
+import json,sys,re
+j=json.load(open(sys.argv[1],'r',encoding='utf-8'))
+s=[]
+def walk(o):
+    if isinstance(o,dict):
+        for v in o.values(): walk(v)
+    elif isinstance(o,list):
+        for i in o: walk(i)
+    elif isinstance(o,str):
+        u=o.strip()
+        if re.search(r'\.(jpg|jpeg|png|webp)$', u, flags=re.I):
+            s.append(u)
+walk(j)
+print('|'.join(dict.fromkeys(s)))
+PY
+ "$jf")
+            for u in $(printf "%s\n" "$imgs" | tr '|' '\n'); do
+              if [ -z "$u" ]; then continue; fi
+              if echo "$u" | grep -qE '^https?://'; then
+                status=$(curl -s -o /dev/null -I --max-time 10 -w "%{http_code}" "$u" || echo "000")
+                if [ "$status" = "200" ] || [ "$status" = "302" ] || [ "$status" = "301" ]; then
+                  echo "OK remote image: $u"
+                else
+                  echo "::error file=$jf::Remote image not reachable: $u (HTTP $status)"
+                  ERR=1
+                fi
+              else
+                if [ -f "$u" ]; then
+                  echo "OK local image: $u"
+                elif [ -f "./${u#/}" ]; then
+                  echo "OK local image (normalized): ${u#/}"
+                elif [ -f "./assets/articles/${u##*/}" ]; then
+                  echo "OK local image (fallback): ./assets/articles/${u##*/}"
+                else
+                  echo "::error file=$jf::Local image missing: $u"
+                  ERR=1
+                fi
+              fi
+            done
+          done
+          if [ "$ERR" -ne 0 ]; then
+            echo "Validation failed — fix images or JSON and re-merge."
+            exit 2
+          fi
+          echo "All checks passed."
+
+  dispatch-platforms:
+    name: Dispatch validated posts to platform workflows (parallel)
+    needs: prep-and-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout minimal
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Dispatch child workflows
+        env:
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JSONS: ${{ needs.prep-and-validate.outputs.json_list }}
+        run: |
+          set -euo pipefail
+
+          JSONS_RAW="${{ needs.prep-and-validate.outputs.json_list }}"
+          if [ -z "$JSONS_RAW" ]; then
+            echo "No JSONs found (nothing to dispatch)."
+            exit 0
+          fi
+
+          # reference for dispatch API
+          REPO="${REPO}"
+          TOKEN="${TOKEN}"
+          REF="${{ github.ref_name }}"
+
+          # list of workflow files to dispatch (must match the filenames in .github/workflows)
+          WORKFLOWS=("telegram.yml" "linkedin.yml" "post-to-fb.yml" "post-to-instagram.yml" "post-to-x.yml")
+
+          # iterate each JSON and fire each workflow with the correct input key expected by that workflow
+          IFS='|'
+          for wf in "${WORKFLOWS[@]}"; do
+            for jf in $JSONS_RAW; do
+              if [ -z "$jf" ]; then continue; fi
+
+              echo "Dispatching ${wf} for ${jf}"
+
+              # prepare input payload depending on target workflow
+              case "$wf" in
+                "post-to-instagram.yml")
+                  # instagram wrapper expects input 'ig_json'
+                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg ig_json "$jf" '{ref: $ref, inputs: {ig_json: $ig_json}}')
+                  ;;
+                "post-to-x.yml")
+                  # x wrapper expects 'json_list' (we'll send single-line list entry)
+                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_list "$jf" '{ref: $ref, inputs: {json_list: $json_list}}')
+                  ;;
+                "linkedin.yml"|"telegram.yml"|"post-to-fb.yml")
+                  # these wrappers expect 'json_path'
+                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
+                  ;;
+                *)
+                  # default: send json_path
+                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
+                  ;;
+              esac
+
+              # fire the dispatch
+              curl -s -X POST \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer ${TOKEN}" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/repos/${REPO}/actions/workflows/${wf}/dispatches" \
+                -d "${PAYLOAD}"
+
+              echo " -> fired $wf for $jf"
+            done
+          done
