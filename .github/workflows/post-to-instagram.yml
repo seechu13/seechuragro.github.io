@@ -1,20 +1,13 @@
-name: Post to Instagram (auto-processed images)
+name: Post to Instagram (auto-processed images — articles/** only)
 
+# ONLY trigger on pushes that change files under articles/
 on:
-  workflow_dispatch:
-    inputs:
-      json_path:
-        description: 'Article JSON path to post (optional)'
-        required: false
-        default: 'articles/test-automation.json'
   push:
-    branches:
-      - staging
-    # only run when article JSONs or assets change (avoid running on unrelated pushes)
     paths:
       - 'articles/**'
-      - 'assets/articles/**'
-      - '.github/workflows/post-to-instagram.yml'
+    # optionally restrict to branch if you want; uncomment and set your branch
+    # branches:
+    #   - staging
 
 concurrency:
   group: post-to-instagram-${{ github.ref }}
@@ -32,13 +25,11 @@ jobs:
       GITHUB_REPO: seechu13/seechuragro.github.io
       GITHUB_BRANCH: staging
       # Path to the article JSON to post (defaults to articles/test-automation.json)
-      IG_POST_JSON: ${{ github.event.inputs.json_path || 'articles/test-automation.json' }}
-      # --------- NEW: hashtag envs (only) ----------
+      IG_POST_JSON: articles/test-automation.json
+      # Hashtag envs (only)
       HASHTAG_MAX: '30'                 # IG limit (30)
       HASHTAG_MIN_WORD_LEN: '3'
       EXTRA_HASHTAGS: 'seechuragro,agriculture'
-      # ---------------------------------------------
-      # Optional: override number of images or caption using IMAGES / CAPTION env if desired
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -52,7 +43,6 @@ jobs:
           python-version: '3.11'
 
       - name: Validate JSON (fast fail)
-        # quick safety check: ensure the target JSON is parseable
         run: |
           if [ -f "${{ env.IG_POST_JSON }}" ]; then
             python -m json.tool "${{ env.IG_POST_JSON }}"
@@ -68,7 +58,6 @@ jobs:
           pip install requests pillow
 
       - name: Configure env (secrets)
-        # Map the secrets into env for the send_ig.py script
         run: |
           echo "Configured runtime env"
         env:
@@ -94,11 +83,6 @@ jobs:
           echo "Posting using JSON: $IG_POST_JSON"
           python3 scripts/send_ig.py
 
-      - name: Upload workflow log (artifact)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: post-to-instagram-failure-logs
-          path: |
-            # capture runner logs if you want — keep empty to avoid large uploads
-            ./  # (no-op placeholder)
+      - name: Cleanup (no-op)
+        if: always()
+        run: echo "done"
