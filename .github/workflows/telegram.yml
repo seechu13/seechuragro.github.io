@@ -1,0 +1,38 @@
+name: Telegram - Post on article push (wrapper safe for master dispatch)
+
+# Wrapper: ONLY manual or master workflow dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      json_path:
+        description: "Optional: JSON path passed from master workflow (not used by old script, but included for uniformity)."
+        required: false
+
+jobs:
+  telegram-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies (requests + pillow)
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install requests pillow
+
+      - name: Run article processor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          echo "Running process_articles.py"
+          python3 scripts/process_articles.py
