@@ -1,4 +1,4 @@
-name: Master — validate article assets & dispatch posts
+name: Master — validate article assets (parse-test)
 
 on:
   push:
@@ -14,179 +14,21 @@ permissions:
   workflows: write
 
 jobs:
-  validate-and-dispatch:
-    name: Validate article JSONs & dispatch
+  parse-test:
+    name: Parse & basic discovery test
     runs-on: ubuntu-latest
-    env:
-      REPO: ${{ github.repository }}
-      TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      REF: ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Install small deps (jq, curl)
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq curl
-
-      - name: Find article JSONs changed (or all) and validate minimal
-        id: validate
+      - name: Print environment + changed files
         run: |
           set -euo pipefail
-
-          # file to store candidate JSONs (one per line)
-          LISTFILE=/tmp/jsons_list.txt
-          : > "$LISTFILE"
-
-          # prefer changed files in this commit
-          CHANGED=$(git show --name-only --pretty="" "$GITHUB_SHA" || true)
-          printf "%s\n" "$CHANGED" | grep -E '^articles/.*\.json$' >> "$LISTFILE" || true
-
-          # fallback: all article JSONs
-          if [ ! -s "$LISTFILE" ]; then
-            ls articles/*.json 2>/dev/null >> "$LISTFILE" || true
-          fi
-
-          if [ ! -s "$LISTFILE" ]; then
-            echo "No article JSONs found; nothing to validate or dispatch."
-            exit 0
-          fi
-
-          # simple validation loop:
-          # - JSON must parse
-          # - any string that ends with image extensions must either be a reachable http url or an existing local file / fallback location
-          ERR=0
-          while IFS= read -r jf || [ -n "$jf" ]; do
-            jf=$(echo "$jf" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-            [ -z "$jf" ] && continue
-            if [ ! -f "$jf" ]; then
-              echo "::error file=$jf::Article JSON missing: $jf"
-              ERR=1
-              continue
-            fi
-
-            # parse check
-            if ! python3 -m json.tool "$jf" >/dev/null 2>&1; then
-              echo "::error file=$jf::Invalid JSON"
-              ERR=1
-              continue
-            fi
-            echo "VALID JSON: $jf"
-
-            # extract image-like strings using a short python one-liner -> newline-separated
-            IMGS=$(python3 - <<'PY'
-import json,sys,re
-j=json.load(open(sys.argv[1],'r',encoding='utf-8'))
-s=[]
-def walk(o):
-    if isinstance(o,dict):
-        for v in o.values(): walk(v)
-    elif isinstance(o,list):
-        for i in o: walk(i)
-    elif isinstance(o,str):
-        u=o.strip()
-        if re.search(r'\.(jpg|jpeg|png|webp)$', u, flags=re.I):
-            s.append(u)
-walk(j)
-# dedupe preserving order
-seen=set(); out=[]
-for x in s:
-    if x not in seen:
-        out.append(x); seen.add(x)
-print("\n".join(out))
-PY
- "$jf" || true)
-
-            if [ -z "$IMGS" ]; then
-              echo "No image-like strings found in $jf (ok if intentional)"
-              continue
-            fi
-
-            # check each image candidate
-            while IFS= read -r u || [ -n "$u" ]; do
-              u=$(echo "$u" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-              [ -z "$u" ] && continue
-              if echo "$u" | grep -qE '^https?://'; then
-                status=$(curl -s -o /dev/null -I --max-time 10 -w "%{http_code}" "$u" || echo "000")
-                if [ "$status" = "200" ] || [ "$status" = "301" ] || [ "$status" = "302" ]; then
-                  echo "OK remote image: $u"
-                else
-                  echo "::error file=$jf::Remote image not reachable: $u (HTTP $status)"
-                  ERR=1
-                fi
-              else
-                if [ -f "$u" ]; then
-                  echo "OK local image: $u"
-                elif [ -f "./${u#/}" ]; then
-                  echo "OK local image (normalized): ${u#/}"
-                elif [ -f "./assets/articles/${u##*/}" ]; then
-                  echo "OK local image (fallback): ./assets/articles/${u##*/}"
-                else
-                  echo "::error file=$jf::Local image missing: $u"
-                  ERR=1
-                fi
-              fi
-            done <<EOF
-$IMGS
-EOF
-
-          done < "$LISTFILE"
-
-          if [ "$ERR" -ne 0 ]; then
-            echo "Validation failed — fix images or JSON and re-merge."
-            exit 2
-          fi
-
-          # save validated list for dispatch
-          cp "$LISTFILE" /tmp/validated_jsons.txt
-          echo "Validation completed successfully."
-
-      - name: Dispatch wrappers for each validated JSON
-        if: always()
-        run: |
-          set -euo pipefail
-
-          if [ ! -f /tmp/validated_jsons.txt ] || [ ! -s /tmp/validated_jsons.txt ]; then
-            echo "No validated JSONs to dispatch (either none found or validation failed)."
-            exit 0
-          fi
-
-          WORKFLOWS=("telegram.yml" "linkedin.yml" "post-to-fb.yml" "post-to-instagram.yml" "post-to-x.yml")
-
-          while IFS= read -r jf || [ -n "$jf" ]; do
-            jf=$(echo "$jf" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-            [ -z "$jf" ] && continue
-
-            for wf in "${WORKFLOWS[@]}"; do
-              echo "Dispatching ${wf} for ${jf}"
-
-              case "$wf" in
-                "post-to-instagram.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg ig_json "$jf" '{ref: $ref, inputs: {ig_json: $ig_json}}')
-                  ;;
-                "post-to-x.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_list "$jf" '{ref: $ref, inputs: {json_list: $json_list}}')
-                  ;;
-                "linkedin.yml"|"telegram.yml"|"post-to-fb.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
-                  ;;
-                *)
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
-                  ;;
-              esac
-
-              # fire the dispatch
-              curl -s -X POST \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer ${TOKEN}" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                "https://api.github.com/repos/${REPO}/actions/workflows/${wf}/dispatches" \
-                -d "${PAYLOAD}"
-
-              echo " -> fired $wf for $jf"
-            done
-
-          done < /tmp/validated_jsons.txt
+          echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+          echo "GITHUB_SHA: $GITHUB_SHA"
+          echo "---- Changed files in this commit (if any) ----"
+          git show --name-only --pretty="" "$GITHUB_SHA" || true
+          echo "---- articles/*.json files in repo ----"
+          ls -1 articles/*.json 2>/dev/null || echo "(none)"
