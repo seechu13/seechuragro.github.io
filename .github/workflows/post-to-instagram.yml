@@ -1,33 +1,32 @@
-name: Post to Instagram (auto-processed images — articles/** only)
+name: Post to Instagram (auto-processed images — articles/** only, processed branch)
 
-# ONLY trigger on pushes that change files under articles/
 on:
   push:
     paths:
       - 'articles/**'
-    # optionally restrict to branch if you want; uncomment and set your branch
-    # branches:
-    #   - staging
+      - 'assets/articles/**'
 
 concurrency:
   group: post-to-instagram-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write   # needed so the job can commit processed images & update processed_map.json
+  contents: write   # required to commit processed images & create processed branch
 
 jobs:
   post:
     name: Post to Instagram
     runs-on: ubuntu-latest
     env:
-      # repo & branch used by scripts/send_ig.py (can be overridden)
+      # content branch (source articles)
       GITHUB_REPO: seechu13/seechuragro.github.io
       GITHUB_BRANCH: staging
+      # branch where processed images are stored (separate branch to avoid noisy builds)
+      PROCESSED_BRANCH: processed-images
       # Path to the article JSON to post (defaults to articles/test-automation.json)
       IG_POST_JSON: articles/test-automation.json
       # Hashtag envs (only)
-      HASHTAG_MAX: '30'                 # IG limit (30)
+      HASHTAG_MAX: '30'
       HASHTAG_MIN_WORD_LEN: '3'
       EXTRA_HASHTAGS: 'seechuragro,agriculture'
     steps:
@@ -57,24 +56,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pillow
 
-      - name: Configure env (secrets)
-        run: |
-          echo "Configured runtime env"
-        env:
-          IG_USER_ID: ${{ secrets.IG_USER_ID }}
-          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Run Instagram poster
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-          # Use GITHUB_TOKEN to allow send_ig.py to commit processed images & map
+          # use GITHUB_TOKEN so script can create branch and commit processed assets
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ env.GITHUB_REPO }}
           GITHUB_BRANCH: ${{ env.GITHUB_BRANCH }}
+          PROCESSED_BRANCH: ${{ env.PROCESSED_BRANCH }}
           IG_POST_JSON: ${{ env.IG_POST_JSON }}
-          # Pass hashtag envs down to the script
           HASHTAG_MAX: ${{ env.HASHTAG_MAX }}
           HASHTAG_MIN_WORD_LEN: ${{ env.HASHTAG_MIN_WORD_LEN }}
           EXTRA_HASHTAGS: ${{ env.EXTRA_HASHTAGS }}
