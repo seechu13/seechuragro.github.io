@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   validate-and-dispatch:
-    name: Validate article JSONs & dispatch (single job)
+    name: Validate article JSONs & dispatch
     runs-on: ubuntu-latest
     env:
       REPO: ${{ github.repository }}
@@ -27,122 +27,160 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Find article JSONs changed (or all)
-        id: find-jsons
+      - name: Build small extractor script
         run: |
-          set -euo pipefail
-          CHANGED="$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}~1" 2>/dev/null | grep '^articles/.*\.json$' || true)"
-          if [ -n "$CHANGED" ]; then
-            JSONS="$CHANGED"
-          else
-            JSONS="$(ls articles/*.json 2>/dev/null || true)"
-          fi
-          # normalize newline -> pipe single line
-          JSONS="$(printf "%s\n" $JSONS | tr '\n' '|' | sed 's/|$//')"
-          echo "Found JSONs: $JSONS"
-          printf "jsons=%s\n" "$JSONS" >> "$GITHUB_OUTPUT"
-
-      - name: Validate JSON files and referenced images
-        if: steps.find-jsons.outputs.jsons != ''
-        run: |
-          set -euo pipefail
-
-          JSONS_RAW="${{ steps.find-jsons.outputs.jsons }}"
-          IFS='|'
-          ERR=0
-
-          for jf in $(printf "%s\n" "$JSONS_RAW" | tr '|' '\n'); do
-            if [ -z "$jf" ] || [ ! -f "$jf" ]; then
-              echo "::error file=$jf::Article JSON missing: $jf"
-              ERR=1
-              continue
-            fi
-
-            python -m json.tool "$jf" >/dev/null || { echo "::error file=$jf::Invalid JSON"; ERR=1; continue; }
-            echo "VALID JSON: $jf"
-
-            imgs=$(python - <<'PY'
-import json,sys,re
-j=json.load(open(sys.argv[1],'r',encoding='utf-8'))
+          cat > /tmp/extract_images.py <<'PY'
+#!/usr/bin/env python3
+# prints newline-separated list of image-like paths found in JSON
+import json,sys,re,os
+path=sys.argv[1]
+j=json.load(open(path, 'r', encoding='utf-8'))
 s=[]
 def walk(o):
-    if isinstance(o,dict):
+    if isinstance(o, dict):
         for v in o.values(): walk(v)
-    elif isinstance(o,list):
+    elif isinstance(o, list):
         for i in o: walk(i)
-    elif isinstance(o,str):
+    elif isinstance(o, str):
         u=o.strip()
         if re.search(r'\.(jpg|jpeg|png|webp)$', u, flags=re.I):
             s.append(u)
 walk(j)
-print('|'.join(dict.fromkeys(s)))
+# dedupe while preserving order
+seen=set()
+out=[]
+for x in s:
+    if x not in seen:
+        out.append(x)
+        seen.add(x)
+for x in out:
+    print(x)
 PY
- "$jf")
+          chmod +x /tmp/extract_images.py
 
-            for u in $(printf "%s\n" "$imgs" | tr '|' '\n'); do
-              if [ -z "$u" ]; then continue; fi
+      - name: Find article JSONs changed (or all) and validate
+        id: validate
+        run: |
+          set -euo pipefail
 
-              if echo "$u" | grep -qE '^https?://'; then
-                status=$(curl -s -o /dev/null -I --max-time 10 -w "%{http_code}" "$u" || echo "000")
-                if [ "$status" = "200" ] || [ "$status" = "302" ] || [ "$status" = "301" ]; then
-                  echo "OK remote image: $u"
+          # create a list file with one JSON path per line
+          LISTFILE=/tmp/jsons_list.txt
+          : > "$LISTFILE"
+
+          # prefer changed files in this commit
+          CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
+          echo "$CHANGED" | grep -E '^articles/.*\.json$' >> "$LISTFILE" || true
+
+          # if none found, fall back to all article JSONs
+          if [ ! -s "$LISTFILE" ]; then
+            ls articles/*.json 2>/dev/null >> "$LISTFILE" || true
+          fi
+
+          if [ ! -s "$LISTFILE" ]; then
+            echo "No article JSONs found; nothing to validate or dispatch."
+            exit 0
+          fi
+
+          # validation loop
+          ERR=0
+          while IFS= read -r jf || [ -n "$jf" ]; do
+            jf_trimmed=$(echo "$jf" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            if [ -z "$jf_trimmed" ]; then
+              continue
+            fi
+            if [ ! -f "$jf_trimmed" ]; then
+              echo "::error file=$jf_trimmed::Article JSON missing: $jf_trimmed"
+              ERR=1
+              continue
+            fi
+
+            # quick JSON parse check
+            if ! python3 -m json.tool "$jf_trimmed" >/dev/null 2>&1; then
+              echo "::error file=$jf_trimmed::Invalid JSON"
+              ERR=1
+              continue
+            fi
+            echo "VALID JSON: $jf_trimmed"
+
+            # extract image candidates using the helper
+            IMGS=$(/tmp/extract_images.py "$jf_trimmed" || true)
+            if [ -z "$IMGS" ]; then
+              echo "No image-like strings found in $jf_trimmed (that's fine if intentional)"
+              continue
+            fi
+
+            # check each image candidate
+            while IFS= read -r u || [ -n "$u" ]; do
+              u_trimmed=$(echo "$u" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+              if [ -z "$u_trimmed" ]; then continue; fi
+
+              if echo "$u_trimmed" | grep -qE '^https?://'; then
+                status=$(curl -s -o /dev/null -I --max-time 10 -w "%{http_code}" "$u_trimmed" || echo "000")
+                if [ "$status" = "200" ] || [ "$status" = "301" ] || [ "$status" = "302" ]; then
+                  echo "OK remote image: $u_trimmed"
                 else
-                  echo "::error file=$jf::Remote image not reachable: $u (HTTP $status)"
+                  echo "::error file=$jf_trimmed::Remote image not reachable: $u_trimmed (HTTP $status)"
                   ERR=1
                 fi
               else
-                if [ -f "$u" ]; then
-                  echo "OK local image: $u"
-                elif [ -f "./${u#/}" ]; then
-                  echo "OK local image (normalized): ${u#/}"
-                elif [ -f "./assets/articles/${u##*/}" ]; then
-                  echo "OK local image (fallback): ./assets/articles/${u##*/}"
+                # try as-is, normalized, and assets fallback
+                if [ -f "$u_trimmed" ]; then
+                  echo "OK local image: $u_trimmed"
+                elif [ -f "./${u_trimmed#/}" ]; then
+                  echo "OK local image (normalized): ${u_trimmed#/}"
+                elif [ -f "./assets/articles/${u_trimmed##*/}" ]; then
+                  echo "OK local image (fallback): ./assets/articles/${u_trimmed##*/}"
                 else
-                  echo "::error file=$jf::Local image missing: $u"
+                  echo "::error file=$jf_trimmed::Local image missing: $u_trimmed"
                   ERR=1
                 fi
               fi
-            done
-          done
+            done <<EOF
+$IMGS
+EOF
+
+          done < "$LISTFILE"
 
           if [ "$ERR" -ne 0 ]; then
             echo "Validation failed — fix images or JSON and re-merge."
             exit 2
           fi
 
-          echo "All validation checks passed."
+          # write validated list to file for dispatch step
+          cp "$LISTFILE" /tmp/validated_jsons.txt
+          echo "Validation completed successfully."
 
-      - name: Dispatch wrappers for each JSON
-        if: steps.find-jsons.outputs.jsons != ''
+      - name: Dispatch wrappers for each validated JSON
+        if: always()
         run: |
           set -euo pipefail
 
-          JSONS_RAW="${{ steps.find-jsons.outputs.jsons }}"
-          if [ -z "$JSONS_RAW" ]; then
-            echo "No JSONs to dispatch."
+          if [ ! -f /tmp/validated_jsons.txt ] || [ ! -s /tmp/validated_jsons.txt ]; then
+            echo "No validated JSONs to dispatch (either none found or validation failed)."
             exit 0
           fi
 
           WORKFLOWS=("telegram.yml" "linkedin.yml" "post-to-fb.yml" "post-to-instagram.yml" "post-to-x.yml")
 
-          IFS='|'
-          for wf in "${WORKFLOWS[@]}"; do
-            for jf in $(printf "%s\n" "$JSONS_RAW" | tr '|' '\n'); do
-              if [ -z "$jf" ]; then continue; fi
-              echo "Dispatching ${wf} for ${jf}"
+          while IFS= read -r jf || [ -n "$jf" ]; do
+            jf_trimmed=$(echo "$jf" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            if [ -z "$jf_trimmed" ]; then continue; fi
+
+            for wf in "${WORKFLOWS[@]}"; do
+              echo "Dispatching ${wf} for ${jf_trimmed}"
 
               case "$wf" in
                 "post-to-instagram.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg ig_json "$jf" '{ref: $ref, inputs: {ig_json: $ig_json}}')
+                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg ig_json "$jf_trimmed" '{ref: $ref, inputs: {ig_json: $ig_json}}')
                   ;;
                 "post-to-x.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_list "$jf" '{ref: $ref, inputs: {json_list: $json_list}}')
+                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_list "$jf_trimmed" '{ref: $ref, inputs: {json_list: $json_list}}')
                   ;;
                 "linkedin.yml"|"telegram.yml"|"post-to-fb.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
+                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf_trimmed" '{ref: $ref, inputs: {json_path: $json_path}}')
                   ;;
                 *)
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
+                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf_trimmed" '{ref: $ref, inputs: {json_path: $json_path}}')
                   ;;
               esac
 
@@ -153,6 +191,7 @@ PY
                 "https://api.github.com/repos/${REPO}/actions/workflows/${wf}/dispatches" \
                 -d "${PAYLOAD}"
 
-              echo " -> fired $wf for $jf"
+              echo " -> fired $wf for $jf_trimmed"
             done
-          done
+
+          done < /tmp/validated_jsons.txt
