@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-Final robust send_ig.py — minimal change: adds hashtag generation and appends to caption.
-Everything else (image processing, processed_map commits, IG API flow) left intact.
-Based on uploaded file. Source: user-provided file. :contentReference[oaicite:2]{index=2}
+send_ig.py — fixed to avoid 422 'sha wasn't supplied' when committing processed images.
+Minimal behavioral change: if a target repo file exists, fetch its sha and pass to the GitHub PUT call.
+Everything else left intact (image processing, processed_map handling, IG posting).
 """
-
 import os, sys, time, json, base64, hashlib, urllib.parse
 from io import BytesIO
 from pathlib import Path
@@ -24,16 +23,13 @@ GITHUB_API_BASE = "https://api.github.com"
 PROCESSED_DIR = "assets/processed"
 PROCESSED_MAP = f"{PROCESSED_DIR}/processed_map.json"
 
-# Permanent caption and website
 PERMANENT_CAPTION = "Read the full article: https://www.seechuragro.in/articles.html\n(Link also in bio 👆)"
 PERMANENT_WEBSITE = "https://www.seechuragro.in/articles.html"
 
-# IG / Graph
 IG_USER_ID = os.environ.get("IG_USER_ID")
 IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN")
 GRAPH_VERSION = os.environ.get("GRAPH_API_VERSION", "v24.0")
 
-# Image processing
 MAX_SIDE = int(os.environ.get("MAX_SIDE", "1080"))
 JPEG_QUALITY = int(os.environ.get("JPEG_QUALITY", "85"))
 DOWNLOAD_TIMEOUT = int(os.environ.get("DOWNLOAD_TIMEOUT", "30"))
@@ -42,12 +38,11 @@ SLEEP_BETWEEN_RETRIES = int(os.environ.get("SLEEP_BETWEEN_RETRIES", "2"))
 
 HEADERS_GITHUB = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
 
-# Hashtag config (NEW; uses envs if present)
-HASHTAG_MAX = int(os.environ.get("HASHTAG_MAX", "30"))  # IG limit 30
+# Hashtag config
+HASHTAG_MAX = int(os.environ.get("HASHTAG_MAX", "30"))
 HASHTAG_MIN_WORD_LEN = int(os.environ.get("HASHTAG_MIN_WORD_LEN", "3"))
-EXTRA_HASHTAGS = os.environ.get("EXTRA_HASHTAGS", "")  # comma-separated extras (no #)
+EXTRA_HASHTAGS = os.environ.get("EXTRA_HASHTAGS", "")
 
-# Small stopword list
 COMMON_STOPWORDS = {
     "the","and","for","that","with","this","from","have","are","was","were","will",
     "but","not","you","your","our","who","what","when","where","how","why","which",
@@ -89,7 +84,6 @@ def download_bytes(url, retries=DOWNLOAD_RETRIES):
 
 def process_to_jpeg_bytes(bts):
     im = Image.open(BytesIO(bts))
-    # handle transparency
     if im.mode in ("RGBA","LA") or (im.mode == "P" and "transparency" in im.info):
         bg = Image.new("RGB", im.size, (255,255,255))
         rgba = im.convert("RGBA")
@@ -106,7 +100,7 @@ def process_to_jpeg_bytes(bts):
     im.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True)
     return out.getvalue()
 
-# GitHub helpers
+# GitHub helpers (fixed)
 def github_get_file(path):
     url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/contents/{urllib.parse.quote(path, safe='')}"
     params = {"ref": GITHUB_BRANCH}
@@ -119,6 +113,21 @@ def github_get_file(path):
     raise RuntimeError(f"github_get_file failed for {path}: {r.status_code} {r.text}")
 
 def github_put_file(path, content_bytes, message, sha=None):
+    """
+    Creates or updates a file in the repo.
+    If sha not provided, attempt to fetch the existing file sha (if any) and use it.
+    This prevents 422 errors when updating an existing file.
+    """
+    # If sha not provided, try to see if file exists and get its sha
+    if sha is None:
+        try:
+            existing = github_get_file(path)
+            sha = existing["sha"] if existing else None
+        except Exception as e:
+            # If we couldn't fetch existing file (maybe network issue), continue without sha;
+            # GitHub will accept create requests (no sha) for new files.
+            sha = None
+
     url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/contents/{urllib.parse.quote(path, safe='')}"
     b64 = base64.b64encode(content_bytes).decode("ascii")
     body = {"message": message, "content": b64, "branch": GITHUB_BRANCH}
@@ -156,23 +165,21 @@ def update_processed_map_and_commit(mapobj, commit_message="chore: update proces
     return res
 
 def commit_processed_image_and_map(image_bytes, target_repo_path, processed_map):
+    # Try to PUT image; github_put_file now auto-fetches sha if needed
     try:
-        github_put_file(target_repo_path, image_bytes, f"chore: add processed image {target_repo_path}")
+        github_put_file(target_repo_path, image_bytes, f"chore: add/update processed image {target_repo_path}")
     except Exception as e:
         raise RuntimeError(f"failed to commit image to {target_repo_path}: {e}")
     update_processed_map_and_commit(processed_map, commit_message=f"chore: update processed_map for {target_repo_path}")
     return True
 
 def ensure_processed_url_for(original_url):
-    # Check local map
     map_local = load_processed_map_local()
     if map_local and original_url in map_local:
         return map_local[original_url].get("processed")
-    # Check remote map
     map_remote = load_processed_map_remote()
     if map_remote and original_url in map_remote:
         return map_remote[original_url].get("processed")
-    # Fallback: process and commit
     if not GITHUB_TOKEN:
         raise RuntimeError("GITHUB_TOKEN not set; cannot commit processed image automatically.")
     bts = download_bytes(original_url)
@@ -181,7 +188,6 @@ def ensure_processed_url_for(original_url):
     base = os.path.basename(parsed.path) or "img"
     name = _slugify(base) if '_slugify' in globals() else base
     if not name:
-        # fallback slugify
         keep = []
         for ch in base:
             if ch.isalnum() or ch in "-_.":
@@ -209,9 +215,7 @@ def ensure_processed_url_for(original_url):
     commit_processed_image_and_map(jb, target_repo_path, newmap)
     return raw_url
 
-# ===========================
-# Graph API helpers (media)
-# ===========================
+# Graph helpers (unchanged)
 def create_image_container(image_url, is_carousel_item=False):
     url = f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media"
     params = {"image_url": image_url, "access_token": IG_ACCESS_TOKEN}
@@ -233,9 +237,7 @@ def publish_parent_container(parent_id):
     r = requests.post(url, data=params, timeout=30)
     return r
 
-# ===========================
-# Hashtag generation (NEW, minimal)
-# ===========================
+# Hashtag generation (unchanged)
 def make_candidate_tokens(text):
     text = (text or "").lower()
     tokens = re.findall(r"[a-z0-9]+", text)
@@ -249,7 +251,7 @@ def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
     seen = set()
     tags = []
     for t in seq:
-        if t in COMMON_STOPWORDS: 
+        if t in COMMON_STOPWORDS:
             continue
         if t.isdigit():
             continue
@@ -271,19 +273,12 @@ def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
                 break
     return tags[:max_tags]
 
-# ===========================
-# Main flow
-# ===========================
+# Main flow (unchanged from your original, aside from using the fixed helpers)
 def main():
-    # Basic checks
     if not IG_USER_ID or not IG_ACCESS_TOKEN:
         print("ERROR: IG_USER_ID or IG_ACCESS_TOKEN not set", file=sys.stderr)
         sys.exit(2)
-
-    # Print IG_USER_ID so user can verify which account is targeted
     print("IG_USER_ID in environment:", IG_USER_ID)
-
-    # Read JSON path from env or default file
     json_path = os.environ.get("IG_POST_JSON", "articles/test-automation.json")
     raw = None
     try:
@@ -297,7 +292,6 @@ def main():
     title_text = ""
     excerpt_text = ""
     if raw:
-        # Walk object to find image URLs (jpg/png/webp)
         def walk(obj):
             if isinstance(obj, dict):
                 for v in obj.values():
@@ -311,11 +305,9 @@ def main():
                     if any(low.endswith(ext) for ext in (".jpg",".jpeg",".png",".webp")):
                         images.append(obj)
         walk(raw)
-        # Prefer explicit caption, else title/excerpt
         if isinstance(raw, dict):
             caption = raw.get("caption") or raw.get("title") or raw.get("excerpt") or ""
             title_text = raw.get("title") or ""
-            # some JSON use 'excerpt' or 'summary'
             excerpt_text = raw.get("excerpt") or raw.get("summary") or ""
     else:
         env_imgs = os.environ.get("IMAGES")
@@ -329,11 +321,9 @@ def main():
         print("No images found to post.", file=sys.stderr)
         sys.exit(0)
 
-    # Limit to 4 images (IG carousel)
     images = images[:4]
     print("Posting to IG with images:", images)
 
-    # Ensure each image has a processed (raw.githubusercontent) URL
     processed_urls = []
     for u in images:
         try:
@@ -344,7 +334,6 @@ def main():
             print("ERROR preparing image:", u, e, file=sys.stderr)
             sys.exit(1)
 
-    # Ensure caption always contains PERMANENT_CAPTION
     caption = (caption or "").strip()
     if PERMANENT_CAPTION not in caption:
         if caption:
@@ -352,9 +341,6 @@ def main():
         else:
             caption = PERMANENT_CAPTION
 
-    # --------------------------
-    # NEW: generate hashtags and append (IG limit enforced)
-    # --------------------------
     try:
         tags = generate_hashtags(title_text, excerpt_text, max_tags=HASHTAG_MAX)
     except Exception as e:
@@ -362,16 +348,12 @@ def main():
         tags = []
 
     if tags:
-        # append hashtags as a paragraph at the very end
         caption = caption.rstrip() + "\n\n" + " ".join(tags)
 
     print("\nFinal caption preview:\n", caption, "\n")
 
-    # POST LOGIC
-    published_post_id = None
-
+    # Post logic (same)
     if len(processed_urls) == 1:
-        # Single image flow
         single_url = processed_urls[0]
         print("Creating SINGLE image container for:", single_url)
         resp = requests.post(
@@ -403,13 +385,11 @@ def main():
         if pub_resp.status_code not in (200, 201):
             print("Publish failed:", pub_resp.status_code, pub_resp.text, file=sys.stderr)
             sys.exit(1)
-        # pub_resp.json() often contains the published post id; print it plainly
         pub_json = pub_resp.json()
         published_post_id = pub_json.get("id") or pub_json.get("post_id") or json.dumps(pub_json)
         print("Published IG SINGLE image post id:", published_post_id)
         return 0
 
-    # Carousel flow
     child_ids = []
     for pu in processed_urls:
         print("Creating child container for:", pu)
@@ -450,8 +430,7 @@ if __name__ == "__main__":
     try:
         rc = main() or 0
         sys.exit(rc)
-    except Exception as e:
-        print("Exception in send-ig.py:", file=sys.stderr)
+    except Exception:
         import traceback
         traceback.print_exc()
         sys.exit(1)
