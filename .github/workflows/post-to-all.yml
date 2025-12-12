@@ -1,12 +1,14 @@
-name: Master — validate article assets & dispatch posts
+name: Master — validate + dispatch (manual test)
 
 on:
-  push:
-    paths:
-      - 'articles/**'
+  workflow_dispatch:
+    inputs:
+      json_path:
+        description: "Path to a single article JSON (relative to repo root). e.g. articles/test-automation.json"
+        required: true
 
 concurrency:
-  group: master-post-${{ github.ref_name }}
+  group: master-post-manual-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -14,161 +16,137 @@ permissions:
 
 jobs:
   validate-and-dispatch:
-    name: Validate article JSONs & dispatch
     runs-on: ubuntu-latest
-    # <<< IMPORTANT: set TOKEN to use your PAT stored as a repo secret named REPO_PAT
+    name: Validate JSON and dispatch wrappers (manual)
     env:
-      REPO: ${{ github.repository }}
+      # use your PAT stored as REPO_PAT (create secret if not present)
       TOKEN: ${{ secrets.REPO_PAT }}
-      REF: ${{ github.ref_name }}
+      REPO: ${{ github.repository }}
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Install deps (jq, curl)
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq curl
+      - name: Install node (used by github-script)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-      - name: Find article JSONs changed (or all) and validate
-        id: validate
-        run: |
-          set -euo pipefail
+      - name: Validate JSON and dispatch workflows
+        uses: actions/github-script@v6
+        env:
+          INPUT_JSON_PATH: ${{ github.event.inputs.json_path }}
+          TOKEN: ${{ secrets.REPO_PAT }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const core = require('@actions/core');
 
-          LISTFILE=/tmp/jsons_list.txt
-          : > "$LISTFILE"
+            const jsonPathInput = process.env.INPUT_JSON_PATH;
+            if (!jsonPathInput) {
+              core.setFailed('Input json_path is required.');
+              return;
+            }
 
-          # prefer changed files in this commit
-          CHANGED=$(git show --name-only --pretty="" "$GITHUB_SHA" || true)
-          printf "%s\n" "$CHANGED" | grep -E '^articles/.*\.json$' >> "$LISTFILE" || true
+            const jf = path.normalize(jsonPathInput);
 
-          # fallback: all article JSONs
-          if [ ! -s "$LISTFILE" ]; then
-            ls articles/*.json 2>/dev/null >> "$LISTFILE" || true
-          fi
+            if (!fs.existsSync(jf)) {
+              core.setFailed(`JSON file not found: ${jf}`);
+              return;
+            }
 
-          if [ ! -s "$LISTFILE" ]; then
-            echo "No article JSONs found; nothing to validate or dispatch."
-            exit 0
-          fi
+            // parse JSON
+            let j;
+            try {
+              j = JSON.parse(fs.readFileSync(jf, 'utf8'));
+            } catch (e) {
+              core.setFailed(`Invalid JSON (${jf}): ${String(e).slice(0,200)}`);
+              return;
+            }
+            console.log(`Parsed JSON: ${jf}`);
 
-          ERR=0
-          > /tmp/validated_jsons.txt
+            // collect string values that look like image paths/URLs
+            const imgs = [];
+            function walk(o) {
+              if (o && typeof o === 'object') {
+                if (Array.isArray(o)) for (const v of o) walk(v);
+                else for (const v of Object.values(o)) walk(v);
+              } else if (typeof o === 'string') {
+                const s = o.trim();
+                if (/\.(jpg|jpeg|png|webp)$/i.test(s)) imgs.push(s);
+              }
+            }
+            walk(j);
+            // dedupe preserving order
+            const seen = new Set();
+            const uniq = imgs.filter(x => { if (seen.has(x)) return false; seen.add(x); return true; });
 
-          while IFS= read -r jf || [ -n "$jf" ]; do
-            jf=$(echo "$jf" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-            [ -z "$jf" ] && continue
+            if (uniq.length === 0) {
+              console.log('No image-like strings found (OK if intentional).');
+            } else {
+              console.log('Image candidates found:');
+              uniq.forEach(u => console.log(' - ' + u));
+            }
 
-            if [ ! -f "$jf" ]; then
-              echo "::error file=$jf::Article JSON missing: $jf"
-              ERR=1
-              continue
-            fi
+            // Check local files; warn for remote URLs
+            let missing = false;
+            for (const u of uniq) {
+              if (/^https?:\/\//i.test(u)) {
+                console.log(`WARN: remote URL not checked: ${u}`);
+              } else {
+                const asIs = path.resolve(u);
+                const normalized = path.resolve('.', u.replace(/^\/+/, ''));
+                const fallback = path.resolve('assets', 'articles', path.basename(u));
+                if (fs.existsSync(asIs)) {
+                  console.log(`OK local image: ${asIs}`);
+                } else if (fs.existsSync(normalized)) {
+                  console.log(`OK local image (normalized): ${normalized}`);
+                } else if (fs.existsSync(fallback)) {
+                  console.log(`OK local image (fallback): ${fallback}`);
+                } else {
+                  core.error(`Local image missing: ${u}`);
+                  missing = true;
+                }
+              }
+            }
 
-            if ! jq -e . "$jf" >/dev/null 2>&1; then
-              echo "::error file=$jf::Invalid JSON"
-              ERR=1
-              continue
-            fi
-            echo "VALID JSON: $jf"
+            if (missing) {
+              core.setFailed('One or more local images are missing. Fix JSON or add assets.');
+              return;
+            }
 
-            IMGS=$(jq -r '.. | strings | select(test("\\.(jpg|jpeg|png|webp)$"; "i"))' "$jf" | awk '!x[$0]++' || true)
+            // validation passed — dispatch wrappers
+            const workflows = [
+              {file: 'telegram.yml', input: 'json_path'},
+              {file: 'linkedin.yml', input: 'json_path'},
+              {file: 'post-to-fb.yml', input: 'json_path'},
+              {file: 'post-to-instagram.yml', input: 'ig_json'},
+              {file: 'post-to-x.yml', input: 'json_list'}
+            ];
 
-            if [ -z "$IMGS" ]; then
-              echo "No image-like strings found in $jf (ok if intentional)"
-              printf "%s\n" "$jf" >> /tmp/validated_jsons.txt
-              continue
-            fi
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            // ref to dispatch to - use the branch you triggered from or default to main
+            const ref = (context.ref || process.env.GITHUB_REF || 'refs/heads/main').replace('refs/heads/','') || 'main';
 
-            MISSING=0
-            while IFS= read -r u || [ -n "$u" ]; do
-              u=$(echo "$u" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-              [ -z "$u" ] && continue
+            const octokit = github.getOctokit(process.env.TOKEN);
 
-              if echo "$u" | grep -qE '^https?://'; then
-                status=$(curl -s -o /dev/null -I --max-time 10 -w "%{http_code}" "$u" || echo "000")
-                if [ "$status" = "200" ] || [ "$status" = "301" ] || [ "$status" = "302" ]; then
-                  echo "OK remote image: $u"
-                else
-                  echo "::error file=$jf::Remote image not reachable: $u (HTTP $status)"
-                  MISSING=1
-                fi
-              else
-                if [ -f "$u" ]; then
-                  echo "OK local image: $u"
-                elif [ -f "./${u#/}" ]; then
-                  echo "OK local image (normalized): ${u#/}"
-                elif [ -f "./assets/articles/${u##*/}" ]; then
-                  echo "OK local image (fallback): ./assets/articles/${u##*/}"
-                else
-                  echo "::error file=$jf::Local image missing: $u"
-                  MISSING=1
-                fi
-              fi
-            done <<EOF
-$IMGS
-EOF
+            for (const wf of workflows) {
+              try {
+                await octokit.actions.createWorkflowDispatch({
+                  owner,
+                  repo,
+                  workflow_id: wf.file,
+                  ref,
+                  inputs: { [wf.input]: jf }
+                });
+                console.log(`Dispatched ${wf.file} with input ${wf.input}=${jf}`);
+              } catch (err) {
+                core.error(`Failed to dispatch ${wf.file}: ${err}`);
+                throw err;
+              }
+            }
 
-            if [ "$MISSING" -eq 1 ]; then
-              ERR=1
-            else
-              printf "%s\n" "$jf" >> /tmp/validated_jsons.txt
-            fi
-
-          done < "$LISTFILE"
-
-          if [ "$ERR" -ne 0 ]; then
-            echo "Validation failed — fix images or JSON and re-merge."
-            exit 2
-          fi
-
-          echo "Validation completed successfully."
-          echo "Validated list written to /tmp/validated_jsons.txt"
-
-      - name: Dispatch wrappers for each validated JSON
-        if: always()
-        run: |
-          set -euo pipefail
-
-          if [ ! -f /tmp/validated_jsons.txt ] || [ ! -s /tmp/validated_jsons.txt ]; then
-            echo "No validated JSONs to dispatch (either none found or validation failed)."
-            exit 0
-          fi
-
-          WORKFLOWS=("telegram.yml" "linkedin.yml" "post-to-fb.yml" "post-to-instagram.yml" "post-to-x.yml")
-
-          while IFS= read -r jf || [ -n "$jf" ]; do
-            jf=$(echo "$jf" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-            [ -z "$jf" ] && continue
-
-            for wf in "${WORKFLOWS[@]}"; do
-              echo "Dispatching ${wf} for ${jf}"
-
-              case "$wf" in
-                "post-to-instagram.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg ig_json "$jf" '{ref: $ref, inputs: {ig_json: $ig_json}}')
-                  ;;
-                "post-to-x.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_list "$jf" '{ref: $ref, inputs: {json_list: $json_list}}')
-                  ;;
-                "linkedin.yml"|"telegram.yml"|"post-to-fb.yml")
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
-                  ;;
-                *)
-                  PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
-                  ;;
-              esac
-
-              # use REPO and TOKEN (REPO_PAT) to call dispatch
-              curl -s -X POST \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer ${TOKEN}" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                "https://api.github.com/repos/${REPO}/actions/workflows/${wf}/dispatches" \
-                -d "${PAYLOAD}"
-
-              echo " -> fired $wf for $jf"
-            done
-          done < /tmp/validated_jsons.txt
+            core.info('All dispatch requests sent.');
