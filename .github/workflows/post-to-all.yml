@@ -1,6 +1,5 @@
 name: Master — validate article assets & dispatch posts
 
-# runs when articles/ change
 on:
   push:
     paths:
@@ -15,11 +14,13 @@ permissions:
   workflows: write
 
 jobs:
-  prep-and-validate:
-    name: Validate article JSONs & assets (stop on any missing)
+  validate-and-dispatch:
+    name: Validate article JSONs & dispatch (single job)
     runs-on: ubuntu-latest
-    outputs:
-      json_list: ${{ steps.find-jsons.outputs.jsons }}
+    env:
+      REPO: ${{ github.repository }}
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REF: ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -30,16 +31,15 @@ jobs:
         id: find-jsons
         run: |
           set -euo pipefail
-          CHANGED="$(git diff --name-only ${{ github.sha }} ${{ github.sha }}~1 2>/dev/null | grep '^articles/.*\.json$' || true)"
+          CHANGED="$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}~1" 2>/dev/null | grep '^articles/.*\.json$' || true)"
           if [ -n "$CHANGED" ]; then
             JSONS="$CHANGED"
           else
             JSONS="$(ls articles/*.json 2>/dev/null || true)"
           fi
-          # normalize to pipe-delimited single-line output
+          # normalize newline -> pipe single line
           JSONS="$(printf "%s\n" $JSONS | tr '\n' '|' | sed 's/|$//')"
           echo "Found JSONs: $JSONS"
-          # modern way to set step output
           printf "jsons=%s\n" "$JSONS" >> "$GITHUB_OUTPUT"
 
       - name: Validate JSON files and referenced images
@@ -81,6 +81,7 @@ PY
 
             for u in $(printf "%s\n" "$imgs" | tr '|' '\n'); do
               if [ -z "$u" ]; then continue; fi
+
               if echo "$u" | grep -qE '^https?://'; then
                 status=$(curl -s -o /dev/null -I --max-time 10 -w "%{http_code}" "$u" || echo "000")
                 if [ "$status" = "200" ] || [ "$status" = "302" ] || [ "$status" = "301" ]; then
@@ -108,45 +109,26 @@ PY
             echo "Validation failed — fix images or JSON and re-merge."
             exit 2
           fi
-          echo "All checks passed."
 
-  dispatch-platforms:
-    name: Dispatch validated posts to platform workflows (parallel)
-    needs: prep-and-validate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout minimal
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+          echo "All validation checks passed."
 
-      - name: Dispatch child workflows
-        env:
-          REPO: ${{ github.repository }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JSONS: ${{ needs.prep-and-validate.outputs.json_list }}
+      - name: Dispatch wrappers for each JSON
+        if: steps.find-jsons.outputs.jsons != ''
         run: |
           set -euo pipefail
 
-          JSONS_RAW="${{ needs.prep-and-validate.outputs.json_list }}"
+          JSONS_RAW="${{ steps.find-jsons.outputs.jsons }}"
           if [ -z "$JSONS_RAW" ]; then
-            echo "No JSONs found (nothing to dispatch)."
+            echo "No JSONs to dispatch."
             exit 0
           fi
 
-          # reference for dispatch API
-          REPO="${REPO}"
-          TOKEN="${TOKEN}"
-          REF="${{ github.ref_name }}"
-
-          # list of workflow files to dispatch (must match the filenames in .github/workflows)
           WORKFLOWS=("telegram.yml" "linkedin.yml" "post-to-fb.yml" "post-to-instagram.yml" "post-to-x.yml")
 
           IFS='|'
           for wf in "${WORKFLOWS[@]}"; do
             for jf in $(printf "%s\n" "$JSONS_RAW" | tr '|' '\n'); do
               if [ -z "$jf" ]; then continue; fi
-
               echo "Dispatching ${wf} for ${jf}"
 
               case "$wf" in
