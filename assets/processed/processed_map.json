@@ -21,15 +21,15 @@
     "generated_at": "2025-12-10T06:57:44.444492Z",
     "repo_path": "assets/processed/3babbc1ae3-coverimage_-_Srivatsan_Renga.jpg"
   },
-  "https://seechuragro.in/images/articles/water-use-efficiency/hero.jpg": {
-    "processed": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/processed/333ead726b-hero.jpg",
+  "https://seechuragro.in/images/articles/microgreens-basics/hero.jpg": {
+    "processed": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/processed/0844e149e7-hero.jpg",
     "variants": {
-      "default": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/processed/333ead726b-hero.jpg"
+      "default": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/processed/0844e149e7-hero.jpg"
     },
-    "sha256": "333ead726b28e40d58a2124784a4715426f2761430306a581ac10e8077c2ee5b",
-    "width": 1024,
-    "height": 672,
-    "generated_at": "2025-12-12T11:36:30.975292Z",
-    "repo_path": "assets/processed/333ead726b-hero.jpg"
+    "sha256": "0844e149e7b2e6aa4ffdad83f051d2230eec8daaefa73e084df836f507ea66db",
+    "width": 268,
+    "height": 178,
+    "generated_at": "2025-12-12T11:36:33.736945Z",
+    "repo_path": "assets/processed/0844e149e7-hero.jpg"
   }
 }
