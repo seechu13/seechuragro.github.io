@@ -1,0 +1,138 @@
+name: Post to Facebook (articles/** trigger + manual post)
+
+on:
+  push:
+    paths:
+      - 'articles/**'
+  workflow_dispatch:
+    inputs:
+      post_real:
+        description: 'Set to "true" to perform real posting when manually dispatching'
+        required: false
+        default: 'false'
+      file:
+        description: 'Optional: specific article JSON to post (relative path). Leave empty to run for all articles.'
+        required: false
+        default: ''
+
+env:
+  # Default env values; secrets injected per-step
+  HASHTAG_MAX: '30'
+  HASHTAG_MIN_WORD_LEN: '3'
+  EXTRA_HASHTAGS: 'seechuragro,agriculture'
+  PREVIEW_ONLY_DEFAULT: 'true'   # used for push preview
+
+jobs:
+  preview_on_push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --quiet Pillow requests
+
+      - name: Preview captions for all article JSONs (push trigger)
+        env:
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          HASHTAG_MAX: ${{ env.HASHTAG_MAX }}
+          HASHTAG_MIN_WORD_LEN: ${{ env.HASHTAG_MIN_WORD_LEN }}
+          EXTRA_HASHTAGS: ${{ env.EXTRA_HASHTAGS }}
+          PREVIEW_ONLY: 'true'
+        run: |
+          echo "Running PREVIEW for all article JSONs under articles/**"
+          set -euo pipefail
+          # find all JSON files tracked in git under articles/
+          mapfile -t files < <(git ls-files 'articles/**/*.json' || true)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No JSON files found under articles/"
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            echo
+            echo "===== PREVIEW: $f ====="
+            python send_fb.py "$f" || echo "Preview script returned non-zero for $f (continuing)"
+            echo "===== END PREVIEW: $f ====="
+          done
+
+  post_real (manual):
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --quiet Pillow requests
+
+      - name: Post real (uses workflow input to control which files)
+        env:
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          HASHTAG_MAX: ${{ env.HASHTAG_MAX }}
+          HASHTAG_MIN_WORD_LEN: ${{ env.HASHTAG_MIN_WORD_LEN }}
+          EXTRA_HASHTAGS: ${{ env.EXTRA_HASHTAGS }}
+        run: |
+          echo "Manual dispatch: post_real=${{ github.event.inputs.post_real }}, file='${{ github.event.inputs.file }}'"
+          set -euo pipefail
+
+          POST_REAL="${{ github.event.inputs.post_real }}"
+          SPECIFIC_FILE="${{ github.event.inputs.file }}"
+
+          if [ "${POST_REAL,,}" != "true" ] ; then
+            echo "post_real is not 'true' — performing PREVIEW only for requested files."
+            PREVIEW_ONLY='true'
+          else
+            echo "post_real is 'true' — performing REAL post (PREVIEW_ONLY=false)."
+            PREVIEW_ONLY='false'
+          fi
+
+          export PREVIEW_ONLY
+
+          if [ -n "${SPECIFIC_FILE}" ]; then
+            if [ ! -f "${SPECIFIC_FILE}" ]; then
+              echo "Specified file does not exist: ${SPECIFIC_FILE}"
+              exit 2
+            fi
+            echo "Running send_fb.py for: ${SPECIFIC_FILE}"
+            python send_fb.py "${SPECIFIC_FILE}"
+            exit 0
+          fi
+
+          # No specific file -> run for all JSONs under articles/
+          mapfile -t files < <(git ls-files 'articles/**/*.json' || true)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No JSON files found under articles/ to post."
+            exit 0
+          fi
+
+          for f in "${files[@]}"; do
+            echo
+            echo "===== PROCESSING: $f ====="
+            python send_fb.py "$f" || echo "send_fb.py returned non-zero for $f (continuing)"
+            echo "===== DONE: $f ====="
+          done
