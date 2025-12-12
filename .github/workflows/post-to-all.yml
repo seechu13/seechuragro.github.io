@@ -39,7 +39,8 @@ jobs:
           # normalize to pipe-delimited single-line output
           JSONS="$(printf "%s\n" $JSONS | tr '\n' '|' | sed 's/|$//')"
           echo "Found JSONs: $JSONS"
-          echo "::set-output name=jsons::$JSONS"
+          # modern way to set step output
+          printf "jsons=%s\n" "$JSONS" >> "$GITHUB_OUTPUT"
 
       - name: Validate JSON files and referenced images
         if: steps.find-jsons.outputs.jsons != ''
