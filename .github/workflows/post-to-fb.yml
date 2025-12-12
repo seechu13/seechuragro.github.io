@@ -68,7 +68,7 @@ jobs:
             echo "===== END PREVIEW: $f ====="
           done
 
-  post_real (manual):
+  post_real:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
