@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
 """
-Final robust send_ig.py — updated:
-- Always appends PERMANENT_CAPTION to captions (single & carousel)
-- Prints IG_USER_ID at startup for verification (does NOT print tokens)
-- Prints publish response and extracted post id on success
-- Clearer error reporting for single vs carousel flows
-Based on uploaded file. Source: user-provided file. :contentReference[oaicite:1]{index=1}
+Final robust send_ig.py — minimal change: adds hashtag generation and appends to caption.
+Everything else (image processing, processed_map commits, IG API flow) left intact.
+Based on uploaded file. Source: user-provided file. :contentReference[oaicite:2]{index=2}
 """
 
 import os, sys, time, json, base64, hashlib, urllib.parse
 from io import BytesIO
 from pathlib import Path
 from datetime import datetime
-
 import requests
 from PIL import Image
+import re
 
 # ===========================
 # CONFIG / CONSTANTS
@@ -37,13 +34,26 @@ IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN")
 GRAPH_VERSION = os.environ.get("GRAPH_API_VERSION", "v24.0")
 
 # Image processing
-MAX_SIDE = 1080
-JPEG_QUALITY = 85
-DOWNLOAD_TIMEOUT = 30
-DOWNLOAD_RETRIES = 3
-SLEEP_BETWEEN_RETRIES = 2
+MAX_SIDE = int(os.environ.get("MAX_SIDE", "1080"))
+JPEG_QUALITY = int(os.environ.get("JPEG_QUALITY", "85"))
+DOWNLOAD_TIMEOUT = int(os.environ.get("DOWNLOAD_TIMEOUT", "30"))
+DOWNLOAD_RETRIES = int(os.environ.get("DOWNLOAD_RETRIES", "3"))
+SLEEP_BETWEEN_RETRIES = int(os.environ.get("SLEEP_BETWEEN_RETRIES", "2"))
 
 HEADERS_GITHUB = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
+
+# Hashtag config (NEW; uses envs if present)
+HASHTAG_MAX = int(os.environ.get("HASHTAG_MAX", "30"))  # IG limit 30
+HASHTAG_MIN_WORD_LEN = int(os.environ.get("HASHTAG_MIN_WORD_LEN", "3"))
+EXTRA_HASHTAGS = os.environ.get("EXTRA_HASHTAGS", "")  # comma-separated extras (no #)
+
+# Small stopword list
+COMMON_STOPWORDS = {
+    "the","and","for","that","with","this","from","have","are","was","were","will",
+    "but","not","you","your","our","who","what","when","where","how","why","which",
+    "their","they","them","been","had","has","about","into","over","through","also",
+    "more","other","these","those","there","such","may","can","its","it's","a","an","in","on","of","to","by","as"
+}
 
 # ===========================
 # Helpers
@@ -224,6 +234,44 @@ def publish_parent_container(parent_id):
     return r
 
 # ===========================
+# Hashtag generation (NEW, minimal)
+# ===========================
+def make_candidate_tokens(text):
+    text = (text or "").lower()
+    tokens = re.findall(r"[a-z0-9]+", text)
+    tokens = [t for t in tokens if len(t) >= HASHTAG_MIN_WORD_LEN]
+    return tokens
+
+def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
+    tokens_title = make_candidate_tokens(title)
+    tokens_excerpt = make_candidate_tokens(excerpt)
+    seq = tokens_title + tokens_excerpt
+    seen = set()
+    tags = []
+    for t in seq:
+        if t in COMMON_STOPWORDS: 
+            continue
+        if t.isdigit():
+            continue
+        if t in seen:
+            continue
+        seen.add(t)
+        tags.append("#" + t)
+        if len(tags) >= max_tags:
+            break
+    if EXTRA_HASHTAGS:
+        extras = [x.strip().lower() for x in EXTRA_HASHTAGS.split(",") if x.strip()]
+        for e in extras:
+            e_clean = re.sub(r"[^a-z0-9]", "", e)
+            if not e_clean or e_clean in seen:
+                continue
+            tags.append("#" + e_clean)
+            seen.add(e_clean)
+            if len(tags) >= max_tags:
+                break
+    return tags[:max_tags]
+
+# ===========================
 # Main flow
 # ===========================
 def main():
@@ -246,6 +294,8 @@ def main():
 
     images = []
     caption = ""
+    title_text = ""
+    excerpt_text = ""
     if raw:
         # Walk object to find image URLs (jpg/png/webp)
         def walk(obj):
@@ -264,11 +314,16 @@ def main():
         # Prefer explicit caption, else title/excerpt
         if isinstance(raw, dict):
             caption = raw.get("caption") or raw.get("title") or raw.get("excerpt") or ""
+            title_text = raw.get("title") or ""
+            # some JSON use 'excerpt' or 'summary'
+            excerpt_text = raw.get("excerpt") or raw.get("summary") or ""
     else:
         env_imgs = os.environ.get("IMAGES")
         if env_imgs:
             images = [x.strip() for x in env_imgs.split(",") if x.strip()]
             caption = os.environ.get("CAPTION","")
+            title_text = os.environ.get("TITLE","")
+            excerpt_text = os.environ.get("EXCERPT","")
 
     if not images:
         print("No images found to post.", file=sys.stderr)
@@ -296,6 +351,19 @@ def main():
             caption = caption + "\n\n" + PERMANENT_CAPTION
         else:
             caption = PERMANENT_CAPTION
+
+    # --------------------------
+    # NEW: generate hashtags and append (IG limit enforced)
+    # --------------------------
+    try:
+        tags = generate_hashtags(title_text, excerpt_text, max_tags=HASHTAG_MAX)
+    except Exception as e:
+        print("Hashtag generation failed, continuing without hashtags:", e, file=sys.stderr)
+        tags = []
+
+    if tags:
+        # append hashtags as a paragraph at the very end
+        caption = caption.rstrip() + "\n\n" + " ".join(tags)
 
     print("\nFinal caption preview:\n", caption, "\n")
 
