@@ -33,6 +33,11 @@ jobs:
       GITHUB_BRANCH: staging
       # Path to the article JSON to post (defaults to articles/test-automation.json)
       IG_POST_JSON: ${{ github.event.inputs.json_path || 'articles/test-automation.json' }}
+      # --------- NEW: hashtag envs (only) ----------
+      HASHTAG_MAX: '30'                 # IG limit (30)
+      HASHTAG_MIN_WORD_LEN: '3'
+      EXTRA_HASHTAGS: 'seechuragro,agriculture'
+      # ---------------------------------------------
       # Optional: override number of images or caption using IMAGES / CAPTION env if desired
     steps:
       - name: Checkout repo
@@ -80,6 +85,10 @@ jobs:
           GITHUB_REPO: ${{ env.GITHUB_REPO }}
           GITHUB_BRANCH: ${{ env.GITHUB_BRANCH }}
           IG_POST_JSON: ${{ env.IG_POST_JSON }}
+          # Pass hashtag envs down to the script
+          HASHTAG_MAX: ${{ env.HASHTAG_MAX }}
+          HASHTAG_MIN_WORD_LEN: ${{ env.HASHTAG_MIN_WORD_LEN }}
+          EXTRA_HASHTAGS: ${{ env.EXTRA_HASHTAGS }}
         run: |
           set -euo pipefail
           echo "Posting using JSON: $IG_POST_JSON"
@@ -92,4 +101,4 @@ jobs:
           name: post-to-instagram-failure-logs
           path: |
             # capture runner logs if you want — keep empty to avoid large uploads
-            ./  # (no-op placeholder; edit if you want to upload specific debug files)
+            ./  # (no-op placeholder)
