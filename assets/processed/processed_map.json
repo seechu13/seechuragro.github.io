@@ -21,15 +21,15 @@
     "generated_at": "2025-12-10T06:57:44.444492Z",
     "repo_path": "assets/processed/3babbc1ae3-coverimage_-_Srivatsan_Renga.jpg"
   },
-  "https://seechuragro.in/assets/articles/dairy-farming-guide-20251122-201040/animals-in-shed-srivatsan-renga-1.jpg": {
-    "processed": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/processed/576b63cad2-animals-in-shed-srivatsan-renga-1.jpg",
+  "https://seechuragro.in/images/articles/water-use-efficiency/hero.jpg": {
+    "processed": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/processed/333ead726b-hero.jpg",
     "variants": {
-      "default": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/processed/576b63cad2-animals-in-shed-srivatsan-renga-1.jpg"
+      "default": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/processed/333ead726b-hero.jpg"
     },
-    "sha256": "576b63cad2ff9dbf9e1ca1202c46487dd9623ab6be2480901386a1cd1c82422f",
-    "width": 1080,
-    "height": 720,
-    "generated_at": "2025-12-12T11:36:27.647980Z",
-    "repo_path": "assets/processed/576b63cad2-animals-in-shed-srivatsan-renga-1.jpg"
+    "sha256": "333ead726b28e40d58a2124784a4715426f2761430306a581ac10e8077c2ee5b",
+    "width": 1024,
+    "height": 672,
+    "generated_at": "2025-12-12T11:36:30.975292Z",
+    "repo_path": "assets/processed/333ead726b-hero.jpg"
   }
 }
