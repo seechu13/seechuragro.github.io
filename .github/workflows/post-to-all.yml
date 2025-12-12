@@ -46,16 +46,21 @@ jobs:
         if: steps.find-jsons.outputs.jsons != ''
         run: |
           set -euo pipefail
+
+          JSONS_RAW="${{ steps.find-jsons.outputs.jsons }}"
           IFS='|'
           ERR=0
-          for jf in ${{ steps.find-jsons.outputs.jsons }}; do
+
+          for jf in $(printf "%s\n" "$JSONS_RAW" | tr '|' '\n'); do
             if [ -z "$jf" ] || [ ! -f "$jf" ]; then
               echo "::error file=$jf::Article JSON missing: $jf"
               ERR=1
               continue
             fi
+
             python -m json.tool "$jf" >/dev/null || { echo "::error file=$jf::Invalid JSON"; ERR=1; continue; }
             echo "VALID JSON: $jf"
+
             imgs=$(python - <<'PY'
 import json,sys,re
 j=json.load(open(sys.argv[1],'r',encoding='utf-8'))
@@ -73,6 +78,7 @@ walk(j)
 print('|'.join(dict.fromkeys(s)))
 PY
  "$jf")
+
             for u in $(printf "%s\n" "$imgs" | tr '|' '\n'); do
               if [ -z "$u" ]; then continue; fi
               if echo "$u" | grep -qE '^https?://'; then
@@ -97,6 +103,7 @@ PY
               fi
             done
           done
+
           if [ "$ERR" -ne 0 ]; then
             echo "Validation failed — fix images or JSON and re-merge."
             exit 2
@@ -135,35 +142,28 @@ PY
           # list of workflow files to dispatch (must match the filenames in .github/workflows)
           WORKFLOWS=("telegram.yml" "linkedin.yml" "post-to-fb.yml" "post-to-instagram.yml" "post-to-x.yml")
 
-          # iterate each JSON and fire each workflow with the correct input key expected by that workflow
           IFS='|'
           for wf in "${WORKFLOWS[@]}"; do
-            for jf in $JSONS_RAW; do
+            for jf in $(printf "%s\n" "$JSONS_RAW" | tr '|' '\n'); do
               if [ -z "$jf" ]; then continue; fi
 
               echo "Dispatching ${wf} for ${jf}"
 
-              # prepare input payload depending on target workflow
               case "$wf" in
                 "post-to-instagram.yml")
-                  # instagram wrapper expects input 'ig_json'
                   PAYLOAD=$(jq -nc --arg ref "$REF" --arg ig_json "$jf" '{ref: $ref, inputs: {ig_json: $ig_json}}')
                   ;;
                 "post-to-x.yml")
-                  # x wrapper expects 'json_list' (we'll send single-line list entry)
                   PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_list "$jf" '{ref: $ref, inputs: {json_list: $json_list}}')
                   ;;
                 "linkedin.yml"|"telegram.yml"|"post-to-fb.yml")
-                  # these wrappers expect 'json_path'
                   PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
                   ;;
                 *)
-                  # default: send json_path
                   PAYLOAD=$(jq -nc --arg ref "$REF" --arg json_path "$jf" '{ref: $ref, inputs: {json_path: $json_path}}')
                   ;;
               esac
 
-              # fire the dispatch
               curl -s -X POST \
                 -H "Accept: application/vnd.github+json" \
                 -H "Authorization: Bearer ${TOKEN}" \
