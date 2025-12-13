@@ -141,7 +141,9 @@ def github_put_file(path, content_bytes, message, branch=None, sha=None):
 
     r = requests.put(url, headers=HEADERS_GITHUB, json=body)
     if r.status_code not in (200,201):
-        raise RuntimeError(f"github_put_file failed (path={path}, branch={branch}): {r.status_code} {r.text}")
+        raise RuntimeError(
+            f"github_put_file failed (path={path}, branch={branch}): {r.status_code} {r.text}"
+        )
     return r.json()
 
 def ensure_processed_branch_exists():
@@ -154,19 +156,27 @@ def ensure_processed_branch_exists():
     src_ref_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{GITHUB_BRANCH}"
     r2 = requests.get(src_ref_url, headers=HEADERS_GITHUB)
     if r2.status_code != 200:
-        raise RuntimeError(f"Could not read source branch ref {GITHUB_BRANCH}: {r2.status_code} {r2.text}")
+        raise RuntimeError(
+            f"Could not read source branch ref {GITHUB_BRANCH}: {r2.status_code} {r2.text}"
+        )
 
     src_sha = r2.json().get("object", {}).get("sha")
     if not src_sha:
         raise RuntimeError("Could not determine source branch SHA to create processed branch.")
 
     create_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/refs"
-    r3 = requests.post(create_url, headers=HEADERS_GITHUB, json={"ref": f"refs/heads/{PROCESSED_BRANCH}", "sha": src_sha})
+    r3 = requests.post(
+        create_url,
+        headers=HEADERS_GITHUB,
+        json={"ref": f"refs/heads/{PROCESSED_BRANCH}", "sha": src_sha},
+    )
 
     if r3.status_code == 201 or (r3.status_code == 422 and "Reference already exists" in r3.text):
         return True
 
-    raise RuntimeError(f"Could not create processed branch {PROCESSED_BRANCH}: {r3.status_code} {r3.text}")
+    raise RuntimeError(
+        f"Could not create processed branch {PROCESSED_BRANCH}: {r3.status_code} {r3.text}"
+    )
 
 # -------------------------
 # processed map helpers
@@ -303,7 +313,7 @@ def is_media_ready(creation_id):
             return False
         j = r.json()
         sc = j.get("status_code") or j.get("status")
-        if isinstance(sc, str) and sc.upper() == "FINISHED":
+        if isinstance(sc, str) and sc.upper() in ("FINISHED", "PUBLISHED"):
             return True
         if sc in ("ready", "complete"):
             return True
@@ -473,8 +483,22 @@ def main():
         print("Hashtag generation failed:", e)
         tags = []
 
+    # ---------------------------------------
+    # THREADS-SAFE CAPTION PATCH
+    # Threads hides everything AFTER this marker:
+    THREADS_SPLIT_MARKER = "<!--threads-->"
+    # ---------------------------------------
+
     if tags:
-        caption += "\n\n" + " ".join(tags)
+        ig_hashtags = " ".join(tags)
+
+        caption = (
+            caption
+            + "\n\n"
+            + THREADS_SPLIT_MARKER
+            + "\n"
+            + ig_hashtags
+        )
 
     print("\nFinal caption:\n", caption, "\n")
 
@@ -491,7 +515,7 @@ def main():
         sys.exit(1)
 
     # ------------------------------------------------
-    # PUBLISH BLOCK — NOW WITH RETRY FIX APPLIED
+    # PUBLISH BLOCK — WITH RETRY FIX & PUBLISHED SUPPORT
     # ------------------------------------------------
 
     pub = publish_parent_container(parent_id)
@@ -504,7 +528,6 @@ def main():
     publish_id = pub.json().get("id")
     print("Publish request accepted. Publish ID:", publish_id)
 
-    # ===== FIX START =====
     print("\n⏳ Waiting 10 seconds before first publish-status check...")
     time.sleep(10)
 
@@ -525,7 +548,6 @@ def main():
             js = {}
 
         status = js.get("status_code") or js.get("status")
-
         print(f"🔎 Publish Check {attempt}/{max_retries}: {status}")
 
         if isinstance(status, str) and status.upper() in ("FINISHED", "PUBLISHED"):
@@ -543,7 +565,6 @@ def main():
     else:
         print("❌ Max retries reached — IG did not confirm publishing.")
         sys.exit(1)
-    # ===== FIX END =====
 
     print("Published IG post id:", publish_id)
     return 0
