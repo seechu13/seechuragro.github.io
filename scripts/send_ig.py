@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
 send_ig.py
-- Posts carousel images to Instagram
-- Uses processed-images branch
-- Robust publish retry logic
-- Hashtags are posted as FIRST COMMENT (Threads-safe)
+
+FINAL STABLE VERSION
+- Carousel posting
+- Processed images committed to processed-images branch
+- Publish retry safe handling
+- FIRST COMMENT hashtags (Threads-safe)
+- No assumptions about IG API response shapes
 """
 
 import os, sys, time, json, base64, hashlib, urllib.parse, re
 from io import BytesIO
 from pathlib import Path
-from datetime import datetime
 import requests
 from PIL import Image
 
@@ -54,7 +56,7 @@ COMMON_STOPWORDS = {
 HEADERS_GITHUB = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
 
 # --------------------------------------------------
-# UTILITIES
+# HELPERS
 # --------------------------------------------------
 def raw_base_for(branch):
     return RAW_BASE_TEMPLATE.format(repo=GITHUB_REPO, branch=branch)
@@ -136,7 +138,7 @@ def ig_get(endpoint, params):
         timeout=20
     )
 
-def wait_for_media_ready(media_id, timeout=120):
+def wait_for_media_ready(media_id, timeout=180):
     waited = 0
     while waited < timeout:
         r = ig_get(media_id, {
@@ -209,11 +211,13 @@ def main():
             f"{IG_USER_ID}/media",
             {"image_url": purl, "is_carousel_item": "true", "access_token": IG_ACCESS_TOKEN}
         )
-        cid = r.json()["id"]
+        cid = r.json().get("id")
+        if not cid:
+            raise RuntimeError("No child container ID returned")
         wait_for_media_ready(cid)
         child_ids.append(cid)
 
-    # ---- Create parent
+    # ---- Create parent container
     parent = ig_post(
         f"{IG_USER_ID}/media",
         {
@@ -223,19 +227,28 @@ def main():
             "access_token": IG_ACCESS_TOKEN
         }
     )
-    creation_id = parent.json()["id"]
+    creation_id = parent.json().get("id")
+    if not creation_id:
+        raise RuntimeError("No parent creation ID returned")
 
     # ---- Publish
     pub = ig_post(
         f"{IG_USER_ID}/media_publish",
         {"creation_id": creation_id, "access_token": IG_ACCESS_TOKEN}
     )
-    post_id = pub.json()["id"]
 
-    # ---- Wait until commentable
+    try:
+        pub_json = pub.json()
+    except Exception:
+        pub_json = {}
+
+    post_id = pub_json.get("id") or creation_id
+    print("Publish response:", pub_json)
+    print("Using media id:", post_id)
+
+    # ---- Wait until commentable and post hashtags
     print("Waiting for media to become commentable...")
     if wait_for_media_ready(post_id):
-
         for attempt in range(1, 4):
             r = ig_post(
                 f"{post_id}/comments",
