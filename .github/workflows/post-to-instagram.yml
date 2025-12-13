@@ -19,6 +19,7 @@ jobs:
   post:
     name: Post to Instagram
     runs-on: ubuntu-latest
+
     env:
       GITHUB_REPO: seechu13/seechuragro.github.io
       GITHUB_BRANCH: staging
@@ -30,11 +31,16 @@ jobs:
       EXTRA_HASHTAGS: 'seechuragro,agriculture'
 
     steps:
-      - name: Checkout repo
+
+      # -----------------------------
+      # ALWAYS CHECK OUT STAGING BRANCH
+      # -----------------------------
+      - name: Checkout repo (force staging branch)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
+          ref: staging
 
       - name: Set up Python
         uses: actions/setup-python@v4
