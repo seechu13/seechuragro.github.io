@@ -49,14 +49,15 @@ jobs:
             let jf = process.env.MANUAL_JSON;
             const eventPath = process.env.GITHUB_EVENT_PATH;
 
-            // -----------------------------
-            // AUTO-DETECT JSON ON PUSH
-            // -----------------------------
+            // ============================================================
+            // AUTO-DETECT JSON ON PUSH — supports commits[] and head_commit
+            // ============================================================
             if (!jf) {
               const event = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
 
-              const files = [];
+              let files = [];
 
+              // Normal pushes: event.commits[]
               if (Array.isArray(event.commits)) {
                 for (const c of event.commits) {
                   const added = Array.isArray(c.added) ? c.added : [];
@@ -65,6 +66,14 @@ jobs:
                 }
               }
 
+              // GitHub UI / single file commits → head_commit fallback
+              if (event.head_commit) {
+                const added = Array.isArray(event.head_commit.added) ? event.head_commit.added : [];
+                const modified = Array.isArray(event.head_commit.modified) ? event.head_commit.modified : [];
+                files.push(...added, ...modified);
+              }
+
+              // Take only JSONs
               const jsons = files.filter(f => f.endsWith('.json'));
 
               if (jsons.length === 0) {
@@ -73,7 +82,7 @@ jobs:
               }
 
               jf = jsons[0];
-              console.log("Auto-detected JSON:", jf);
+              console.log("Auto-detected JSON file:", jf);
             } else {
               console.log("Manual mode JSON:", jf);
             }
@@ -85,27 +94,27 @@ jobs:
               return;
             }
 
-            // --------------------------------
-            // PARSE JSON
-            // --------------------------------
+            // ==============================
+            // PARSE JSON SAFELY
+            // ==============================
             let j;
             try {
               j = JSON.parse(fs.readFileSync(jf, 'utf8'));
             } catch (e) {
-              core.setFailed(`Invalid JSON (${jf}): ${String(e).slice(0,180)}`);
+              core.setFailed(`Invalid JSON (${jf}): ${String(e).slice(0,200)}`);
               return;
             }
-            console.log("Parsed JSON OK");
+            console.log("JSON parsed successfully");
 
-            // --------------------------------
+            // ==============================
             // FIND IMAGE PATHS
-            // --------------------------------
+            // ==============================
             const imgs = [];
             function walk(o) {
-              if (o && typeof o === 'object') {
+              if (o && typeof o === "object") {
                 if (Array.isArray(o)) o.forEach(walk);
                 else Object.values(o).forEach(walk);
-              } else if (typeof o === 'string') {
+              } else if (typeof o === "string") {
                 if (/\.(jpg|jpeg|png|webp)$/i.test(o.trim()))
                   imgs.push(o.trim());
               }
@@ -114,21 +123,21 @@ jobs:
 
             const uniq = [...new Set(imgs)];
 
-            if (uniq.length) {
+            if (uniq.length > 0) {
               console.log("Image candidates:");
-              uniq.forEach(i => console.log(" -", i));
+              uniq.forEach(u => console.log(" -", u));
             } else {
-              console.log("No images found (OK).");
+              console.log("No images detected (OK).");
             }
 
-            // --------------------------------
-            // CHECK LOCAL IMAGES
-            // --------------------------------
+            // ==============================
+            // VALIDATE LOCAL IMAGES
+            // ==============================
             let missing = false;
 
             for (const u of uniq) {
               if (/^https?:\/\//i.test(u)) {
-                console.log("WARN: remote image (not validated):", u);
+                console.log("WARN: Remote image skipped:", u);
                 continue;
               }
 
@@ -138,19 +147,19 @@ jobs:
               if (fs.existsSync(p1) || fs.existsSync(p2)) {
                 console.log("OK local image:", u);
               } else {
-                core.error("Missing local image: " + u);
                 missing = true;
+                core.error("Missing local image: " + u);
               }
             }
 
             if (missing) {
-              core.setFailed("Fix missing local images first.");
+              core.setFailed("Missing image files detected.");
               return;
             }
 
-            // --------------------------------
+            // ==============================
             // DISPATCH WRAPPERS
-            // --------------------------------
+            // ==============================
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const ref = (context.ref || "refs/heads/main").replace("refs/heads/", "");
@@ -158,11 +167,11 @@ jobs:
             const octokit = github.getOctokit(process.env.TOKEN);
 
             const workflows = [
-              {file: "telegram.yml",          input: "json_path"},
-              {file: "linkedin.yml",          input: "json_path"},
-              {file: "post-to-fb.yml",        input: "json_path"},
-              {file: "post-to-instagram.yml", input: "ig_json"},
-              {file: "post-to-x.yml",         input: "json_list"},
+              { file: "telegram.yml",          input: "json_path" },
+              { file: "linkedin.yml",          input: "json_path" },
+              { file: "post-to-fb.yml",        input: "json_path" },
+              { file: "post-to-instagram.yml", input: "ig_json" },
+              { file: "post-to-x.yml",         input: "json_list" }
             ];
 
             for (const wf of workflows) {
@@ -174,11 +183,12 @@ jobs:
                   ref,
                   inputs: { [wf.input]: jf }
                 });
-                console.log("Dispatched:", wf.file, "→", jf);
+
+                console.log(`Dispatched ${wf.file} → ${jf}`);
               } catch (err) {
-                core.error("Dispatch failed for " + wf.file);
+                core.error(`Dispatch failed for ${wf.file}: ${err}`);
                 throw err;
               }
             }
 
-            console.log("ALL DISPATCHES SENT.");
+            core.info("ALL WRAPPERS DISPATCHED SUCCESSFULLY.");
