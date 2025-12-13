@@ -149,7 +149,6 @@ def github_put_file(path, content_bytes, message, branch=None, sha=None):
 def ensure_processed_branch_exists():
     ref_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{PROCESSED_BRANCH}"
     r = requests.get(ref_url, headers=HEADERS_GITHUB)
-
     if r.status_code == 200:
         return True
 
@@ -159,7 +158,6 @@ def ensure_processed_branch_exists():
         raise RuntimeError(
             f"Could not read source branch ref {GITHUB_BRANCH}: {r2.status_code} {r2.text}"
         )
-
     src_sha = r2.json().get("object", {}).get("sha")
     if not src_sha:
         raise RuntimeError("Could not determine source branch SHA to create processed branch.")
@@ -483,19 +481,20 @@ def main():
         print("Hashtag generation failed:", e)
         tags = []
 
-    # ---------------------------------------
-    # THREADS-SAFE CAPTION PATCH
-    # Threads hides everything AFTER this marker:
-    THREADS_SPLIT_MARKER = "<!--threads-->"
-    # ---------------------------------------
+    # ------------------------------------------------------
+    # THREADS-SAFE INVISIBLE BREAK (THE REAL WORKING METHOD)
+    # ------------------------------------------------------
+    # Threads silently stops rendering caption after this character:
+    THREADS_INVISIBLE_BREAK = "\u2063"
 
     if tags:
         ig_hashtags = " ".join(tags)
 
+        # Instagram still shows hashtags normally.
+        # Threads truncates text before the invisible break.
         caption = (
             caption
-            + "\n\n"
-            + THREADS_SPLIT_MARKER
+            + THREADS_INVISIBLE_BREAK
             + "\n"
             + ig_hashtags
         )
@@ -515,7 +514,7 @@ def main():
         sys.exit(1)
 
     # ------------------------------------------------
-    # PUBLISH BLOCK — WITH RETRY FIX & PUBLISHED SUPPORT
+    # PUBLISH BLOCK — WITH RETRY FIX
     # ------------------------------------------------
 
     pub = publish_parent_container(parent_id)
