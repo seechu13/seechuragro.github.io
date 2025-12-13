@@ -13,21 +13,18 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write   # required to commit processed images & create processed branch
+  contents: write
 
 jobs:
   post:
     name: Post to Instagram
     runs-on: ubuntu-latest
     env:
-      # content branch (source articles)
       GITHUB_REPO: seechu13/seechuragro.github.io
       GITHUB_BRANCH: staging
-      # branch where processed images are stored
       PROCESSED_BRANCH: processed-images
-      # default JSON (will be overridden by master workflow dispatch input)
       IG_POST_JSON: articles/test-automation.json
-      # Hashtags
+
       HASHTAG_MAX: '30'
       HASHTAG_MIN_WORD_LEN: '3'
       EXTRA_HASHTAGS: 'seechuragro,agriculture'
@@ -58,6 +55,13 @@ jobs:
             echo "JSON not found at $IG_POST_JSON — aborting"
             exit 1
           fi
+
+      - name: Normalize hashtags for Instagram + Threads
+        run: |
+          CLEANED=$(echo "${EXTRA_HASHTAGS}" | sed 's/,/ /g' | sed 's/  */ /g')
+          FORMATTED=$(for t in $CLEANED; do echo -n "#$t "; done)
+          echo "Normalized hashtags: $FORMATTED"
+          echo "EXTRA_HASHTAGS=$FORMATTED" >> $GITHUB_ENV
 
       - name: Install Python deps
         run: |
