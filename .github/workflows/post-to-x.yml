@@ -1,12 +1,12 @@
 name: Post changed article JSONs to X (staging)
 
-# Wrapper: run ONLY when dispatched by the master workflow (no push trigger)
+# Wrapper: run ONLY when dispatched by the master workflow
 on:
   workflow_dispatch:
     inputs:
       json_list:
-        description: "Optional: newline-separated list of JSONs to post. Master workflow will supply this."
-        required: false
+        description: "JSON file or newline-separated list of JSONs to post"
+        required: true
 
 permissions:
   contents: read
@@ -16,11 +16,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # keep config simple for dispatch-only runs
-  UPSTREAM_WORKFLOW_FILE: "post-on-merge.yml"
-  POLL_INTERVAL: "10"
-  SLEEP_SECONDS: "0"
-
   # X credentials
   X_API_KEY: ${{ secrets.X_API_KEY }}
   X_API_SECRET: ${{ secrets.X_API_SECRET }}
@@ -29,19 +24,16 @@ env:
 
 jobs:
   post-x:
+    name: X — Post changed article JSONs (staging)
+    runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BASE_URL: "https://seechuragro.in"
-
-    name: X — Post changed article JSONs (staging)
-    runs-on: ubuntu-latest
 
     steps:
 
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -50,55 +42,43 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install tweepy requests
 
-      - name: Determine JSONs to post (dispatch-safe)
-        id: changes_x
+      - name: Normalize master-supplied JSON list
+        id: jsonprep
         run: |
           set -euo pipefail
+          RAW="${{ github.event.inputs.json_list }}"
 
-          # If master workflow passed explicit list
-          if [ -n "${{ github.event.inputs.json_list }}" ]; then
-            echo "Using master-supplied JSON list"
-            RAW="${{ github.event.inputs.json_list }}"
-            ENC=$(printf "%s" "$RAW" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
-            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
+          # Convert linebreaks safely
+          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
+          if [ -z "$LIST" ]; then
+            echo "json_files=" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Fallback logic (same as original)
-          CHANGED=$(git diff --name-only "${GITHUB_SHA}" "${GITHUB_SHA}^" 2>/dev/null || true)
-          if [ -z "$CHANGED" ]; then
-            CHANGED=$(git show --name-only --pretty="" "${GITHUB_SHA}" || true)
-          fi
-          JSONS=$(printf "%s\n" "$CHANGED" | grep -E '\.json$' || true)
-          if [ -z "$JSONS" ]; then
-            JSONS=$(git ls-files 'assets/articles/*.json' 'articles/*.json' 'content/articles/*.json' || true)
-          fi
-          CLEAN=$(printf "%s\n" "$JSONS" | sed '/^\s*$/d' || true)
-          if [ -z "$CLEAN" ]; then
-            echo "json_files=" >> $GITHUB_OUTPUT
-          else
-            ENC=$(printf "%s" "$CLEAN" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
-            echo "json_files=${ENC}" >> $GITHUB_OUTPUT
-          fi
+          # Encode safely
+          ENC=$(printf "%s" "$LIST" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
+          echo "json_files=$ENC" >> $GITHUB_OUTPUT
 
       - name: Post each JSON to X (runner script)
-        if: steps.changes_x.outputs.json_files != ''
+        if: steps.jsonprep.outputs.json_files != ''
         run: |
           set -euo pipefail
-          RAW="${{ steps.changes_x.outputs.json_files }}"
+          RAW="${{ steps.jsonprep.outputs.json_files }}"
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
 
           for jf in $LIST; do
             if [ ! -f "$jf" ]; then
-              echo "Skipping: $jf"
+              echo "Skipping: $jf (not found)"
               continue
             fi
-            echo "Posting (hashtags + URL): $jf"
+
+            echo "Posting to X: $jf"
             python3 scripts/send_x.py "$jf"
             echo "--------------------------------"
           done
 
       - name: No JSONs found notice
-        if: steps.changes_x.outputs.json_files == ''
+        if: steps.jsonprep.outputs.json_files == ''
         run: |
           echo "No JSONs to post to X."
