@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       json_path:
-        description: "Manual: Path to one article JSON (optional)"
+        description: "Manual: Path to one article file (HTML or JSON)"
         required: false
 
   push:
     paths:
       - 'articles/**/*.html'
-      - 'articles.json'
       - 'articles/**/*.json'
+      - 'articles.json'
 
 permissions:
   contents: write
@@ -32,13 +32,14 @@ jobs:
       - name: Detect article file (auto or manual)
         id: detect
         run: |
-          # Manual override (JSON-based legacy support)
+          # ---- MANUAL OVERRIDE ----
           if [ -n "${{ github.event.inputs.json_path }}" ]; then
+            echo "Using manual input: ${{ github.event.inputs.json_path }}"
             echo "file=${{ github.event.inputs.json_path }}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Auto-detect changed article (HTML preferred)
+          # ---- AUTO MODE (push trigger) ----
           FILE=$(git diff --name-only HEAD~1 HEAD \
             | grep -E '^articles/.*\.(html|json)$' \
             | grep -v '^articles\.json$' \
@@ -63,20 +64,22 @@ jobs:
           ARTICLE_FILE: ${{ steps.detect.outputs.file }}
         with:
           script: |
-            const article = process.env.ARTICLE_FILE;
-            console.log("Dispatching article:", article);
+            const jf = process.env.ARTICLE_FILE;
+            console.log("Dispatching article file:", jf);
 
             const octokit = github;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const ref = context.ref.replace("refs/heads/", "");
 
+            // IMPORTANT:
+            // These input names match your EXISTING workflows exactly
             const workflows = [
-              { file: "telegram.yml",          input: "article_path" },
-              { file: "linkedin.yml",          input: "article_path" },
-              { file: "post-to-fb.yml",        input: "article_path" },
-              { file: "post-to-instagram.yml", input: "article_path" },
-              { file: "post-to-x.yml",         input: "article_path" }
+              { file: "telegram.yml",          input: "json_path" },
+              { file: "linkedin.yml",          input: "json_path" },
+              { file: "post-to-fb.yml",        input: "json_path" },
+              { file: "post-to-instagram.yml", input: "ig_json" },
+              { file: "post-to-x.yml",         input: "json_list" }
             ];
 
             for (const wf of workflows) {
@@ -85,7 +88,7 @@ jobs:
                 repo,
                 workflow_id: wf.file,
                 ref,
-                inputs: { [wf.input]: article }
+                inputs: { [wf.input]: jf }
               });
               console.log("Dispatched:", wf.file);
             }
