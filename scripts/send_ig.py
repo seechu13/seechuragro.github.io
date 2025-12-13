@@ -224,7 +224,7 @@ def main():
     )
     post_id = pub.json()["id"]
 
-    time.sleep(10)
+    time.sleep(45)
 
     if hashtag_comment:
         ig_post(
