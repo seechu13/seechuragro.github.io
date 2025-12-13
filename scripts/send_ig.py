@@ -528,7 +528,7 @@ def main():
 
         print(f"🔎 Publish Check {attempt}/{max_retries}: {status}")
 
-        if isinstance(status, str) and status.upper() == "FINISHED":
+        if isinstance(status, str) and status.upper() in ("FINISHED", "PUBLISHED"):
             print("🎉 Post successfully published!")
             break
 
