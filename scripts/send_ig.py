@@ -3,11 +3,8 @@
 send_ig.py — posts to Instagram with processed images committed to a separate branch (PROCESSED_BRANCH)
 Drop-in replacement. Commits processed images to PROCESSED_BRANCH (default: processed-images)
 so the main content branch (GITHUB_BRANCH, e.g. staging) does not get noisy commits.
-
-Requirements:
-- GITHUB_TOKEN with contents: write permissions (workflow sets permissions: contents: write)
-- IG_USER_ID, IG_ACCESS_TOKEN set in env
 """
+
 import os, sys, time, json, base64, hashlib, urllib.parse
 from io import BytesIO
 from pathlib import Path
@@ -51,7 +48,8 @@ COMMON_STOPWORDS = {
     "the","and","for","that","with","this","from","have","are","was","were","will",
     "but","not","you","your","our","who","what","when","where","how","why","which",
     "their","they","them","been","had","has","about","into","over","through","also",
-    "more","other","these","those","there","such","may","can","its","it's","a","an","in","on","of","to","by","as"
+    "more","other","these","those","there","such","may","can","its","it's","a","an",
+    "in","on","of","to","by","as"
 }
 
 # -------------------------
@@ -117,8 +115,12 @@ def github_get_file(path, branch=None):
     r = requests.get(url, headers=HEADERS_GITHUB, params=params)
     if r.status_code == 200:
         j = r.json()
-        return {"sha": j.get("sha"), "content_b64": j.get("content"), "text": base64.b64decode(j.get("content")).decode("utf-8", errors="ignore")}
-    if r.status_code in (404,):
+        return {
+            "sha": j.get("sha"),
+            "content_b64": j.get("content"),
+            "text": base64.b64decode(j.get("content")).decode("utf-8", errors="ignore")
+        }
+    if r.status_code == 404:
         return None
     raise RuntimeError(f"github_get_file failed for {path} (branch={branch}): {r.status_code} {r.text}")
 
@@ -130,38 +132,54 @@ def github_put_file(path, content_bytes, message, branch=None, sha=None):
             sha = existing["sha"] if existing else None
         except Exception:
             sha = None
+
     url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/contents/{urllib.parse.quote(path, safe='')}"
     b64 = base64.b64encode(content_bytes).decode("ascii")
     body = {"message": message, "content": b64, "branch": branch}
     if sha:
         body["sha"] = sha
+
     r = requests.put(url, headers=HEADERS_GITHUB, json=body)
     if r.status_code not in (200,201):
-        raise RuntimeError(f"github_put_file failed (path={path}, branch={branch}): {r.status_code} {r.text}")
+        raise RuntimeError(
+            f"github_put_file failed (path={path}, branch={branch}): {r.status_code} {r.text}"
+        )
     return r.json()
 
 def ensure_processed_branch_exists():
+    """Ensure PROCESSED_BRANCH exists; if not, create it from source branch."""
     ref_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{PROCESSED_BRANCH}"
     r = requests.get(ref_url, headers=HEADERS_GITHUB)
-    if r.statusocode == 200:
+
+    # FIX APPLIED HERE: status_code instead of statusocode
+    if r.status_code == 200:
         return True
 
+    # create branch
     src_ref_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{GITHUB_BRANCH}"
     r2 = requests.get(src_ref_url, headers=HEADERS_GITHUB)
     if r2.status_code != 200:
-        raise RuntimeError(f"Could not read source branch ref {GITHUB_BRANCH}: {r2.status_code} {r2.text}")
+        raise RuntimeError(
+            f"Could not read source branch ref {GITHUB_BRANCH}: {r2.status_code} {r2.text}"
+        )
 
     src_sha = r2.json().get("object", {}).get("sha")
     if not src_sha:
         raise RuntimeError("Could not determine source branch SHA to create processed branch.")
 
     create_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/refs"
-    r3 = requests.post(create_url, headers=HEADERS_GITHUB, json={"ref": f"refs/heads/{PROCESSED_BRANCH}", "sha": src_sha})
+    r3 = requests.post(
+        create_url,
+        headers=HEADERS_GITHUB,
+        json={"ref": f"refs/heads/{PROCESSED_BRANCH}", "sha": src_sha},
+    )
 
     if r3.status_code == 201 or (r3.status_code == 422 and "Reference already exists" in r3.text):
         return True
 
-    raise RuntimeError(f"Could not create processed branch {PROCESSED_BRANCH}: {r3.status_code} {r3.text}")
+    raise RuntimeError(
+        f"Could not create processed branch {PROCESSED_BRANCH}: {r3.status_code} {r3.text}"
+    )
 
 # -------------------------
 # processed map helpers
@@ -186,17 +204,24 @@ def load_processed_map_remote(branch=None):
             return None
     return None
 
-def update_processed_map_and_commit(mapobj, commit_message="chore: update processed_map"):
+def update_processed_map_and_commit(mapobj, msg="chore: update processed_map"):
     ensure_processed_branch_exists()
     content = json.dumps(mapobj, indent=2, ensure_ascii=False).encode("utf-8")
     existing = github_get_file(PROCESSED_MAP, branch=PROCESSED_BRANCH)
     sha = existing["sha"] if existing else None
-    return github_put_file(PROCESSED_MAP, content, commit_message, branch=PROCESSED_BRANCH, sha=sha)
+    return github_put_file(PROCESSED_MAP, content, msg, branch=PROCESSED_BRANCH, sha=sha)
 
 def commit_processed_image_and_map(image_bytes, target_repo_path, processed_map):
     ensure_processed_branch_exists()
-    github_put_file(target_repo_path, image_bytes, f"chore: add/update processed image {target_repo_path}", branch=PROCESSED_BRANCH)
-    update_processed_map_and_commit(processed_map, commit_message=f"chore: update processed_map for {target_repo_path}")
+    github_put_file(
+        target_repo_path,
+        image_bytes,
+        f"chore: add/update processed image {target_repo_path}",
+        branch=PROCESSED_BRANCH,
+    )
+    update_processed_map_and_commit(
+        processed_map, msg=f"chore: update processed_map for {target_repo_path}"
+    )
     return True
 
 # -------------------------
@@ -212,7 +237,7 @@ def ensure_processed_url_for(original_url):
         return map_local[original_url].get("processed")
 
     if not GITHUB_TOKEN:
-        raise RuntimeError("GITHUB_TOKEN not set; cannot commit processed image.")
+        raise RuntimeError("GITHUB_TOKEN not set; cannot commit processed image automatically.")
 
     bts = download_bytes(original_url)
     jb = process_to_jpeg_bytes(bts)
@@ -236,7 +261,7 @@ def ensure_processed_url_for(original_url):
         "width": width,
         "height": height,
         "generated_at": datetime.utcnow().isoformat() + "Z",
-        "repo_path": target_repo_path
+        "repo_path": target_repo_path,
     }
 
     newmap = load_processed_map_remote(branch=PROCESSED_BRANCH) or load_processed_map_local() or {}
@@ -246,51 +271,63 @@ def ensure_processed_url_for(original_url):
     return raw_url
 
 # -------------------------
-# IG helpers
+# Graph API helpers
 # -------------------------
 def create_image_container(image_url, is_carousel_item=False):
-    url = f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media"
     params = {"image_url": image_url, "access_token": IG_ACCESS_TOKEN}
     if is_carousel_item:
         params["is_carousel_item"] = "true"
-    return requests.post(url, data=params, timeout=30)
+    return requests.post(
+        f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media",
+        data=params,
+        timeout=30,
+    )
 
-def create_parent_container(creation_id_list, caption=""):
-    url = f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media"
+def create_parent_container(creation_ids, caption=""):
     params = {
         "media_type": "CAROUSEL",
-        "children": ",".join(creation_id_list),
+        "children": ",".join(creation_ids),
         "caption": caption,
-        "access_token": IG_ACCESS_TOKEN
+        "access_token": IG_ACCESS_TOKEN,
     }
-    return requests.post(url, data=params, timeout=30)
+    return requests.post(
+        f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media",
+        data=params,
+        timeout=30,
+    )
 
 def publish_parent_container(parent_id):
-    url = f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media_publish"
     params = {"creation_id": parent_id, "access_token": IG_ACCESS_TOKEN}
-    return requests.post(url, data=params, timeout=30)
+    return requests.post(
+        f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media_publish",
+        data=params,
+        timeout=30,
+    )
 
 def is_media_ready(creation_id):
-    url = f"https://graph.facebook.com/{GRAPH_VERSION}/{creation_id}"
     params = {"fields": "status_code", "access_token": IG_ACCESS_TOKEN}
     try:
-        r = requests.get(url, params=params, timeout=20)
+        r = requests.get(
+            f"https://graph.facebook.com/{GRAPH_VERSION}/{creation_id}",
+            params=params,
+            timeout=20,
+        )
         if r.status_code != 200:
             return False
         j = r.json()
         sc = j.get("status_code") or j.get("status")
         if isinstance(sc, str) and sc.upper() == "FINISHED":
             return True
-        if sc in ("ready","complete"):
+        if sc in ("ready", "complete"):
             return True
         return False
     except Exception:
         return False
 
-def wait_for_media_ready(creation_id, timeout=120, poll_interval=2):
+def wait_for_media_ready(cid, timeout=120, poll_interval=2):
     waited = 0
     while waited < timeout:
-        if is_media_ready(creation_id):
+        if is_media_ready(cid):
             return True
         time.sleep(poll_interval)
         waited += poll_interval
@@ -299,7 +336,7 @@ def wait_for_media_ready(creation_id, timeout=120, poll_interval=2):
     return False
 
 # -------------------------
-# NEW FIXED HASHTAG SYSTEM (Instagram + Threads compatible)
+# NEW FIXED HASHTAG SYSTEM
 # -------------------------
 def make_candidate_tokens(text):
     text = (text or "").lower()
@@ -310,9 +347,8 @@ def make_candidate_tokens(text):
 def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
     """
     Generates clickable hashtags for BOTH Instagram and Threads.
-    - Accepts EXTRA_HASHTAGS as comma OR space separated.
-    - Cleans but preserves brand casing.
-    - Outputs: #tag1 #tag2 #tag3
+    Accepts EXTRA_HASHTAGS as comma OR space separated.
+    Preserves casing.
     """
     tokens_title = make_candidate_tokens(title)
     tokens_excerpt = make_candidate_tokens(excerpt)
@@ -321,7 +357,7 @@ def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
     seen = set()
     tags = []
 
-    # auto-generated tags
+    # auto-gen
     for t in seq:
         if t in COMMON_STOPWORDS:
             continue
@@ -334,7 +370,7 @@ def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
         if len(tags) >= max_tags:
             break
 
-    # EXTRA_HASHTAGS (manual, guaranteed clickable)
+    # EXTRA_HASHTAGS
     if EXTRA_HASHTAGS:
         raw = EXTRA_HASHTAGS.replace(",", " ")
         parts = [p.strip() for p in raw.split() if p.strip()]
@@ -358,146 +394,135 @@ def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
 # -------------------------
 def main():
     if not IG_USER_ID or not IG_ACCESS_TOKEN:
-        print("ERROR: IG_USER_ID or IG_ACCESS_TOKEN not set", file=sys.stderr)
+        print("ERROR: IG_USER_ID or IG_ACCESS_TOKEN missing")
         sys.exit(2)
+
     if not GITHUB_TOKEN:
-        print("ERROR: GITHUB_TOKEN not set.", file=sys.stderr)
+        print("ERROR: GITHUB_TOKEN not set")
         sys.exit(2)
 
     print("IG_USER_ID:", IG_USER_ID)
-    print("Processing branch (source):", GITHUB_BRANCH, "Processed branch:", PROCESSED_BRANCH)
+    print("Processing branch:", GITHUB_BRANCH, "Processed branch:", PROCESSED_BRANCH)
 
     json_path = os.environ.get("IG_POST_JSON", "articles/test-automation.json")
 
     raw = None
     try:
-        raw_text = Path(json_path).read_text(encoding="utf-8")
-        raw = json.loads(raw_text)
+        raw = json.loads(Path(json_path).read_text(encoding="utf-8"))
     except Exception:
         raw = None
 
-    images = []
-    caption = ""
-    title_text = ""
-    excerpt_text = ""
+    images, caption, title_text, excerpt_text = [], "", "", ""
 
     if raw:
-        def walk(obj):
-            if isinstance(obj, dict):
-                for v in obj.values():
+        def walk(x):
+            if isinstance(x, dict):
+                for v in x.values():
                     walk(v)
-            elif isinstance(obj, list):
-                for x in obj:
-                    walk(x)
-            elif isinstance(obj, str):
-                low = obj.lower()
-                if low.startswith(("http://","https://")) and any(
-                    low.endswith(ext) for ext in (".jpg",".jpeg",".png",".webp")
+            elif isinstance(x, list):
+                for i in x:
+                    walk(i)
+            elif isinstance(x, str):
+                low = x.lower()
+                if low.startswith(("http://", "https://")) and any(
+                    low.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp")
                 ):
-                    images.append(obj)
+                    images.append(x)
 
         walk(raw)
 
-        if isinstance(raw, dict):
-            caption = raw.get("caption") or raw.get("title") or raw.get("excerpt") or ""
-            title_text = raw.get("title") or ""
-            excerpt_text = raw.get("excerpt") or raw.get("summary") or ""
+        caption = raw.get("caption") or raw.get("title") or raw.get("excerpt") or ""
+        title_text = raw.get("title") or ""
+        excerpt_text = raw.get("excerpt") or raw.get("summary") or ""
     else:
         env_imgs = os.environ.get("IMAGES")
         if env_imgs:
             images = [x.strip() for x in env_imgs.split(",") if x.strip()]
-            caption = os.environ.get("CAPTION","")
-            title_text = os.environ.get("TITLE","")
-            excerpt_text = os.environ.get("EXCERPT","")
+            caption = os.environ.get("CAPTION", "")
+            title_text = os.environ.get("TITLE", "")
+            excerpt_text = os.environ.get("EXCERPT", "")
 
     if not images:
-        print("No images found to post.", file=sys.stderr)
+        print("No images found.")
         sys.exit(0)
 
     images = images[:4]
     print("Posting to IG with images:", images)
 
-    child_ids_ready = []
+    # upload each child
+    child_ids = []
 
-    for u in images:
+    for url in images:
         try:
-            purl = ensure_processed_url_for(u)
-            print("USING PROCESSED URL:", purl)
+            processed = ensure_processed_url_for(url)
+            print("Processed URL:", processed)
 
-            resp = create_image_container(purl, is_carousel_item=True)
-            print("CREATE child returned", resp.status_code, "->", resp.text)
+            r = create_image_container(processed, is_carousel_item=True)
+            print("Child container response:", r.status_code, r.text)
 
-            if resp.status_code not in (200,201):
-                print("create_image_container failed:", resp.status_code, resp.text, file=sys.stderr)
+            if r.status_code not in (200, 201):
+                print("Failed child container:", r.status_code, r.text)
                 sys.exit(1)
 
-            cid = resp.json().get("id")
+            cid = r.json().get("id")
             if not cid:
-                print("No child id returned:", resp.text, file=sys.stderr)
+                print("No child id returned")
                 sys.exit(1)
 
-            ready = wait_for_media_ready(cid, timeout=120, poll_interval=2)
-            if not ready:
-                print(f"Child media {cid} not ready.", file=sys.stderr)
+            if not wait_for_media_ready(cid):
+                print("Media not ready:", cid)
                 sys.exit(1)
 
-            print(f"Child media {cid} ready.")
-            child_ids_ready.append(cid)
-
+            child_ids.append(cid)
         except Exception as e:
-            print("ERROR preparing image:", u, e, file=sys.stderr)
+            print("ERROR preparing image:", url, e)
             sys.exit(1)
 
-    # -------------------------
-    # Compose caption
-    # -------------------------
+    # caption
     caption = (caption or "").strip()
 
     if PERMANENT_CAPTION not in caption:
         if caption:
-            caption = caption + "\n\n" + PERMANENT_CAPTION
+            caption += "\n\n" + PERMANENT_CAPTION
         else:
             caption = PERMANENT_CAPTION
 
     try:
-        tags = generate_hashtags(title_text, excerpt_text, max_tags=HASHTAG_MAX)
+        tags = generate_hashtags(title_text, excerpt_text)
     except Exception as e:
-        print("Hashtag generation failed:", e, file=sys.stderr)
+        print("Hashtag generation failed:", e)
         tags = []
 
     if tags:
-        caption = caption.rstrip() + "\n\n" + " ".join(tags)
+        caption += "\n\n" + " ".join(tags)
 
-    print("\nFinal caption preview:\n", caption, "\n")
+    print("\nFinal caption:\n", caption, "\n")
 
-    parent_resp = create_parent_container(child_ids_ready, caption=caption)
-    print("Parent create response:", parent_resp.status_code, parent_resp.text)
+    parent = create_parent_container(child_ids, caption=caption)
+    print("Parent container:", parent.status_code, parent.text)
 
-    if parent_resp.status_code not in (200,201):
-        print("Parent creation failed:", parent_resp.status_code, parent_resp.text, file=sys.stderr)
+    if parent.status_code not in (200, 201):
+        print("Failed parent create:", parent.status_code, parent.text)
         sys.exit(1)
 
-    parent_id = parent_resp.json().get("id")
+    parent_id = parent.json().get("id")
     if not parent_id:
-        print("No parent creation id returned:", parent_resp.text, file=sys.stderr)
+        print("No parent ID returned")
         sys.exit(1)
 
-    pub_resp = publish_parent_container(parent_id)
-    print("Publish response:", pub_resp.status_code, pub_resp.text)
+    pub = publish_parent_container(parent_id)
+    print("Publish:", pub.status_code, pub.text)
 
-    if pub_resp.status_code not in (200,201):
-        print("Publish failed:", pub_resp.status_code, pub_resp.text, file=sys.stderr)
+    if pub.status_code not in (200, 201):
+        print("Publish failed:", pub.status_code, pub.text)
         sys.exit(1)
 
-    out = pub_resp.json()
-    published_post_id = out.get("id") or out.get("post_id") or json.dumps(out)
-    print("Published IG CAROUSEL post id:", published_post_id)
+    print("Published IG post id:", pub.json().get("id"))
     return 0
 
 if __name__ == "__main__":
     try:
-        rc = main() or 0
-        sys.exit(rc)
+        sys.exit(main() or 0)
     except Exception:
         import traceback
         traceback.print_exc()
