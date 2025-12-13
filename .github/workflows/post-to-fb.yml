@@ -1,8 +1,12 @@
 name: Post to Facebook (automatic on articles/**)
 
-# Wrapper: run only manually to avoid push-triggered runs
+# Wrapper: run only manually or via dispatch
 on:
   workflow_dispatch:
+    inputs:
+      json_path:
+        description: "Path to one article JSON"
+        required: true
 
 jobs:
   post:
@@ -15,6 +19,7 @@ jobs:
       HASHTAG_MAX: '30'
       HASHTAG_MIN_WORD_LEN: '3'
       EXTRA_HASHTAGS: 'seechuragro,agriculture'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,7 +65,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Look for article JSONs (same folders you used originally)
           LIST="$(find posts -type f -name '*.json' 2>/dev/null || true) $(find .github/test-posts -type f -name '*.json' 2>/dev/null || true) $(find articles -type f -name '*.json' 2>/dev/null || true)"
           LIST=$(printf "%s\n" $LIST || true)
           if [ -z "$LIST" ]; then
@@ -78,7 +82,6 @@ jobs:
             echo "--- Extracted images ---"
             python3 /tmp/extract_images.py "$jf" "${BASE_URL:-https://seechuragro.in}"
             echo "--- run send_fb.py ---"
-            # Keep exact call location as before; script now reads HASHTAG envs
             python3 scripts/send_fb.py "$jf" || { echo "send_fb.py failed for $jf"; exit 1; }
             echo "----------------------------------------"
           done
