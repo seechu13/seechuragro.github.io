@@ -1,0 +1,154 @@
+name: Master — validate + dispatch (manual test)
+
+on:
+  workflow_dispatch:
+    inputs:
+      json_path:
+        description: "Path to a single article JSON (relative to repo root). e.g. articles/test-automation.json"
+        required: true
+
+concurrency:
+  group: master-post-manual-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+
+jobs:
+  validate-and-dispatch:
+    runs-on: ubuntu-latest
+    name: Validate JSON and dispatch wrappers (manual)
+    env:
+      # use your PAT stored as REPO_PAT (create secret if not present)
+      TOKEN: ${{ secrets.REPO_PAT }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install node (used by github-script)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Validate JSON and dispatch workflows
+        uses: actions/github-script@v6
+        env:
+          INPUT_JSON_PATH: ${{ github.event.inputs.json_path }}
+          TOKEN: ${{ secrets.REPO_PAT }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const core = require('@actions/core');
+
+            const jsonPathInput = process.env.INPUT_JSON_PATH;
+            if (!jsonPathInput) {
+              core.setFailed('Input json_path is required.');
+              return;
+            }
+
+            const jf = path.normalize(jsonPathInput);
+
+            if (!fs.existsSync(jf)) {
+              core.setFailed(`JSON file not found: ${jf}`);
+              return;
+            }
+
+            // parse JSON
+            let j;
+            try {
+              j = JSON.parse(fs.readFileSync(jf, 'utf8'));
+            } catch (e) {
+              core.setFailed(`Invalid JSON (${jf}): ${String(e).slice(0,200)}`);
+              return;
+            }
+            console.log(`Parsed JSON: ${jf}`);
+
+            // collect string values that look like image paths/URLs
+            const imgs = [];
+            function walk(o) {
+              if (o && typeof o === 'object') {
+                if (Array.isArray(o)) for (const v of o) walk(v);
+                else for (const v of Object.values(o)) walk(v);
+              } else if (typeof o === 'string') {
+                const s = o.trim();
+                if (/\.(jpg|jpeg|png|webp)$/i.test(s)) imgs.push(s);
+              }
+            }
+            walk(j);
+            // dedupe preserving order
+            const seen = new Set();
+            const uniq = imgs.filter(x => { if (seen.has(x)) return false; seen.add(x); return true; });
+
+            if (uniq.length === 0) {
+              console.log('No image-like strings found (OK if intentional).');
+            } else {
+              console.log('Image candidates found:');
+              uniq.forEach(u => console.log(' - ' + u));
+            }
+
+            // Check local files; warn for remote URLs
+            let missing = false;
+            for (const u of uniq) {
+              if (/^https?:\/\//i.test(u)) {
+                console.log(`WARN: remote URL not checked: ${u}`);
+              } else {
+                const asIs = path.resolve(u);
+                const normalized = path.resolve('.', u.replace(/^\/+/, ''));
+                const fallback = path.resolve('assets', 'articles', path.basename(u));
+                if (fs.existsSync(asIs)) {
+                  console.log(`OK local image: ${asIs}`);
+                } else if (fs.existsSync(normalized)) {
+                  console.log(`OK local image (normalized): ${normalized}`);
+                } else if (fs.existsSync(fallback)) {
+                  console.log(`OK local image (fallback): ${fallback}`);
+                } else {
+                  core.error(`Local image missing: ${u}`);
+                  missing = true;
+                }
+              }
+            }
+
+            if (missing) {
+              core.setFailed('One or more local images are missing. Fix JSON or add assets.');
+              return;
+            }
+
+            // validation passed — dispatch wrappers
+            const workflows = [
+              {file: 'telegram.yml', input: 'json_path'},
+              {file: 'linkedin.yml', input: 'json_path'},
+              {file: 'post-to-fb.yml', input: 'json_path'},
+              {file: 'post-to-instagram.yml', input: 'ig_json'},
+              {file: 'post-to-x.yml', input: 'json_list'}
+            ];
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            // ref to dispatch to - use the branch you triggered from or default to main
+            const ref = (context.ref || process.env.GITHUB_REF || 'refs/heads/main').replace('refs/heads/','') || 'main';
+
+            const octokit = github.getOctokit(process.env.TOKEN);
+
+            for (const wf of workflows) {
+              try {
+                await octokit.actions.createWorkflowDispatch({
+                  owner,
+                  repo,
+                  workflow_id: wf.file,
+                  ref,
+                  inputs: { [wf.input]: jf }
+                });
+                console.log(`Dispatched ${wf.file} with input ${wf.input}=${jf}`);
+              } catch (err) {
+                core.error(`Failed to dispatch ${wf.file}: ${err}`);
+                throw err;
+              }
+            }
+
+            core.info('All dispatch requests sent.');
