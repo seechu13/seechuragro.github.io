@@ -45,8 +45,9 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            const eventPath = process.env.GITHUB_EVENT_PATH;
+
             let jf = process.env.MANUAL_JSON;
+            const eventPath = process.env.GITHUB_EVENT_PATH;
 
             // -----------------------------
             // AUTO-DETECT JSON ON PUSH
@@ -54,11 +55,16 @@ jobs:
             if (!jf) {
               const event = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
 
-              // find added/modified files that end with .json
               const files = [];
-              for (const c of event.commits || []) {
-                files.push(...c.added, ...c.modified);
+
+              if (Array.isArray(event.commits)) {
+                for (const c of event.commits) {
+                  const added = Array.isArray(c.added) ? c.added : [];
+                  const modified = Array.isArray(c.modified) ? c.modified : [];
+                  files.push(...added, ...modified);
+                }
               }
+
               const jsons = files.filter(f => f.endsWith('.json'));
 
               if (jsons.length === 0) {
@@ -122,7 +128,7 @@ jobs:
 
             for (const u of uniq) {
               if (/^https?:\/\//i.test(u)) {
-                console.log("WARN remote image (not validated):", u);
+                console.log("WARN: remote image (not validated):", u);
                 continue;
               }
 
