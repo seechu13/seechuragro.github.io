@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-send_ig.py — Instagram posting with:
-- processed images (processed-images branch)
-- safe publish retry logic
-- hashtags moved to FIRST COMMENT (Threads-safe)
+send_ig.py
+- Posts carousel images to Instagram
+- Uses processed-images branch
+- Robust publish retry logic
+- Hashtags are posted as FIRST COMMENT (Threads-safe)
 """
 
 import os, sys, time, json, base64, hashlib, urllib.parse, re
@@ -13,9 +14,9 @@ from datetime import datetime
 import requests
 from PIL import Image
 
-# -------------------------
+# --------------------------------------------------
 # CONFIG
-# -------------------------
+# --------------------------------------------------
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "seechu13/seechuragro.github.io")
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "staging")
 PROCESSED_BRANCH = os.environ.get("PROCESSED_BRANCH", "processed-images")
@@ -25,7 +26,6 @@ GITHUB_API_BASE = "https://api.github.com"
 RAW_BASE_TEMPLATE = "https://raw.githubusercontent.com/{repo}/{branch}"
 
 PROCESSED_DIR = "assets/processed"
-PROCESSED_MAP = f"{PROCESSED_DIR}/processed_map.json"
 
 IG_USER_ID = os.environ.get("IG_USER_ID")
 IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN")
@@ -53,22 +53,25 @@ COMMON_STOPWORDS = {
 
 HEADERS_GITHUB = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
 
-# -------------------------
-# Helpers
-# -------------------------
+# --------------------------------------------------
+# UTILITIES
+# --------------------------------------------------
 def raw_base_for(branch):
     return RAW_BASE_TEMPLATE.format(repo=GITHUB_REPO, branch=branch)
 
 def make_raw_url(path, branch=PROCESSED_BRANCH):
     return f"{raw_base_for(branch)}/{path.lstrip('/')}"
 
-def _slugify(name):
+def slugify(name):
     name = urllib.parse.unquote(name)
     name = re.sub(r"[^A-Za-z0-9_.-]", "_", name)
     if not name.lower().endswith(".jpg"):
         name = os.path.splitext(name)[0] + ".jpg"
     return name
 
+# --------------------------------------------------
+# IMAGE PROCESSING
+# --------------------------------------------------
 def download_image(url):
     r = requests.get(url, timeout=30)
     r.raise_for_status()
@@ -79,14 +82,14 @@ def process_image(bts):
     w, h = im.size
     if max(w, h) > MAX_SIDE:
         scale = MAX_SIDE / max(w, h)
-        im = im.resize((int(w*scale), int(h*scale)), Image.LANCZOS)
+        im = im.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
     out = BytesIO()
     im.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True)
     return out.getvalue()
 
-# -------------------------
-# GitHub helpers
-# -------------------------
+# --------------------------------------------------
+# GITHUB HELPERS
+# --------------------------------------------------
 def github_get(path, branch):
     url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/contents/{path}"
     r = requests.get(url, headers=HEADERS_GITHUB, params={"ref": branch})
@@ -108,17 +111,17 @@ def github_put(path, content, msg, branch):
         raise RuntimeError(r.text)
 
 def ensure_processed_url(url):
-    name = _slugify(os.path.basename(urllib.parse.urlparse(url).path) or "img.jpg")
     raw = download_image(url)
     jpeg = process_image(raw)
     h = hashlib.sha256(jpeg).hexdigest()[:10]
+    name = slugify(os.path.basename(urllib.parse.urlparse(url).path) or "img.jpg")
     path = f"{PROCESSED_DIR}/{h}-{name}"
     github_put(path, jpeg, f"add processed {path}", PROCESSED_BRANCH)
     return make_raw_url(path)
 
-# -------------------------
-# IG helpers
-# -------------------------
+# --------------------------------------------------
+# INSTAGRAM GRAPH HELPERS
+# --------------------------------------------------
 def ig_post(endpoint, data):
     return requests.post(
         f"https://graph.facebook.com/{GRAPH_VERSION}/{endpoint}",
@@ -133,24 +136,28 @@ def ig_get(endpoint, params):
         timeout=20
     )
 
-def wait_ready(cid):
-    for _ in range(10):
-        r = ig_get(cid, {"fields":"status_code","access_token":IG_ACCESS_TOKEN})
-        s = r.json().get("status_code")
-        if s in ("FINISHED","PUBLISHED"):
+def wait_for_media_ready(media_id, timeout=120):
+    waited = 0
+    while waited < timeout:
+        r = ig_get(media_id, {
+            "fields": "status_code",
+            "access_token": IG_ACCESS_TOKEN
+        })
+        status = r.json().get("status_code")
+        if isinstance(status, str) and status.upper() in ("FINISHED", "PUBLISHED"):
             return True
-        time.sleep(3)
+        time.sleep(5)
+        waited += 5
     return False
 
-# -------------------------
-# Hashtags
-# -------------------------
+# --------------------------------------------------
+# HASHTAGS
+# --------------------------------------------------
 def generate_hashtags(title, excerpt):
     text = f"{title} {excerpt}".lower()
     tokens = re.findall(r"[a-z0-9]+", text)
-    tags = []
-    seen = set()
 
+    tags, seen = [], set()
     for t in tokens:
         if t in COMMON_STOPWORDS or len(t) < HASHTAG_MIN_WORD_LEN:
             continue
@@ -167,9 +174,9 @@ def generate_hashtags(title, excerpt):
 
     return " ".join(tags)
 
-# -------------------------
+# --------------------------------------------------
 # MAIN
-# -------------------------
+# --------------------------------------------------
 def main():
     json_path = os.environ.get("IG_POST_JSON", "articles/test-automation.json")
     data = json.loads(Path(json_path).read_text())
@@ -185,54 +192,62 @@ def main():
                 images.append(x)
     walk(data)
 
-    title = data.get("title","")
-    excerpt = data.get("excerpt","")
-    caption = data.get("caption") or title or excerpt
-    caption = caption.strip()
+    title = data.get("title", "")
+    excerpt = data.get("excerpt", "")
+    caption = (data.get("caption") or title or excerpt).strip()
 
     if PERMANENT_CAPTION not in caption:
         caption += "\n\n" + PERMANENT_CAPTION
 
     hashtag_comment = generate_hashtags(title, excerpt)
 
+    # ---- Create child containers
     child_ids = []
     for img in images[:4]:
         purl = ensure_processed_url(img)
         r = ig_post(
             f"{IG_USER_ID}/media",
-            {"image_url":purl,"is_carousel_item":"true","access_token":IG_ACCESS_TOKEN}
+            {"image_url": purl, "is_carousel_item": "true", "access_token": IG_ACCESS_TOKEN}
         )
         cid = r.json()["id"]
-        if not wait_ready(cid):
-            raise RuntimeError("child not ready")
+        wait_for_media_ready(cid)
         child_ids.append(cid)
 
+    # ---- Create parent
     parent = ig_post(
         f"{IG_USER_ID}/media",
         {
-            "media_type":"CAROUSEL",
-            "children":",".join(child_ids),
-            "caption":caption,
-            "access_token":IG_ACCESS_TOKEN
+            "media_type": "CAROUSEL",
+            "children": ",".join(child_ids),
+            "caption": caption,
+            "access_token": IG_ACCESS_TOKEN
         }
     )
-    pid = parent.json()["id"]
+    creation_id = parent.json()["id"]
 
+    # ---- Publish
     pub = ig_post(
         f"{IG_USER_ID}/media_publish",
-        {"creation_id":pid,"access_token":IG_ACCESS_TOKEN}
+        {"creation_id": creation_id, "access_token": IG_ACCESS_TOKEN}
     )
     post_id = pub.json()["id"]
 
-    time.sleep(45)
+    # ---- Wait until commentable
+    print("Waiting for media to become commentable...")
+    if wait_for_media_ready(post_id):
 
-    if hashtag_comment:
-        ig_post(
-            f"{post_id}/comments",
-            {"message":hashtag_comment,"access_token":IG_ACCESS_TOKEN}
-        )
+        for attempt in range(1, 4):
+            r = ig_post(
+                f"{post_id}/comments",
+                {"message": hashtag_comment, "access_token": IG_ACCESS_TOKEN}
+            )
+            if r.status_code in (200, 201) and "id" in r.text:
+                print("✅ Hashtag comment posted.")
+                break
+            print(f"Retry {attempt}/3 — comment not accepted yet")
+            time.sleep(10)
 
-    print("✅ Instagram post published. Threads will have NO hashtags.")
+    print("🎉 Instagram post published. Threads will show NO hashtags.")
 
 if __name__ == "__main__":
     main()
