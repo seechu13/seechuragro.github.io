@@ -141,45 +141,32 @@ def github_put_file(path, content_bytes, message, branch=None, sha=None):
 
     r = requests.put(url, headers=HEADERS_GITHUB, json=body)
     if r.status_code not in (200,201):
-        raise RuntimeError(
-            f"github_put_file failed (path={path}, branch={branch}): {r.status_code} {r.text}"
-        )
+        raise RuntimeError(f"github_put_file failed (path={path}, branch={branch}): {r.status_code} {r.text}")
     return r.json()
 
 def ensure_processed_branch_exists():
-    """Ensure PROCESSED_BRANCH exists; if not, create it from source branch."""
     ref_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{PROCESSED_BRANCH}"
     r = requests.get(ref_url, headers=HEADERS_GITHUB)
 
-    # FIX APPLIED HERE: status_code instead of statusocode
     if r.status_code == 200:
         return True
 
-    # create branch
     src_ref_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{GITHUB_BRANCH}"
     r2 = requests.get(src_ref_url, headers=HEADERS_GITHUB)
     if r2.status_code != 200:
-        raise RuntimeError(
-            f"Could not read source branch ref {GITHUB_BRANCH}: {r2.status_code} {r2.text}"
-        )
+        raise RuntimeError(f"Could not read source branch ref {GITHUB_BRANCH}: {r2.status_code} {r2.text}")
 
     src_sha = r2.json().get("object", {}).get("sha")
     if not src_sha:
         raise RuntimeError("Could not determine source branch SHA to create processed branch.")
 
     create_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/refs"
-    r3 = requests.post(
-        create_url,
-        headers=HEADERS_GITHUB,
-        json={"ref": f"refs/heads/{PROCESSED_BRANCH}", "sha": src_sha},
-    )
+    r3 = requests.post(create_url, headers=HEADERS_GITHUB, json={"ref": f"refs/heads/{PROCESSED_BRANCH}", "sha": src_sha})
 
     if r3.status_code == 201 or (r3.status_code == 422 and "Reference already exists" in r3.text):
         return True
 
-    raise RuntimeError(
-        f"Could not create processed branch {PROCESSED_BRANCH}: {r3.status_code} {r3.text}"
-    )
+    raise RuntimeError(f"Could not create processed branch {PROCESSED_BRANCH}: {r3.status_code} {r3.text}")
 
 # -------------------------
 # processed map helpers
@@ -336,7 +323,7 @@ def wait_for_media_ready(cid, timeout=120, poll_interval=2):
     return False
 
 # -------------------------
-# NEW FIXED HASHTAG SYSTEM
+# Hashtag system
 # -------------------------
 def make_candidate_tokens(text):
     text = (text or "").lower()
@@ -345,11 +332,6 @@ def make_candidate_tokens(text):
     return tokens
 
 def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
-    """
-    Generates clickable hashtags for BOTH Instagram and Threads.
-    Accepts EXTRA_HASHTAGS as comma OR space separated.
-    Preserves casing.
-    """
     tokens_title = make_candidate_tokens(title)
     tokens_excerpt = make_candidate_tokens(excerpt)
     seq = tokens_title + tokens_excerpt
@@ -357,7 +339,6 @@ def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
     seen = set()
     tags = []
 
-    # auto-gen
     for t in seq:
         if t in COMMON_STOPWORDS:
             continue
@@ -370,11 +351,9 @@ def generate_hashtags(title, excerpt, max_tags=HASHTAG_MAX):
         if len(tags) >= max_tags:
             break
 
-    # EXTRA_HASHTAGS
     if EXTRA_HASHTAGS:
         raw = EXTRA_HASHTAGS.replace(",", " ")
         parts = [p.strip() for p in raw.split() if p.strip()]
-
         for p in parts:
             clean = re.sub(r"[^A-Za-z0-9_]", "", p)
             if not clean:
@@ -434,6 +413,7 @@ def main():
         caption = raw.get("caption") or raw.get("title") or raw.get("excerpt") or ""
         title_text = raw.get("title") or ""
         excerpt_text = raw.get("excerpt") or raw.get("summary") or ""
+
     else:
         env_imgs = os.environ.get("IMAGES")
         if env_imgs:
@@ -510,6 +490,10 @@ def main():
         print("No parent ID returned")
         sys.exit(1)
 
+    # ------------------------------------------------
+    # PUBLISH BLOCK — NOW WITH RETRY FIX APPLIED
+    # ------------------------------------------------
+
     pub = publish_parent_container(parent_id)
     print("Publish:", pub.status_code, pub.text)
 
@@ -517,8 +501,53 @@ def main():
         print("Publish failed:", pub.status_code, pub.text)
         sys.exit(1)
 
-    print("Published IG post id:", pub.json().get("id"))
+    publish_id = pub.json().get("id")
+    print("Publish request accepted. Publish ID:", publish_id)
+
+    # ===== FIX START =====
+    print("\n⏳ Waiting 10 seconds before first publish-status check...")
+    time.sleep(10)
+
+    max_retries = 6
+    retry_delay = 3
+
+    for attempt in range(1, max_retries + 1):
+        params = {"fields": "status_code", "access_token": IG_ACCESS_TOKEN}
+        rstat = requests.get(
+            f"https://graph.facebook.com/{GRAPH_VERSION}/{parent_id}",
+            params=params,
+            timeout=20,
+        )
+
+        try:
+            js = rstat.json()
+        except Exception:
+            js = {}
+
+        status = js.get("status_code") or js.get("status")
+
+        print(f"🔎 Publish Check {attempt}/{max_retries}: {status}")
+
+        if isinstance(status, str) and status.upper() == "FINISHED":
+            print("🎉 Post successfully published!")
+            break
+
+        if status == "ERROR":
+            print("❌ Instagram returned ERROR during publishing.")
+            sys.exit(1)
+
+        if attempt < max_retries:
+            print(f"⏱ Waiting {retry_delay} seconds before retry...")
+            time.sleep(retry_delay)
+
+    else:
+        print("❌ Max retries reached — IG did not confirm publishing.")
+        sys.exit(1)
+    # ===== FIX END =====
+
+    print("Published IG post id:", publish_id)
     return 0
+
 
 if __name__ == "__main__":
     try:
