@@ -42,5 +42,16 @@
     "height": 672,
     "generated_at": "2025-12-12T11:59:05.106798Z",
     "repo_path": "assets/processed/333ead726b-hero.jpg"
+  },
+  "https://seechuragro.in/assets/articles/dairy-farming-guide-20251122-201040/animals-in-shed-srivatsan-renga-1.jpg": {
+    "processed": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/processed-images/assets/processed/576b63cad2-animals-in-shed-srivatsan-renga-1.jpg",
+    "variants": {
+      "default": "https://raw.githubusercontent.com/seechu13/seechuragro.github.io/processed-images/assets/processed/576b63cad2-animals-in-shed-srivatsan-renga-1.jpg"
+    },
+    "sha256": "576b63cad2ff9dbf9e1ca1202c46487dd9623ab6be2480901386a1cd1c82422f",
+    "width": 1080,
+    "height": 720,
+    "generated_at": "2025-12-13T10:46:53.619826Z",
+    "repo_path": "assets/processed/576b63cad2-animals-in-shed-srivatsan-renga-1.jpg"
   }
 }
