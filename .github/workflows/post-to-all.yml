@@ -4,11 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       json_path:
-        description: "Manual: Path to one article JSON"
+        description: "Manual: Path to one article JSON (optional)"
         required: false
 
   push:
     paths:
+      - 'articles/**/*.html'
+      - 'articles.json'
       - 'articles/**/*.json'
 
 permissions:
@@ -27,93 +29,54 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Detect JSON file (auto or manual)
+      - name: Detect article file (auto or manual)
         id: detect
         run: |
+          # Manual override (JSON-based legacy support)
           if [ -n "${{ github.event.inputs.json_path }}" ]; then
-            echo "json=${{ github.event.inputs.json_path }}" >> $GITHUB_OUTPUT
+            echo "file=${{ github.event.inputs.json_path }}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          FILE=$(git diff --name-only HEAD~1 HEAD | grep ".json" | head -n 1 || true)
+          # Auto-detect changed article (HTML preferred)
+          FILE=$(git diff --name-only HEAD~1 HEAD \
+            | grep -E '^articles/.*\.(html|json)$' \
+            | grep -v '^articles\.json$' \
+            | head -n 1 || true)
 
           if [ -z "$FILE" ]; then
-            echo "No JSON found in git diff"
+            echo "No article file found in git diff"
             exit 1
           fi
 
-          echo "Auto-detected JSON: $FILE"
-          echo "json=$FILE" >> $GITHUB_OUTPUT
+          echo "Auto-detected article: $FILE"
+          echo "file=$FILE" >> $GITHUB_OUTPUT
 
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Validate JSON + dispatch
+      - name: Dispatch platform workflows
         uses: actions/github-script@v6
         env:
-          JSON_FILE: ${{ steps.detect.outputs.json }}
+          ARTICLE_FILE: ${{ steps.detect.outputs.file }}
         with:
           script: |
-            const fs = require("fs");
-            const path = require("path");
+            const article = process.env.ARTICLE_FILE;
+            console.log("Dispatching article:", article);
 
-            const jf = process.env.JSON_FILE;
-            console.log("Using JSON:", jf);
-
-            if (!fs.existsSync(jf)) {
-              core.setFailed("JSON not found: " + jf);
-              return;
-            }
-
-            let j;
-            try {
-              j = JSON.parse(fs.readFileSync(jf, "utf8"));
-            } catch (err) {
-              core.setFailed("Invalid JSON: " + err);
-              return;
-            }
-
-            const imgs = [];
-            function walk(o) {
-              if (o && typeof o === "object") {
-                if (Array.isArray(o)) o.forEach(walk);
-                else Object.values(o).forEach(walk);
-              } else if (typeof o === "string" && /\.(jpg|jpeg|png|webp)$/i.test(o.trim())) {
-                imgs.push(o.trim());
-              }
-            }
-            walk(j);
-
-            const uniq = [...new Set(imgs)];
-            let missing = false;
-
-            for (const u of uniq) {
-              if (/^https?:\/\//i.test(u)) continue;
-              const p = path.resolve(u);
-              if (!fs.existsSync(p)) {
-                core.error("Missing image: " + u);
-                missing = true;
-              }
-            }
-
-            if (missing) {
-              core.setFailed("Missing local image(s)");
-              return;
-            }
-
-            const octokit = github;  
+            const octokit = github;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const ref = context.ref.replace("refs/heads/", "");
 
             const workflows = [
-              { file: "telegram.yml",          input: "json_path" },
-              { file: "linkedin.yml",          input: "json_path" },
-              { file: "post-to-fb.yml",        input: "json_path" },
-              { file: "post-to-instagram.yml", input: "ig_json" },
-              { file: "post-to-x.yml",         input: "json_list" }
+              { file: "telegram.yml",          input: "article_path" },
+              { file: "linkedin.yml",          input: "article_path" },
+              { file: "post-to-fb.yml",        input: "article_path" },
+              { file: "post-to-instagram.yml", input: "article_path" },
+              { file: "post-to-x.yml",         input: "article_path" }
             ];
 
             for (const wf of workflows) {
@@ -122,7 +85,7 @@ jobs:
                 repo,
                 workflow_id: wf.file,
                 ref,
-                inputs: { [wf.input]: jf }
+                inputs: { [wf.input]: article }
               });
               console.log("Dispatched:", wf.file);
             }
