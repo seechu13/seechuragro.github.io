@@ -79,7 +79,7 @@ jobs:
 
                 const sha = event.head_commit.id;
                 const { owner, repo } = context.repo;
-                const octokit = github.getOctokit(process.env.TOKEN);
+                const octokit = github;
 
                 const res = await octokit.repos.getCommit({
                   owner,
