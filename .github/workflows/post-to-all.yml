@@ -11,10 +11,6 @@ on:
     paths:
       - 'articles/**/*.json'
 
-concurrency:
-  group: master-post-${{ github.ref_name }}
-  cancel-in-progress: false
-
 permissions:
   contents: write
   actions: write
@@ -29,160 +25,93 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 2   # IMPORTANT: we need 2 commits for git diff
+
+      - name: Detect JSON file (auto or manual)
+        id: detect
+        run: |
+          if [ -n "${{ github.event.inputs.json_path }}" ]; then
+            echo "json=${{ github.event.inputs.json_path }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Auto detect JSON changed in this commit
+          FILE=$(git diff --name-only HEAD~1 HEAD | grep ".json" | head -n 1 || true)
+
+          if [ -z "$FILE" ]; then
+            echo "No JSON file found in git diff"
+            exit 1
+          fi
+
+          echo "Auto-detected JSON: $FILE"
+          echo "json=$FILE" >> $GITHUB_OUTPUT
 
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Validate JSON and dispatch
+      - name: Validate JSON + images + dispatch
         uses: actions/github-script@v6
         env:
-          MANUAL_JSON: ${{ github.event.inputs.json_path }}
-          TOKEN: ${{ secrets.REPO_PAT }}
+          JSON_FILE: ${{ steps.detect.outputs.json }}
         with:
           script: |
             const fs = require("fs");
             const path = require("path");
 
-            let jf = process.env.MANUAL_JSON;
-            const eventPath = process.env.GITHUB_EVENT_PATH;
-
-            // ======================================================================
-            // AUTO-DETECT JSON (supports ALL GitHub push formats)
-            // ======================================================================
-            if (!jf) {
-              const event = JSON.parse(fs.readFileSync(eventPath, "utf8"));
-
-              let files = [];
-
-              // 1) Normal pushes: commits[]
-              if (Array.isArray(event.commits)) {
-                for (const c of event.commits) {
-                  const added = Array.isArray(c.added) ? c.added : [];
-                  const modified = Array.isArray(c.modified) ? c.modified : [];
-                  files.push(...added, ...modified);
-                }
-              }
-
-              // 2) GitHub UI / mobile app edits: head_commit.added / modified
-              if (event.head_commit) {
-                const added = Array.isArray(event.head_commit.added) ? event.head_commit.added : [];
-                const modified = Array.isArray(event.head_commit.modified) ? event.head_commit.modified : [];
-                files.push(...added, ...modified);
-              }
-
-              // 3) STILL EMPTY? → Use GitHub API to get commit diff (FALLBACK)
-              if (files.length === 0 && event.head_commit && event.head_commit.id) {
-                console.log("No files in push event. Falling back to GitHub API commit diff…");
-
-                const sha = event.head_commit.id;
-                const { owner, repo } = context.repo;
-                const octokit = github;
-
-                const res = await octokit.repos.getCommit({
-                  owner,
-                  repo,
-                  ref: sha
-                });
-
-                files = res.data.files.map(f => f.filename);
-              }
-
-              // final filter
-              const jsons = files.filter(f => f.endsWith(".json"));
-
-              if (jsons.length === 0) {
-                core.setFailed("No JSON file detected in push event.");
-                return;
-              }
-
-              jf = jsons[0];
-              console.log("Auto-detected JSON:", jf);
-            } else {
-              console.log("Manual mode JSON:", jf);
-            }
-
-            jf = path.normalize(jf);
+            const jf = process.env.JSON_FILE;
+            console.log("Using JSON:", jf);
 
             if (!fs.existsSync(jf)) {
-              core.setFailed(`JSON NOT FOUND: ${jf}`);
+              core.setFailed("JSON not found: " + jf);
               return;
             }
 
-            // ======================================================================
-            // PARSE JSON
-            // ======================================================================
+            // Parse JSON
             let j;
             try {
               j = JSON.parse(fs.readFileSync(jf, "utf8"));
             } catch (err) {
-              core.setFailed(`Invalid JSON (${jf}): ${String(err).slice(0,200)}`);
+              core.setFailed("Invalid JSON: " + err);
               return;
             }
-            console.log("JSON parsed successfully");
 
-            // ======================================================================
-            // FIND IMAGE FILES
-            // ======================================================================
+            // Extract image paths
             const imgs = [];
             function walk(o) {
               if (o && typeof o === "object") {
                 if (Array.isArray(o)) o.forEach(walk);
                 else Object.values(o).forEach(walk);
-              } else if (typeof o === "string") {
-                if (/\.(jpg|jpeg|png|webp)$/i.test(o.trim())) {
-                  imgs.push(o.trim());
-                }
+              } else if (typeof o === "string" && /\.(jpg|jpeg|png|webp)$/i.test(o.trim())) {
+                imgs.push(o.trim());
               }
             }
             walk(j);
 
             const uniq = [...new Set(imgs)];
 
-            if (uniq.length > 0) {
-              console.log("IMAGE CANDIDATES:");
-              uniq.forEach(x => console.log(" -", x));
-            } else {
-              console.log("No images found (OK)");
-            }
-
-            // ======================================================================
-            // VALIDATE LOCAL IMAGES
-            // ======================================================================
+            // Validate local images
             let missing = false;
-
             for (const u of uniq) {
-              if (/^https?:\/\//i.test(u)) {
-                console.log("Remote image (not validated):", u);
-                continue;
-              }
-
-              const p1 = path.resolve(u);
-              const p2 = path.resolve(".", u.replace(/^\/+/, ""));
-
-              if (fs.existsSync(p1) || fs.existsSync(p2)) {
-                console.log("OK local image:", u);
-              } else {
-                core.error("Missing local image: " + u);
+              if (/^https?:\/\//i.test(u)) continue;
+              const p = path.resolve(u);
+              if (!fs.existsSync(p)) {
                 missing = true;
+                core.error("Missing local image: " + u);
               }
             }
 
             if (missing) {
-              core.setFailed("Missing local image assets.");
+              core.setFailed("Missing images.");
               return;
             }
 
-            // ======================================================================
-            // DISPATCH WRAPPER WORKFLOWS
-            // ======================================================================
+            // Dispatch workflows
+            const octokit = github;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const ref = (context.ref || "refs/heads/main").replace("refs/heads/", "");
-
-            const octokit = github.getOctokit(process.env.TOKEN);
+            const ref = context.ref.replace("refs/heads/", "");
 
             const workflows = [
               { file: "telegram.yml",          input: "json_path" },
@@ -193,19 +122,14 @@ jobs:
             ];
 
             for (const wf of workflows) {
-              try {
-                await octokit.actions.createWorkflowDispatch({
-                  owner,
-                  repo,
-                  workflow_id: wf.file,
-                  ref,
-                  inputs: { [wf.input]: jf }
-                });
-                console.log(`Dispatched → ${wf.file}`);
-              } catch (err) {
-                core.error(`Dispatch failed for ${wf.file}: ${err}`);
-                throw err;
-              }
+              await octokit.actions.createWorkflowDispatch({
+                owner,
+                repo,
+                workflow_id: wf.file,
+                ref,
+                inputs: { [wf.input]: jf }
+              });
+              console.log("Dispatched:", wf.file);
             }
 
-            console.log("ALL WRAPPERS DISPATCHED SUCCESSFULLY.");
+            console.log("DONE.");
