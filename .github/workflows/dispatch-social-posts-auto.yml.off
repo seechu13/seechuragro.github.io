@@ -1,0 +1,68 @@
+name: Dispatch social posts (AUTO)
+
+on:
+  push:
+    paths:
+      - 'social_new.json'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo (force staging)
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Validate social JSON exists
+        run: |
+          set -euo pipefail
+          JSON="social_new.json"
+
+          if [ ! -f "$JSON" ]; then
+            echo "❌ Social JSON not found: $JSON"
+            exit 1
+          fi
+
+          echo "✅ Using social JSON: $JSON"
+          python3 -m json.tool "$JSON" > /dev/null
+
+      - name: Dispatch child workflows
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const jsonPath = "social_new.json";
+
+            const workflows = [
+              { file: "telegram.yml",          input: "json_path" },
+              { file: "post-to-fb.yml",        input: "json_path" },
+              { file: "post-to-instagram.yml", input: "ig_json" },
+              { file: "linkedin.yml",          input: "json_path" },
+              { file: "post-to-x.yml",         input: "json_list" }
+            ];
+
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const ref   = "staging";
+
+            for (const wf of workflows) {
+              await github.rest.actions.createWorkflowDispatch({
+                owner,
+                repo,
+                workflow_id: wf.file,
+                ref,
+                inputs: {
+                  [wf.input]: jsonPath
+                }
+              });
+
+              console.log(`✅ Dispatched ${wf.file}`);
+            }
+
+            console.log("🎉 AUTO dispatch completed.");
