@@ -1,6 +1,5 @@
 name: Dispatch social posts (MANUAL)
 
-# SAFE MODE: manual only
 on:
   workflow_dispatch:
     inputs:
@@ -18,6 +17,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 🔑 REQUIRED: checkout repo so social_new.json exists
+      - name: Checkout repo (force staging)
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+
       - name: Validate social JSON exists
         run: |
           set -euo pipefail
@@ -47,7 +53,7 @@ jobs:
 
             const owner = context.repo.owner;
             const repo  = context.repo.repo;
-            const ref   = "staging"; // IMPORTANT: force staging
+            const ref   = "staging";
 
             for (const wf of workflows) {
               await github.rest.actions.createWorkflowDispatch({
