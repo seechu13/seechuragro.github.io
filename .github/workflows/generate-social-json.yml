@@ -1,0 +1,70 @@
+name: Generate Social JSON (HTML → social_new.json)
+
+# This workflow ONLY generates social JSON.
+# It does NOT post anywhere.
+
+on:
+  # AUTO: when a new article HTML is merged
+  push:
+    paths:
+      - 'articles/**/*.html'
+
+  # MANUAL: regenerate from any past article
+  workflow_dispatch:
+    inputs:
+      article_path:
+        description: "Optional: Path to a specific article HTML (e.g. articles/old-article.html)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Resolve article HTML to process
+        id: article
+        run: |
+          set -euo pipefail
+
+          # MANUAL mode
+          if [ -n "${{ github.event.inputs.article_path }}" ]; then
+            ARTICLE="${{ github.event.inputs.article_path }}"
+          else
+            # AUTO mode: take the latest changed HTML article
+            ARTICLE=$(git diff --name-only HEAD~1 HEAD | grep '^articles/.*\.html$' | tail -n 1 || true)
+          fi
+
+          if [ -z "$ARTICLE" ]; then
+            echo "❌ No article HTML found to process"
+            exit 1
+          fi
+
+          if [ ! -f "$ARTICLE" ]; then
+            echo "❌ Article file not found: $ARTICLE"
+            exit 1
+          fi
+
+          echo "✅ Using article: $ARTICLE"
+          echo "article=$ARTICLE" >> $GITHUB_OUTPUT
+
+      - name: Placeholder — social JSON generator (to be added)
+        run: |
+          echo "--------------------------------------------------"
+          echo "This is a SAFE placeholder step."
+          echo "Next step will:"
+          echo " - Parse HTML: ${{ steps.article.outputs.article }}"
+          echo " - Generate social_new.json"
+          echo " - Overwrite previous version"
+          echo "--------------------------------------------------"
+
+      - name: Stop here (no side effects)
+        run: |
+          echo "Generator workflow skeleton executed successfully."
