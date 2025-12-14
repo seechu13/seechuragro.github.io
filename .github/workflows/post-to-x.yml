@@ -1,11 +1,11 @@
-name: Post changed article JSONs to X (staging)
+name: X — Post article JSONs (manual + master safe)
 
-# Wrapper: run ONLY when dispatched by the master workflow
+# HARD RULE: X runs ONLY when explicitly dispatched
 on:
   workflow_dispatch:
     inputs:
       json_list:
-        description: "JSON file or newline-separated list of JSONs to post"
+        description: "REQUIRED: JSON file or newline-separated list of JSON files to post"
         required: true
 
 permissions:
@@ -24,14 +24,13 @@ env:
 
 jobs:
   post-x:
-    name: X — Post changed article JSONs (staging)
+    name: X — Post article JSONs
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BASE_URL: "https://seechuragro.in"
 
     steps:
-
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -42,26 +41,30 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install tweepy requests
 
-      - name: Normalize master-supplied JSON list
+      - name: Normalize supplied JSON list
         id: jsonprep
         run: |
           set -euo pipefail
-          RAW="${{ github.event.inputs.json_list }}"
 
-          # Convert linebreaks safely
+          RAW="${{ github.event.inputs.json_list }}"
+          if [ -z "$RAW" ]; then
+            echo "❌ json_list input is empty"
+            exit 1
+          fi
+
+          # Decode line breaks
           LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
 
           if [ -z "$LIST" ]; then
-            echo "json_files=" >> $GITHUB_OUTPUT
-            exit 0
+            echo "❌ No JSON paths resolved from input"
+            exit 1
           fi
 
-          # Encode safely
+          # Re-encode safely for outputs
           ENC=$(printf "%s" "$LIST" | sed ':a;N;$!ba;s/\n/<<NL>>/g')
           echo "json_files=$ENC" >> $GITHUB_OUTPUT
 
-      - name: Post each JSON to X (runner script)
-        if: steps.jsonprep.outputs.json_files != ''
+      - name: Validate JSON files (fail fast)
         run: |
           set -euo pipefail
           RAW="${{ steps.jsonprep.outputs.json_files }}"
@@ -69,16 +72,21 @@ jobs:
 
           for jf in $LIST; do
             if [ ! -f "$jf" ]; then
-              echo "Skipping: $jf (not found)"
-              continue
+              echo "❌ JSON file not found: $jf"
+              exit 1
             fi
+            echo "✅ Validating JSON: $jf"
+            python3 -m json.tool "$jf" > /dev/null
+          done
 
+      - name: Post each JSON to X
+        run: |
+          set -euo pipefail
+          RAW="${{ steps.jsonprep.outputs.json_files }}"
+          LIST=$(printf "%s" "$RAW" | sed 's/<<NL>>/\n/g')
+
+          for jf in $LIST; do
             echo "Posting to X: $jf"
             python3 scripts/send_x.py "$jf"
             echo "--------------------------------"
           done
-
-      - name: No JSONs found notice
-        if: steps.jsonprep.outputs.json_files == ''
-        run: |
-          echo "No JSONs to post to X."
