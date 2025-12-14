@@ -1,18 +1,18 @@
-name: LinkedIn - Post articles (Personal)
+name: LinkedIn — Post single article (manual + master safe)
 
-# Wrapper: ONLY manual dispatch — prevents accidental push triggers
+# HARD RULE: LinkedIn runs ONLY when explicitly dispatched
 on:
   workflow_dispatch:
     inputs:
       json_path:
-        description: 'Optional: path to a single article JSON to post (relative to repo root). If omitted, the internal master workflow will pass the file.'
-        required: false
+        description: "REQUIRED: Path to social JSON for ONE article"
+        required: true
 
 jobs:
   post-to-linkedin:
     runs-on: ubuntu-latest
     concurrency:
-      group: linkedin-personal-posting
+      group: linkedin-single-post
       cancel-in-progress: false
 
     steps:
@@ -31,27 +31,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pillow
 
-      - name: Determine article JSONs to process
-        id: files
+      - name: Validate JSON input (fail fast)
         run: |
-          echo "GITHUB_EVENT_NAME=${GITHUB_EVENT_NAME}"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.json_path }}" != "" ]; then
-            echo "Using json_path from workflow_dispatch: ${{ github.event.inputs.json_path }}"
-            echo "::set-output name=jsons::${{ github.event.inputs.json_path }}"
-          else
-            changed=$(git diff --name-only --diff-filter=AMR ${{ github.sha }} ${{ github.sha }}~1 2>/dev/null | grep '^articles/.*\.json$' || true)
-            if [ -z "$changed" ]; then
-              echo "No changed article JSONs detected; falling back to all articles/*.json"
-              changed=$(ls articles/*.json 2>/dev/null || true)
-            fi
-            echo "::set-output name=jsons::${changed}"
+          if [ ! -f "${{ github.event.inputs.json_path }}" ]; then
+            echo "❌ JSON file not found: ${{ github.event.inputs.json_path }}"
+            exit 1
           fi
+          echo "✅ Using JSON: ${{ github.event.inputs.json_path }}"
+          python3 -m json.tool "${{ github.event.inputs.json_path }}" > /dev/null
 
-      - name: Show JSONs to process
-        run: |
-          echo "JSONS=${{ steps.files.outputs.jsons }}"
-
-      - name: Run LinkedIn personal poster for each JSON
+      - name: Post to LinkedIn (personal)
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON: ${{ secrets.LINKEDIN_PERSON }}
@@ -60,15 +49,5 @@ jobs:
           LINKEDIN_POST_IMAGE: "true"
         run: |
           set -euo pipefail
-          IFS=$'\n'
-          for json in ${{ steps.files.outputs.jsons }}; do
-            if [ -z "$json" ]; then
-              continue
-            fi
-            if [ ! -f "$json" ]; then
-              echo "Skipping missing file: $json"
-              continue
-            fi
-            echo "Processing $json"
-            python scripts/send_linkedin.py --json "$json"
-          done
+          echo "Posting to LinkedIn: ${{ github.event.inputs.json_path }}"
+          python scripts/send_linkedin.py --json "${{ github.event.inputs.json_path }}"
