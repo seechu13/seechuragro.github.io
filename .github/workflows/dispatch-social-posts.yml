@@ -1,0 +1,66 @@
+name: Dispatch social posts (MANUAL)
+
+# SAFE MODE: manual only
+on:
+  workflow_dispatch:
+    inputs:
+      json_path:
+        description: "Path to social JSON to post (default: social_new.json)"
+        required: false
+        default: social_new.json
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate social JSON exists
+        run: |
+          set -euo pipefail
+          JSON="${{ github.event.inputs.json_path }}"
+
+          if [ ! -f "$JSON" ]; then
+            echo "❌ Social JSON not found: $JSON"
+            exit 1
+          fi
+
+          echo "✅ Using social JSON: $JSON"
+          python3 -m json.tool "$JSON" > /dev/null
+
+      - name: Dispatch child workflows
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const jsonPath = "${{ github.event.inputs.json_path }}";
+
+            const workflows = [
+              { file: "telegram.yml",          input: "json_path" },
+              { file: "post-to-fb.yml",        input: "json_path" },
+              { file: "post-to-instagram.yml", input: "ig_json" },
+              { file: "linkedin.yml",          input: "json_path" },
+              { file: "post-to-x.yml",         input: "json_list" }
+            ];
+
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const ref   = "staging"; // IMPORTANT: force staging
+
+            for (const wf of workflows) {
+              await github.rest.actions.createWorkflowDispatch({
+                owner,
+                repo,
+                workflow_id: wf.file,
+                ref,
+                inputs: {
+                  [wf.input]: jsonPath
+                }
+              });
+
+              console.log(`✅ Dispatched ${wf.file}`);
+            }
+
+            console.log("🎉 All social workflows dispatched.");
