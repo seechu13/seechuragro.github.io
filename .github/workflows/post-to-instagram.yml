@@ -16,6 +16,9 @@ jobs:
 
     env:
       PYTHONUNBUFFERED: "1"
+      GITHUB_REPO: seechu13/seechuragro.github.io
+      GITHUB_BRANCH: staging
+      PROCESSED_BRANCH: processed-images
 
     steps:
       - name: Checkout staging
@@ -23,39 +26,42 @@ jobs:
         with:
           ref: staging
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
-      - name: Verify script file (CRITICAL)
+      - name: Validate JSON input
         run: |
-          echo "---- ls scripts ----"
-          ls -la scripts
-          echo "---- sha256 ----"
-          sha256sum scripts/send_ig.py
-          echo "---- first 40 lines ----"
-          sed -n '1,40p' scripts/send_ig.py
-          echo "---- last 40 lines ----"
-          sed -n '$((`wc -l < scripts/send_ig.py`-40)),${p}' scripts/send_ig.py
-
-      - name: Validate JSON
-        run: |
-          test -f "${{ github.event.inputs.ig_json }}"
+          if [ ! -f "${{ github.event.inputs.ig_json }}" ]; then
+            echo "❌ JSON not found: ${{ github.event.inputs.ig_json }}"
+            exit 1
+          fi
+          echo "✅ Using JSON: ${{ github.event.inputs.ig_json }}"
           python -m json.tool "${{ github.event.inputs.ig_json }}" > /dev/null
 
-      - name: Install deps
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests pillow
 
-      - name: Run Instagram script (forced traceback)
+      - name: Instagram poster
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+
+          GITHUB_REPO: ${{ env.GITHUB_REPO }}
+          GITHUB_BRANCH: ${{ env.GITHUB_BRANCH }}
+          PROCESSED_BRANCH: ${{ env.PROCESSED_BRANCH }}
+
           IG_POST_JSON: ${{ github.event.inputs.ig_json }}
         run: |
           set -x
-          python3 -X faulthandler -u scripts/send_ig.py || echo "EXIT CODE: $?"
+          python3 -u scripts/send_ig.py
+
+      - name: Cleanup
+        if: always()
+        run: echo "done"
