@@ -65,7 +65,7 @@ jobs:
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           echo "IG_USER_ID set -> ${IG_USER_ID:+YES}"
           echo "IG_ACCESS_TOKEN set -> ${IG_ACCESS_TOKEN:+YES}"
