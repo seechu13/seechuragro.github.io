@@ -25,6 +25,7 @@ jobs:
       HASHTAG_MAX: "30"
       HASHTAG_MIN_WORD_LEN: "3"
       EXTRA_HASHTAGS: "seechuragro,agriculture"
+      PYTHONUNBUFFERED: "1"   # 🔴 CRITICAL
 
     steps:
       - name: Checkout staging
@@ -39,82 +40,56 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate JSON input
+      - name: Validate JSON
         run: |
-          if [ ! -f "${{ github.event.inputs.ig_json }}" ]; then
-            echo "❌ JSON not found: ${{ github.event.inputs.ig_json }}"
-            exit 1
-          fi
-          echo "✅ Using JSON: ${{ github.event.inputs.ig_json }}"
+          test -f "${{ github.event.inputs.ig_json }}"
           python -m json.tool "${{ github.event.inputs.ig_json }}" > /dev/null
 
-      - name: Normalize hashtags (kept for parity, IG ignores)
-        run: |
-          CLEANED=$(echo "${EXTRA_HASHTAGS}" | sed 's/,/ /g' | sed 's/  */ /g')
-          FORMATTED=""
-          for t in $CLEANED; do FORMATTED="$FORMATTED #$t"; done
-          echo "EXTRA_HASHTAGS=$FORMATTED" >> "$GITHUB_ENV"
-
-      - name: Install Python dependencies
+      - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install requests pillow
 
-      # -------- SAFE DEBUG: secrets presence (NO VALUES) --------
-      - name: Debug IG env presence (safe)
+      - name: Debug env (safe)
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          echo "IG_USER_ID set -> ${IG_USER_ID:+YES}"
-          echo "IG_ACCESS_TOKEN set -> ${IG_ACCESS_TOKEN:+YES}"
-          echo "GITHUB_TOKEN set -> ${GITHUB_TOKEN:+YES}"
+          echo "IG_USER_ID -> ${IG_USER_ID:+YES}"
+          echo "IG_ACCESS_TOKEN -> ${IG_ACCESS_TOKEN:+YES}"
+          echo "GITHUB_TOKEN -> ${GITHUB_TOKEN:+YES}"
 
-      # -------- CRITICAL: inspect image URLs seen by script --------
-      - name: Inspect images in JSON (safe)
+      - name: Inspect images in JSON
         run: |
-          echo "🔍 Inspecting image URLs inside JSON"
           python - <<'PY'
           import json
-          p = "${{ github.event.inputs.ig_json }}"
-          with open(p, "r", encoding="utf-8") as f:
-              data = json.load(f)
-
-          urls = []
+          p="${{ github.event.inputs.ig_json }}"
+          data=json.load(open(p))
+          urls=[]
           def walk(x):
-              if isinstance(x, dict):
+              if isinstance(x,dict):
                   for v in x.values(): walk(v)
-              elif isinstance(x, list):
+              elif isinstance(x,list):
                   for i in x: walk(i)
-              elif isinstance(x, str) and x.startswith("http"):
+              elif isinstance(x,str) and x.startswith("http"):
                   urls.append(x)
-
           walk(data)
-          for u in urls:
-              print(u)
-          print("TOTAL URLS FOUND:", len(urls))
+          for u in urls: print(u)
+          print("TOTAL URLS:", len(urls))
           PY
 
-      # -------- RUN INSTAGRAM SCRIPT --------
-      - name: Run Instagram poster
+      - name: Run Instagram poster (unbuffered)
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          GITHUB_REPO: ${{ env.GITHUB_REPO }}
-          GITHUB_BRANCH: ${{ env.GITHUB_BRANCH }}
-          PROCESSED_BRANCH: ${{ env.PROCESSED_BRANCH }}
-
+          GITHUB_TOKEN: ${{ github.token }}
           IG_POST_JSON: ${{ github.event.inputs.ig_json }}
-          HASHTAG_MAX: ${{ env.HASHTAG_MAX }}
-          HASHTAG_MIN_WORD_LEN: ${{ env.HASHTAG_MIN_WORD_LEN }}
-          EXTRA_HASHTAGS: ${{ env.EXTRA_HASHTAGS }}
         run: |
           set -x
-          python3 scripts/send_ig.py
+          python3 -u scripts/send_ig.py
+          echo "PYTHON EXIT CODE -> $?"
 
       - name: Cleanup
         if: always()
-        run: echo "done"
+        run: echo done
