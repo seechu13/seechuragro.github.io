@@ -1,12 +1,12 @@
-name: Telegram - Post on article push (wrapper safe for master dispatch)
+name: Telegram — Post single article (manual + master safe)
 
-# Wrapper: ONLY manual or master workflow dispatch
+# HARD RULE: Telegram runs ONLY when explicitly dispatched
 on:
   workflow_dispatch:
     inputs:
       json_path:
-        description: "Optional: JSON path passed from master workflow (not used by old script, but included for uniformity)."
-        required: false
+        description: "REQUIRED: Path to social JSON for ONE article"
+        required: true
 
 jobs:
   telegram-post:
@@ -21,18 +21,26 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies (requests + pillow)
+      - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
           pip3 install requests pillow
 
-      - name: Run article processor
+      - name: Validate JSON input (fail fast)
+        run: |
+          if [ ! -f "${{ github.event.inputs.json_path }}" ]; then
+            echo "❌ JSON file not found: ${{ github.event.inputs.json_path }}"
+            exit 1
+          fi
+          echo "✅ Using JSON: ${{ github.event.inputs.json_path }}"
+          python3 -m json.tool "${{ github.event.inputs.json_path }}" > /dev/null
+
+      - name: Post to Telegram
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           BASE_URL: ${{ secrets.BASE_URL }}
-          GITHUB_SHA: ${{ github.sha }}
-          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          JSON_PATH: ${{ github.event.inputs.json_path }}
         run: |
-          echo "Running process_articles.py"
+          echo "Posting to Telegram using JSON_PATH=$JSON_PATH"
           python3 scripts/process_articles.py
