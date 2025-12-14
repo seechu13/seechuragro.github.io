@@ -42,4 +42,4 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
         run: |
           echo "Posting to Telegram using JSON: ${{ github.event.inputs.json_path }}"
-          python3 scripts/process_articles.py "${{ github.event.inputs.json_path }}"
+          python3 scripts/send_telegram.py "${{ github.event.inputs.json_path }}"
