@@ -40,7 +40,6 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           BASE_URL: ${{ secrets.BASE_URL }}
-          JSON_PATH: ${{ github.event.inputs.json_path }}
         run: |
-          echo "Posting to Telegram using JSON_PATH=$JSON_PATH"
-          python3 scripts/process_articles.py
+          echo "Posting to Telegram using JSON: ${{ github.event.inputs.json_path }}"
+          python3 scripts/process_articles.py "${{ github.event.inputs.json_path }}"
