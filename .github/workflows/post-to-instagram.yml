@@ -39,24 +39,29 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate JSON
+      - name: Validate JSON input
         run: |
-          test -f "${{ github.event.inputs.ig_json }}"
+          if [ ! -f "${{ github.event.inputs.ig_json }}" ]; then
+            echo "❌ JSON not found: ${{ github.event.inputs.ig_json }}"
+            exit 1
+          fi
+          echo "✅ Using JSON: ${{ github.event.inputs.ig_json }}"
           python -m json.tool "${{ github.event.inputs.ig_json }}" > /dev/null
 
-      - name: Normalize hashtags
+      - name: Normalize hashtags (kept for parity, IG ignores)
         run: |
           CLEANED=$(echo "${EXTRA_HASHTAGS}" | sed 's/,/ /g' | sed 's/  */ /g')
           FORMATTED=""
           for t in $CLEANED; do FORMATTED="$FORMATTED #$t"; done
           echo "EXTRA_HASHTAGS=$FORMATTED" >> "$GITHUB_ENV"
 
-      - name: Install deps
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests pillow
 
-      - name: Debug env (safe)
+      # -------- SAFE DEBUG: secrets presence (NO VALUES) --------
+      - name: Debug IG env presence (safe)
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
@@ -66,16 +71,50 @@ jobs:
           echo "IG_ACCESS_TOKEN set -> ${IG_ACCESS_TOKEN:+YES}"
           echo "GITHUB_TOKEN set -> ${GITHUB_TOKEN:+YES}"
 
-      - name: Run Instagram
+      # -------- CRITICAL: inspect image URLs seen by script --------
+      - name: Inspect images in JSON (safe)
+        run: |
+          echo "🔍 Inspecting image URLs inside JSON"
+          python - <<'PY'
+          import json
+          p = "${{ github.event.inputs.ig_json }}"
+          with open(p, "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          urls = []
+          def walk(x):
+              if isinstance(x, dict):
+                  for v in x.values(): walk(v)
+              elif isinstance(x, list):
+                  for i in x: walk(i)
+              elif isinstance(x, str) and x.startswith("http"):
+                  urls.append(x)
+
+          walk(data)
+          for u in urls:
+              print(u)
+          print("TOTAL URLS FOUND:", len(urls))
+          PY
+
+      # -------- RUN INSTAGRAM SCRIPT --------
+      - name: Run Instagram poster
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          GITHUB_REPO: ${{ env.GITHUB_REPO }}
+          GITHUB_BRANCH: ${{ env.GITHUB_BRANCH }}
+          PROCESSED_BRANCH: ${{ env.PROCESSED_BRANCH }}
+
           IG_POST_JSON: ${{ github.event.inputs.ig_json }}
+          HASHTAG_MAX: ${{ env.HASHTAG_MAX }}
+          HASHTAG_MIN_WORD_LEN: ${{ env.HASHTAG_MIN_WORD_LEN }}
+          EXTRA_HASHTAGS: ${{ env.EXTRA_HASHTAGS }}
         run: |
           set -x
           python3 scripts/send_ig.py
 
       - name: Cleanup
         if: always()
-        run: echo done
+        run: echo "done"
