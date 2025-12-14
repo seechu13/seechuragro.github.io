@@ -1,0 +1,45 @@
+name: Telegram — Post single article (manual + master safe)
+
+# HARD RULE: Telegram runs ONLY when explicitly dispatched
+on:
+  workflow_dispatch:
+    inputs:
+      json_path:
+        description: "REQUIRED: Path to social JSON for ONE article"
+        required: true
+
+jobs:
+  telegram-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install requests pillow
+
+      - name: Validate JSON input (fail fast)
+        run: |
+          if [ ! -f "${{ github.event.inputs.json_path }}" ]; then
+            echo "❌ JSON file not found: ${{ github.event.inputs.json_path }}"
+            exit 1
+          fi
+          echo "✅ Using JSON: ${{ github.event.inputs.json_path }}"
+          python3 -m json.tool "${{ github.event.inputs.json_path }}" > /dev/null
+
+      - name: Post to Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+        run: |
+          echo "Posting to Telegram using JSON: ${{ github.event.inputs.json_path }}"
+          python3 scripts/process_articles.py "${{ github.event.inputs.json_path }}"
