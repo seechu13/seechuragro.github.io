@@ -1,12 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 
 """
-send_ig.py — FINAL AUTHORITATIVE VERSION (NO HASHTAGS, THREADS-SAFE)
-
-- Carousel posting only
-- Processed images committed to PROCESSED_BRANCH
-- NO hashtags anywhere (caption or comments)
-- Threads inherits clean caption
-- Deterministic, retry-safe
+send_ig.py — posts to Instagram with processed images committed to a separate branch (PROCESSED_BRANCH)
+Drop-in replacement. Commits processed images to PROCESSED_BRANCH (default: processed-images)
+so the main content branch (GITHUB_BRANCH, e.g. staging) does not get noisy commits.
 """
 
 import os, sys, time, json, base64, hashlib, urllib.parse
@@ -27,14 +23,10 @@ PROCESSED_BRANCH = os.environ.get("PROCESSED_BRANCH", "processed-images")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 RAW_BASE_TEMPLATE = "https://raw.githubusercontent.com/{repo}/{branch}"
 GITHUB_API_BASE = "https://api.github.com"
-
 PROCESSED_DIR = "assets/processed"
 PROCESSED_MAP = f"{PROCESSED_DIR}/processed_map.json"
 
-PERMANENT_CAPTION = (
-    "Read the full article: https://www.seechuragro.in/articles.html\n"
-    "(Link also in bio 👆)"
-)
+PERMANENT_CAPTION = "Read the full article: https://www.seechuragro.in/articles.html\n(Link also in bio 👆)"
 
 IG_USER_ID = os.environ.get("IG_USER_ID")
 IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN")
@@ -47,6 +39,18 @@ DOWNLOAD_RETRIES = int(os.environ.get("DOWNLOAD_RETRIES", "3"))
 SLEEP_BETWEEN_RETRIES = int(os.environ.get("SLEEP_BETWEEN_RETRIES", "2"))
 
 HEADERS_GITHUB = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
+
+HASHTAG_MAX = int(os.environ.get("HASHTAG_MAX", "30"))
+HASHTAG_MIN_WORD_LEN = int(os.environ.get("HASHTAG_MIN_WORD_LEN", "3"))
+EXTRA_HASHTAGS = os.environ.get("EXTRA_HASHTAGS", "")
+
+COMMON_STOPWORDS = {
+    "the","and","for","that","with","this","from","have","are","was","were","will",
+    "but","not","you","your","our","who","what","when","where","how","why","which",
+    "their","they","them","been","had","has","about","into","over","through","also",
+    "more","other","these","those","there","such","may","can","its","it's","a","an",
+    "in","on","of","to","by","as"
+}
 
 # -------------------------
 # Helpers
@@ -68,34 +72,35 @@ def raw_base_for(branch):
     return RAW_BASE_TEMPLATE.format(repo=GITHUB_REPO, branch=branch)
 
 def make_raw_url(path, branch=PROCESSED_BRANCH):
-    return f"{raw_base_for(branch)}/{path.lstrip('/')}"
+    path = path.lstrip("/")
+    return f"{raw_base_for(branch)}/{path}"
 
-# -------------------------
-# Image helpers
-# -------------------------
-def download_bytes(url):
-    for i in range(DOWNLOAD_RETRIES):
+def download_bytes(url, retries=DOWNLOAD_RETRIES):
+    exc = None
+    for i in range(retries):
         try:
-            r = requests.get(
-                url,
-                timeout=DOWNLOAD_TIMEOUT,
-                headers={"User-Agent": "SeechurAgroBot/1.0"},
-                stream=True,
-            )
+            r = requests.get(url, timeout=DOWNLOAD_TIMEOUT, stream=True, headers={"User-Agent":"SeechurAgroBot/1.0"})
             r.raise_for_status()
             return r.content
-        except Exception:
-            time.sleep(SLEEP_BETWEEN_RETRIES * (i + 1))
-    raise RuntimeError(f"Download failed for {url}")
+        except Exception as e:
+            exc = e
+            time.sleep(SLEEP_BETWEEN_RETRIES * (i+1))
+    raise RuntimeError(f"download failed for {url}: {exc}")
 
 def process_to_jpeg_bytes(bts):
     im = Image.open(BytesIO(bts))
-    if im.mode != "RGB":
+    if im.mode in ("RGBA","LA") or (im.mode == "P" and "transparency" in im.info):
+        bg = Image.new("RGB", im.size, (255,255,255))
+        rgba = im.convert("RGBA")
+        bg.paste(rgba, mask=rgba.split()[3])
+        im = bg
+    else:
         im = im.convert("RGB")
-    w, h = im.size
-    if max(w, h) > MAX_SIDE:
-        scale = MAX_SIDE / float(max(w, h))
-        im = im.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+    w,h = im.size
+    maxside = max(w,h)
+    if maxside > MAX_SIDE:
+        scale = MAX_SIDE / float(maxside)
+        im = im.resize((int(w*scale), int(h*scale)), Image.LANCZOS)
     out = BytesIO()
     im.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True)
     return out.getvalue()
@@ -103,101 +108,136 @@ def process_to_jpeg_bytes(bts):
 # -------------------------
 # GitHub helpers
 # -------------------------
-def github_get_file(path, branch):
+def github_get_file(path, branch=None):
+    branch = branch or PROCESSED_BRANCH
     url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/contents/{urllib.parse.quote(path, safe='')}"
-    r = requests.get(url, headers=HEADERS_GITHUB, params={"ref": branch})
+    params = {"ref": branch}
+    r = requests.get(url, headers=HEADERS_GITHUB, params=params)
     if r.status_code == 200:
         j = r.json()
-        return {"sha": j["sha"], "text": base64.b64decode(j["content"]).decode()}
-    return None
+        return {"sha": j.get("sha")}
+    if r.status_code == 404:
+        return None
+    raise RuntimeError(f"github_get_file failed for {path} (branch={branch}): {r.status_code} {r.text}")
 
-def github_put_file(path, content_bytes, message, branch, sha=None):
+def github_put_file(path, content_bytes, message, branch=None, sha=None):
+    branch = branch or PROCESSED_BRANCH
+    if sha is None:
+        existing = github_get_file(path, branch=branch)
+        sha = existing["sha"] if existing else None
+
     url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/contents/{urllib.parse.quote(path, safe='')}"
-    body = {
-        "message": message,
-        "content": base64.b64encode(content_bytes).decode(),
-        "branch": branch,
-    }
+    b64 = base64.b64encode(content_bytes).decode("ascii")
+    body = {"message": message, "content": b64, "branch": branch}
     if sha:
         body["sha"] = sha
+
     r = requests.put(url, headers=HEADERS_GITHUB, json=body)
-    if r.status_code not in (200, 201):
-        raise RuntimeError(r.text)
+    if r.status_code not in (200,201):
+        raise RuntimeError(f"github_put_file failed (path={path}, branch={branch}): {r.status_code} {r.text}")
+    return r.json()
 
-def ensure_processed_branch():
-    ref = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{PROCESSED_BRANCH}"
-    r = requests.get(ref, headers=HEADERS_GITHUB)
+def ensure_processed_branch_exists():
+    ref_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{PROCESSED_BRANCH}"
+    r = requests.get(ref_url, headers=HEADERS_GITHUB)
     if r.status_code == 200:
-        return
-    src = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{GITHUB_BRANCH}"
-    r2 = requests.get(src, headers=HEADERS_GITHUB)
-    sha = r2.json()["object"]["sha"]
-    requests.post(
-        f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/refs",
-        headers=HEADERS_GITHUB,
-        json={"ref": f"refs/heads/{PROCESSED_BRANCH}", "sha": sha},
-    )
+        return True
 
-def ensure_processed_url(original_url):
-    ensure_processed_branch()
+    src_ref_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/ref/heads/{GITHUB_BRANCH}"
+    r2 = requests.get(src_ref_url, headers=HEADERS_GITHUB)
+    src_sha = r2.json()["object"]["sha"]
+
+    create_url = f"{GITHUB_API_BASE}/repos/{GITHUB_REPO}/git/refs"
+    requests.post(create_url, headers=HEADERS_GITHUB,
+                  json={"ref": f"refs/heads/{PROCESSED_BRANCH}", "sha": src_sha})
+    return True
+
+# -------------------------
+# ensure processed URL
+# -------------------------
+def ensure_processed_url_for(original_url):
+    if not GITHUB_TOKEN:
+        raise RuntimeError("GITHUB_TOKEN not set")
+
     bts = download_bytes(original_url)
-    jpeg = process_to_jpeg_bytes(bts)
+    jb = process_to_jpeg_bytes(bts)
 
-    h = hashlib.sha256(jpeg).hexdigest()[:10]
-    base = os.path.basename(urllib.parse.urlparse(original_url).path) or "img.jpg"
+    parsed = urllib.parse.urlparse(original_url)
+    base = os.path.basename(parsed.path) or "img"
     name = _slugify(base)
-    final = f"{h}-{name}"
 
-    path = f"{PROCESSED_DIR}/{final}"
-    existing = github_get_file(path, PROCESSED_BRANCH)
-    sha = existing["sha"] if existing else None
+    h = hashlib.sha256(jb).hexdigest()[:10]
+    final_name = f"{h}-{name}"
+    target_repo_path = f"{PROCESSED_DIR}/{final_name}"
 
+    ensure_processed_branch_exists()
     github_put_file(
-        path,
-        jpeg,
-        f"chore: add processed image {path}",
-        PROCESSED_BRANCH,
-        sha=sha,
+        target_repo_path,
+        jb,
+        f"chore: add/update processed image {target_repo_path}",
+        branch=PROCESSED_BRANCH,
     )
-    return make_raw_url(path)
+
+    return make_raw_url(target_repo_path, branch=PROCESSED_BRANCH)
 
 # -------------------------
-# Graph helpers
+# Graph API helpers
 # -------------------------
-def ig_post(endpoint, data):
+def create_image_container(image_url, is_carousel_item=False):
+    params = {"image_url": image_url, "access_token": IG_ACCESS_TOKEN}
+    if is_carousel_item:
+        params["is_carousel_item"] = "true"
     return requests.post(
-        f"https://graph.facebook.com/{GRAPH_VERSION}/{endpoint}",
-        data=data,
+        f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media",
+        data=params,
         timeout=30,
     )
 
-def ig_get(endpoint, params):
-    return requests.get(
-        f"https://graph.facebook.com/{GRAPH_VERSION}/{endpoint}",
-        params=params,
-        timeout=20,
+def create_parent_container(creation_ids, caption=""):
+    params = {
+        "media_type": "CAROUSEL",
+        "children": ",".join(creation_ids),
+        "caption": caption,
+        "access_token": IG_ACCESS_TOKEN,
+    }
+    return requests.post(
+        f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media",
+        data=params,
+        timeout=30,
     )
 
-def wait_ready(cid, timeout=120):
+def publish_parent_container(parent_id):
+    params = {"creation_id": parent_id, "access_token": IG_ACCESS_TOKEN}
+    return requests.post(
+        f"https://graph.facebook.com/{GRAPH_VERSION}/{IG_USER_ID}/media_publish",
+        data=params,
+        timeout=30,
+    )
+
+def wait_for_media_ready(cid, timeout=120, poll_interval=2):
     waited = 0
     while waited < timeout:
-        r = ig_get(cid, {"fields": "status_code", "access_token": IG_ACCESS_TOKEN})
-        status = r.json().get("status_code")
-        if isinstance(status, str) and status.upper() in ("FINISHED", "PUBLISHED"):
+        r = requests.get(
+            f"https://graph.facebook.com/{GRAPH_VERSION}/{cid}",
+            params={"fields": "status_code", "access_token": IG_ACCESS_TOKEN},
+            timeout=20,
+        )
+        sc = r.json().get("status_code")
+        if isinstance(sc, str) and sc.upper() == "FINISHED":
             return True
-        time.sleep(5)
-        waited += 5
+        time.sleep(poll_interval)
+        waited += poll_interval
     return False
 
 # -------------------------
-# MAIN
+# Main logic
 # -------------------------
 def main():
     if not IG_USER_ID or not IG_ACCESS_TOKEN:
-        sys.exit("Missing IG credentials")
+        sys.exit(2)
 
     json_path = os.environ.get("IG_POST_JSON", "social_new.json")
-    data = json.loads(Path(json_path).read_text(encoding="utf-8"))
+    raw = json.loads(Path(json_path).read_text(encoding="utf-8"))
 
     images = []
     def walk(x):
@@ -205,53 +245,39 @@ def main():
             for v in x.values(): walk(v)
         elif isinstance(x, list):
             for i in x: walk(i)
-        elif isinstance(x, str) and x.startswith("http") and x.lower().endswith((".jpg",".jpeg",".png",".webp")):
-            images.append(x)
-    walk(data)
+        elif isinstance(x, str):
+            low = x.lower()
+            if low.startswith(("http://","https://")) and low.endswith((".jpg",".jpeg",".png",".webp")):
+                images.append(x)
+    walk(raw)
 
     images = images[:4]
-    if not images:
-        sys.exit("No images found")
+    caption = (raw.get("title") or raw.get("excerpt") or "").strip()
 
-    title = data.get("title","")
-    excerpt = data.get("excerpt","")
-    caption = (title or excerpt).strip()
-    caption += "\n\n" + PERMANENT_CAPTION
+    if PERMANENT_CAPTION not in caption:
+        caption += "\n\n" + PERMANENT_CAPTION
+
+    # 🔒 HASHTAGS DISABLED — DO NOT CHANGE
+    tags = []
 
     child_ids = []
-    for img in images:
-        purl = ensure_processed_url(img)
-        r = ig_post(
-            f"{IG_USER_ID}/media",
-            {"image_url": purl, "is_carousel_item": "true", "access_token": IG_ACCESS_TOKEN}
-        )
+    for url in images:
+        processed = ensure_processed_url_for(url)
+        r = create_image_container(processed, is_carousel_item=True)
         cid = r.json().get("id")
         if not cid:
-            raise RuntimeError("No child container ID returned")
-        if not wait_ready(cid):
-            raise RuntimeError("Media not ready")
+            sys.exit(1)
+        if not wait_for_media_ready(cid):
+            sys.exit(1)
         child_ids.append(cid)
 
-    parent = ig_post(
-        f"{IG_USER_ID}/media",
-        {
-            "media_type": "CAROUSEL",
-            "children": ",".join(child_ids),
-            "caption": caption,
-            "access_token": IG_ACCESS_TOKEN
-        }
-    )
+    parent = create_parent_container(child_ids, caption=caption)
+    parent_id = parent.json().get("id")
+    if not parent_id:
+        sys.exit(1)
 
-    pid = parent.json().get("id")
-    if not pid:
-        raise RuntimeError("No parent container ID")
-
-    pub = ig_post(
-        f"{IG_USER_ID}/media_publish",
-        {"creation_id": pid, "access_token": IG_ACCESS_TOKEN}
-    )
-
-    print("Instagram published:", pub.json())
+    publish_parent_container(parent_id)
+    print("Instagram post published successfully.")
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)
