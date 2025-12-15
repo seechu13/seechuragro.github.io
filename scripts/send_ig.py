@@ -171,11 +171,13 @@ def main():
         else:
             children = []
             for u in processed_urls:
-                cid = create_image_container(u, is_carousel_item=True)
-                children.append(cid)
-            time.sleep(15)
+            cid = create_image_container(u, is_carousel_item=True)
+            children.append(cid)
+            time.sleep(10)  # IMPORTANT: allow IG to process each child
+
+              time.sleep(25)  # IMPORTANT: allow all children to be ready
             parent = create_carousel(children)
-            time.sleep(10)
+
             res = publish_container(parent)
             log(f"Published IG carousel: {res}")
 
