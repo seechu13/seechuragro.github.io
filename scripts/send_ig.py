@@ -37,6 +37,7 @@ def download_image(url):
     r.raise_for_status()
     return r.content
 
+# Force IG-safe square images
 def process_image(img_bytes):
     im = Image.open(BytesIO(img_bytes)).convert("RGB")
     w, h = im.size
@@ -51,7 +52,7 @@ def process_image(img_bytes):
 
 def hash_name(url):
     h = hashlib.sha1(url.encode()).hexdigest()[:10]
-    ts = int(time.time())  # avoid IG caching
+    ts = int(time.time())  # avoid IG cache
     name = os.path.basename(urlparse(url).path)
     return f"{h}-{ts}-{name}".replace(" ", "-")
 
@@ -113,7 +114,7 @@ def create_carousel_parent(children):
     return r.json()["id"]
 
 def wait_until_ready(container_id):
-    for _ in range(12):  # ~2 minutes
+    for _ in range(12):
         r = requests.get(
             f"{GRAPH_BASE}/{container_id}",
             params={
@@ -124,25 +125,28 @@ def wait_until_ready(container_id):
         r.raise_for_status()
         status = r.json().get("status", "")
         log(f"IG container status: {status}")
-
-        # Instagram now returns descriptive strings, not just FINISHED
         if status.upper().startswith("FINISHED"):
             return
-
         time.sleep(10)
-
     raise RuntimeError("IG container never became FINISHED")
 
-def publish_container(container_id):
+def publish_container(container_id, caption):
     wait_until_ready(container_id)
+
+    data = {
+        "creation_id": container_id,
+        "caption": caption,
+        "access_token": IG_ACCESS_TOKEN,
+    }
+
     r = requests.post(
         f"{GRAPH_BASE}/{IG_USER_ID}/media_publish",
-        data={
-            "creation_id": container_id,
-            "access_token": IG_ACCESS_TOKEN,
-        },
+        data=data,
     )
-    r.raise_for_status()
+
+    if r.status_code != 200:
+        raise RuntimeError(f"IG publish failed: {r.text}")
+
     return r.json()
 
 # ---------------- MAIN ----------------
@@ -158,6 +162,16 @@ def main():
         with open(jf, "r", encoding="utf-8") as f:
             data = json.load(f)
 
+        title = data.get("title", "").strip()
+        url = data.get("url", "").strip()
+
+        caption = f"""{title}
+
+Read the full article:
+{url}
+(Link also in bio 👇)
+""".strip()
+
         processed_urls = []
 
         for img in data.get("images", []):
@@ -166,12 +180,12 @@ def main():
             processed = process_image(raw)
             fname = hash_name(src)
             gh_path = f"assets/processed/{fname}"
-            url = gh_put_file(gh_path, processed, f"IG processed {fname}")
-            processed_urls.append(url)
+            url_img = gh_put_file(gh_path, processed, f"IG processed {fname}")
+            processed_urls.append(url_img)
 
         if len(processed_urls) == 1:
             cid = create_child_container(processed_urls[0])
-            res = publish_container(cid)
+            res = publish_container(cid, caption)
             log(f"Published IG single image: {res}")
         else:
             children = []
@@ -180,7 +194,7 @@ def main():
                 time.sleep(5)
 
             parent = create_carousel_parent(children)
-            res = publish_container(parent)
+            res = publish_container(parent, caption)
             log(f"Published IG carousel: {res}")
 
     return 0
