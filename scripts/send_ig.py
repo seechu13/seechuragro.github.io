@@ -122,11 +122,15 @@ def wait_until_ready(container_id):
             },
         )
         r.raise_for_status()
-        status = r.json().get("status")
+        status = r.json().get("status", "")
         log(f"IG container status: {status}")
-        if status == "FINISHED":
+
+        # Instagram now returns descriptive strings, not just FINISHED
+        if status.upper().startswith("FINISHED"):
             return
+
         time.sleep(10)
+
     raise RuntimeError("IG container never became FINISHED")
 
 def publish_container(container_id):
