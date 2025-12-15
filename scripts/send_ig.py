@@ -38,11 +38,23 @@ def download_image(url):
     r.raise_for_status()
     return r.content
 
+# 🔴 CRITICAL FIX: FORCE 1:1 SQUARE (IG SAFE)
 def process_image(img_bytes):
     im = Image.open(BytesIO(img_bytes)).convert("RGB")
-    im.thumbnail((1350, 1350))
+
+    w, h = im.size
+    side = min(w, h)
+
+    left = (w - side) // 2
+    top = (h - side) // 2
+    right = left + side
+    bottom = top + side
+
+    im = im.crop((left, top, right, bottom))
+    im = im.resize((1080, 1080))
+
     buf = BytesIO()
-    im.save(buf, format="JPEG", quality=85)
+    im.save(buf, format="JPEG", quality=90)
     return buf.getvalue()
 
 def hash_name(url):
@@ -86,8 +98,8 @@ def gh_put_file(path, content_bytes, message):
 
 def create_image_container(image_url, is_carousel_item=False):
     """
-    Retry-safe container creation.
-    Instagram often needs time to fetch/cache the image URL.
+    Retry-safe creation.
+    IG needs time to fetch/cache public URLs.
     """
     data = {
         "image_url": image_url,
@@ -97,7 +109,7 @@ def create_image_container(image_url, is_carousel_item=False):
 
     last_error = None
 
-    for attempt in range(1, 6):  # up to 5 attempts
+    for attempt in range(1, 6):
         r = requests.post(
             f"{GRAPH_BASE}/{IG_USER_ID}/media",
             data=data,
