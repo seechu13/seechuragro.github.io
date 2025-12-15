@@ -51,8 +51,9 @@ def process_image(img_bytes):
 
 def hash_name(url):
     h = hashlib.sha1(url.encode()).hexdigest()[:10]
+    ts = int(time.time())
     name = os.path.basename(urlparse(url).path)
-    return f"{h}-{name}".replace(" ", "-")
+    return f"{h}-{ts}-{name}".replace(" ", "-")
 
 def gh_get_sha(path):
     url = f"https://api.github.com/repos/{REPO}/contents/{path}"
