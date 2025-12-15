@@ -13,20 +13,19 @@ from PIL import Image
 # ---------------- CONFIG ----------------
 
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
-REPO = os.environ["GITHUB_REPOSITORY"]  # owner/repo
+REPO = os.environ["GITHUB_REPOSITORY"]
 PROCESSED_BRANCH = os.environ.get("PROCESSED_BRANCH", "processed-images")
 
 IG_USER_ID = os.environ["IG_USER_ID"]
 IG_ACCESS_TOKEN = os.environ["IG_ACCESS_TOKEN"]
 
 SITE_URL_BASE = os.environ.get("SITE_URL_BASE", "").rstrip("/")
+GRAPH_BASE = "https://graph.facebook.com/v19.0"
 
 HEADERS_GH = {
     "Authorization": f"token {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
 }
-
-GRAPH_BASE = "https://graph.facebook.com/v19.0"
 
 # ---------------- HELPERS ----------------
 
@@ -38,21 +37,14 @@ def download_image(url):
     r.raise_for_status()
     return r.content
 
-# 🔴 CRITICAL FIX: FORCE 1:1 SQUARE (IG SAFE)
 def process_image(img_bytes):
     im = Image.open(BytesIO(img_bytes)).convert("RGB")
-
     w, h = im.size
     side = min(w, h)
-
     left = (w - side) // 2
     top = (h - side) // 2
-    right = left + side
-    bottom = top + side
-
-    im = im.crop((left, top, right, bottom))
+    im = im.crop((left, top, left + side, top + side))
     im = im.resize((1080, 1080))
-
     buf = BytesIO()
     im.save(buf, format="JPEG", quality=90)
     return buf.getvalue()
@@ -64,12 +56,7 @@ def hash_name(url):
 
 def gh_get_sha(path):
     url = f"https://api.github.com/repos/{REPO}/contents/{path}"
-    r = requests.get(
-        url,
-        headers=HEADERS_GH,
-        params={"ref": PROCESSED_BRANCH},
-        timeout=20,
-    )
+    r = requests.get(url, headers=HEADERS_GH, params={"ref": PROCESSED_BRANCH})
     if r.status_code == 200:
         return r.json().get("sha")
     if r.status_code == 404:
@@ -78,7 +65,6 @@ def gh_get_sha(path):
 
 def gh_put_file(path, content_bytes, message):
     sha = gh_get_sha(path)
-
     payload = {
         "message": message,
         "content": base64.b64encode(content_bytes).decode(),
@@ -87,8 +73,11 @@ def gh_put_file(path, content_bytes, message):
     if sha:
         payload["sha"] = sha
 
-    url = f"https://api.github.com/repos/{REPO}/contents/{path}"
-    r = requests.put(url, headers=HEADERS_GH, json=payload, timeout=30)
+    r = requests.put(
+        f"https://api.github.com/repos/{REPO}/contents/{path}",
+        headers=HEADERS_GH,
+        json=payload,
+    )
     if r.status_code not in (200, 201):
         raise RuntimeError(r.text)
 
@@ -97,57 +86,46 @@ def gh_put_file(path, content_bytes, message):
 # ---------------- INSTAGRAM ----------------
 
 def create_image_container(image_url, is_carousel_item=False):
-    """
-    Retry-safe creation.
-    IG needs time to fetch/cache public URLs.
-    """
     data = {
         "image_url": image_url,
         "is_carousel_item": "true" if is_carousel_item else "false",
         "access_token": IG_ACCESS_TOKEN,
     }
 
-    last_error = None
-
-    for attempt in range(1, 6):
-        r = requests.post(
-            f"{GRAPH_BASE}/{IG_USER_ID}/media",
-            data=data,
-            timeout=30,
-        )
-
+    for _ in range(5):
+        r = requests.post(f"{GRAPH_BASE}/{IG_USER_ID}/media", data=data)
         if r.status_code == 200:
             return r.json()["id"]
-
-        last_error = r.text
-        log(f"IG media not ready (attempt {attempt}/5). Waiting 10s...")
         time.sleep(10)
 
-    raise RuntimeError(f"Instagram media creation failed after retries: {last_error}")
+    raise RuntimeError(f"Failed to create IG media: {r.text}")
 
-def create_carousel(children):
-    data = {
-        "media_type": "CAROUSEL",
-        "children": ",".join(children),
-        "access_token": IG_ACCESS_TOKEN,
-    }
-    r = requests.post(
-        f"{GRAPH_BASE}/{IG_USER_ID}/media",
-        data=data,
-        timeout=30,
-    )
-    r.raise_for_status()
-    return r.json()["id"]
+def wait_until_ready(container_id):
+    for _ in range(12):  # up to ~2 minutes
+        r = requests.get(
+            f"{GRAPH_BASE}/{container_id}",
+            params={
+                "fields": "status",
+                "access_token": IG_ACCESS_TOKEN,
+            },
+        )
+        r.raise_for_status()
+        status = r.json().get("status")
+        log(f"IG container status: {status}")
+        if status == "FINISHED":
+            return
+        time.sleep(10)
+
+    raise RuntimeError("IG container never became FINISHED")
 
 def publish_container(container_id):
-    data = {
-        "creation_id": container_id,
-        "access_token": IG_ACCESS_TOKEN,
-    }
+    wait_until_ready(container_id)
     r = requests.post(
         f"{GRAPH_BASE}/{IG_USER_ID}/media_publish",
-        data=data,
-        timeout=30,
+        data={
+            "creation_id": container_id,
+            "access_token": IG_ACCESS_TOKEN,
+        },
     )
     r.raise_for_status()
     return r.json()
@@ -162,52 +140,42 @@ def main():
 
     for jf in json_files:
         log(f"Processing {jf}")
-        with open(jf, "r", encoding="utf-8") as f:
+        with open(jf) as f:
             data = json.load(f)
-
-        images = data.get("images", [])
-        if not images:
-            log("No images found, skipping")
-            continue
 
         processed_urls = []
 
-        for img in images:
-            src_url = img if img.startswith("http") else f"{SITE_URL_BASE}{img}"
-            log(f"Downloading {src_url}")
-            raw = download_image(src_url)
+        for img in data.get("images", []):
+            src = img if img.startswith("http") else f"{SITE_URL_BASE}{img}"
+            raw = download_image(src)
             processed = process_image(raw)
-
-            fname = hash_name(src_url)
+            fname = hash_name(src)
             gh_path = f"assets/processed/{fname}"
-
-            log(f"Uploading processed image: {gh_path}")
-            url = gh_put_file(
-                gh_path,
-                processed,
-                f"IG processed image {fname}",
-            )
+            url = gh_put_file(gh_path, processed, f"IG processed {fname}")
             processed_urls.append(url)
 
-        # ---------- POST TO INSTAGRAM ----------
         if len(processed_urls) == 1:
             cid = create_image_container(processed_urls[0])
-            time.sleep(10)
             res = publish_container(cid)
-            log(f"Published IG single image: {res}")
-
+            log(f"Published single image: {res}")
         else:
             children = []
             for u in processed_urls:
-                cid = create_image_container(u, is_carousel_item=True)
-                children.append(cid)
+                children.append(create_image_container(u, True))
                 time.sleep(5)
 
-            time.sleep(15)
-            parent = create_carousel(children)
-            time.sleep(10)
+            parent = create_image_container(None)
+            parent = requests.post(
+                f"{GRAPH_BASE}/{IG_USER_ID}/media",
+                data={
+                    "media_type": "CAROUSEL",
+                    "children": ",".join(children),
+                    "access_token": IG_ACCESS_TOKEN,
+                },
+            ).json()["id"]
+
             res = publish_container(parent)
-            log(f"Published IG carousel: {res}")
+            log(f"Published carousel: {res}")
 
     return 0
 
