@@ -7,13 +7,13 @@ import hashlib
 import base64
 import requests
 from urllib.parse import urlparse
-from PIL import Image
 from io import BytesIO
+from PIL import Image
 
 # ---------------- CONFIG ----------------
 
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
-REPO = os.environ.get("GITHUB_REPOSITORY")  # owner/repo
+REPO = os.environ["GITHUB_REPOSITORY"]  # owner/repo
 PROCESSED_BRANCH = os.environ.get("PROCESSED_BRANCH", "processed-images")
 
 IG_USER_ID = os.environ["IG_USER_ID"]
@@ -162,22 +162,23 @@ def main():
             )
             processed_urls.append(url)
 
-        # --- Instagram posting ---
+        # ---------- POST TO INSTAGRAM ----------
         if len(processed_urls) == 1:
             cid = create_image_container(processed_urls[0])
             time.sleep(10)
             res = publish_container(cid)
             log(f"Published IG single image: {res}")
+
         else:
             children = []
             for u in processed_urls:
-            cid = create_image_container(u, is_carousel_item=True)
-            children.append(cid)
-            time.sleep(10)  # IMPORTANT: allow IG to process each child
+                cid = create_image_container(u, is_carousel_item=True)
+                children.append(cid)
+                time.sleep(7)  # allow IG to process each child
 
-              time.sleep(25)  # IMPORTANT: allow all children to be ready
+            time.sleep(20)  # allow all children to be ready
             parent = create_carousel(children)
-
+            time.sleep(10)
             res = publish_container(parent)
             log(f"Published IG carousel: {res}")
 
