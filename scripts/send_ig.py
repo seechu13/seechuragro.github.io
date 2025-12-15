@@ -51,13 +51,16 @@ def process_image(img_bytes):
 
 def hash_name(url):
     h = hashlib.sha1(url.encode()).hexdigest()[:10]
-    ts = int(time.time())
+    ts = int(time.time())  # avoid IG caching
     name = os.path.basename(urlparse(url).path)
     return f"{h}-{ts}-{name}".replace(" ", "-")
 
 def gh_get_sha(path):
-    url = f"https://api.github.com/repos/{REPO}/contents/{path}"
-    r = requests.get(url, headers=HEADERS_GH, params={"ref": PROCESSED_BRANCH})
+    r = requests.get(
+        f"https://api.github.com/repos/{REPO}/contents/{path}",
+        headers=HEADERS_GH,
+        params={"ref": PROCESSED_BRANCH},
+    )
     if r.status_code == 200:
         return r.json().get("sha")
     if r.status_code == 404:
@@ -86,23 +89,31 @@ def gh_put_file(path, content_bytes, message):
 
 # ---------------- INSTAGRAM ----------------
 
-def create_image_container(image_url, is_carousel_item=False):
+def create_child_container(image_url):
     data = {
         "image_url": image_url,
-        "is_carousel_item": "true" if is_carousel_item else "false",
+        "is_carousel_item": "true",
         "access_token": IG_ACCESS_TOKEN,
     }
-
     for _ in range(5):
         r = requests.post(f"{GRAPH_BASE}/{IG_USER_ID}/media", data=data)
         if r.status_code == 200:
             return r.json()["id"]
         time.sleep(10)
+    raise RuntimeError(f"Failed to create IG child: {r.text}")
 
-    raise RuntimeError(f"Failed to create IG media: {r.text}")
+def create_carousel_parent(children):
+    data = {
+        "media_type": "CAROUSEL",
+        "children": ",".join(children),
+        "access_token": IG_ACCESS_TOKEN,
+    }
+    r = requests.post(f"{GRAPH_BASE}/{IG_USER_ID}/media", data=data)
+    r.raise_for_status()
+    return r.json()["id"]
 
 def wait_until_ready(container_id):
-    for _ in range(12):  # up to ~2 minutes
+    for _ in range(12):  # ~2 minutes
         r = requests.get(
             f"{GRAPH_BASE}/{container_id}",
             params={
@@ -116,7 +127,6 @@ def wait_until_ready(container_id):
         if status == "FINISHED":
             return
         time.sleep(10)
-
     raise RuntimeError("IG container never became FINISHED")
 
 def publish_container(container_id):
@@ -141,7 +151,7 @@ def main():
 
     for jf in json_files:
         log(f"Processing {jf}")
-        with open(jf) as f:
+        with open(jf, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         processed_urls = []
@@ -156,27 +166,18 @@ def main():
             processed_urls.append(url)
 
         if len(processed_urls) == 1:
-            cid = create_image_container(processed_urls[0])
+            cid = create_child_container(processed_urls[0])
             res = publish_container(cid)
-            log(f"Published single image: {res}")
+            log(f"Published IG single image: {res}")
         else:
             children = []
             for u in processed_urls:
-                children.append(create_image_container(u, True))
+                children.append(create_child_container(u))
                 time.sleep(5)
 
-            parent = create_image_container(None)
-            parent = requests.post(
-                f"{GRAPH_BASE}/{IG_USER_ID}/media",
-                data={
-                    "media_type": "CAROUSEL",
-                    "children": ",".join(children),
-                    "access_token": IG_ACCESS_TOKEN,
-                },
-            ).json()["id"]
-
+            parent = create_carousel_parent(children)
             res = publish_container(parent)
-            log(f"Published carousel: {res}")
+            log(f"Published IG carousel: {res}")
 
     return 0
 
