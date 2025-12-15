@@ -85,18 +85,33 @@ def gh_put_file(path, content_bytes, message):
 # ---------------- INSTAGRAM ----------------
 
 def create_image_container(image_url, is_carousel_item=False):
+    """
+    Retry-safe container creation.
+    Instagram often needs time to fetch/cache the image URL.
+    """
     data = {
         "image_url": image_url,
         "is_carousel_item": "true" if is_carousel_item else "false",
         "access_token": IG_ACCESS_TOKEN,
     }
-    r = requests.post(
-        f"{GRAPH_BASE}/{IG_USER_ID}/media",
-        data=data,
-        timeout=30,
-    )
-    r.raise_for_status()
-    return r.json()["id"]
+
+    last_error = None
+
+    for attempt in range(1, 6):  # up to 5 attempts
+        r = requests.post(
+            f"{GRAPH_BASE}/{IG_USER_ID}/media",
+            data=data,
+            timeout=30,
+        )
+
+        if r.status_code == 200:
+            return r.json()["id"]
+
+        last_error = r.text
+        log(f"IG media not ready (attempt {attempt}/5). Waiting 10s...")
+        time.sleep(10)
+
+    raise RuntimeError(f"Instagram media creation failed after retries: {last_error}")
 
 def create_carousel(children):
     data = {
@@ -174,9 +189,9 @@ def main():
             for u in processed_urls:
                 cid = create_image_container(u, is_carousel_item=True)
                 children.append(cid)
-                time.sleep(7)  # allow IG to process each child
+                time.sleep(5)
 
-            time.sleep(20)  # allow all children to be ready
+            time.sleep(15)
             parent = create_carousel(children)
             time.sleep(10)
             res = publish_container(parent)
