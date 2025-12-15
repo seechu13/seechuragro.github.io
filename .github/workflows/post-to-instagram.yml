@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ig_json:
-        description: "REQUIRED: Path to social JSON for ONE article"
+        description: "REQUIRED: Path to social JSON for ONE article (e.g. social_new.json)"
         required: true
 
 permissions:
@@ -56,11 +56,9 @@ jobs:
           GITHUB_REPO: ${{ env.GITHUB_REPO }}
           GITHUB_BRANCH: ${{ env.GITHUB_BRANCH }}
           PROCESSED_BRANCH: ${{ env.PROCESSED_BRANCH }}
-
-          IG_POST_JSON: ${{ github.event.inputs.ig_json }}
         run: |
           set -x
-          python3 -u scripts/send_ig.py
+          python3 -u scripts/send_ig.py "${{ github.event.inputs.ig_json }}"
 
       - name: Cleanup
         if: always()
