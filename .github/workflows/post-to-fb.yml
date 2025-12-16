@@ -1,0 +1,88 @@
+name: Facebook — Post single article (manual + master safe)
+
+# HARD RULE: Facebook runs ONLY when explicitly dispatched
+on:
+  workflow_dispatch:
+    inputs:
+      json_path:
+        description: "REQUIRED: Path to social JSON for ONE article"
+        required: true
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    env:
+      FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+      FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+      BASE_URL: ${{ secrets.BASE_URL }}
+
+      HASHTAG_MAX: '30'
+      HASHTAG_MIN_WORD_LEN: '3'
+      EXTRA_HASHTAGS: 'seechuragro,agriculture'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JSON input (fail fast)
+        run: |
+          if [ ! -f "${{ github.event.inputs.json_path }}" ]; then
+            echo "❌ JSON file not found: ${{ github.event.inputs.json_path }}"
+            exit 1
+          fi
+          echo "✅ Using JSON: ${{ github.event.inputs.json_path }}"
+          python3 -m json.tool "${{ github.event.inputs.json_path }}" > /dev/null
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y imagemagick jq curl
+          python3 -m pip install --upgrade pip
+          python3 -m pip install requests Pillow
+
+      - name: Create extractor script (safe)
+        run: |
+          cat > /tmp/extract_images.py << 'EOF'
+          #!/usr/bin/env python3
+          import sys,json,urllib.parse
+          path=sys.argv[1]
+          base=sys.argv[2].rstrip("/") + "/"
+          j=json.load(open(path,"r",encoding="utf-8"))
+          imgs=[]
+          if isinstance(j.get("images"),list) and j.get("images"):
+              imgs=j.get("images")
+          elif j.get("cover_image") is not None:
+              ci=j.get("cover_image")
+              if isinstance(ci,list): imgs=ci
+              elif isinstance(ci,str) and ci.strip(): imgs=[ci]
+          elif isinstance(j.get("media"),list) and j.get("media"):
+              imgs=j.get("media")
+          def normalize(u):
+              if not u: return None
+              u=u.strip()
+              if u.startswith("http"): return u
+              if u.startswith("/"): return urllib.parse.urljoin(base,u.lstrip("/"))
+              return urllib.parse.urljoin(base,u)
+          images=[normalize(u) for u in imgs if normalize(u)]
+          print("EXTRACTED_IMAGES_COUNT:",len(images))
+          for i,u in enumerate(images,1):
+              print(f"IMAGE_{i}: {u}")
+          EOF
+          chmod +x /tmp/extract_images.py
+
+      - name: Post to Facebook
+        run: |
+          set -euo pipefail
+          jf="${{ github.event.inputs.json_path }}"
+          echo "----------------------------------------"
+          echo "Posting to Facebook: $jf"
+          sed -n '1,200p' "$jf" || true
+          echo "--- Extracted images ---"
+          python3 /tmp/extract_images.py "$jf" "${BASE_URL:-https://seechuragro.in}"
+          echo "--- run send_fb.py ---"
+          python3 scripts/send_fb.py "$jf"
+          echo "----------------------------------------"
+
+      - name: Cleanup
+        if: always()
+        run: rm -f /tmp/extract_images.py || true
