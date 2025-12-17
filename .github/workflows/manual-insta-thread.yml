@@ -1,17 +1,18 @@
-name: Generate Insta + Threads Assets (Manual)
+name: Manual Generate Instagram + Threads Assets
 
 on:
   workflow_dispatch:
     inputs:
       article_path:
-        description: "Article HTML path (example: articles/dairy-farming-guide-20251122-201040.html)"
+        description: "Path to article HTML (e.g. articles/aeroponics-farming-20251213-205856.html)"
         required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
-  generate:
+  generate-manual:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,25 +29,39 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install beautifulsoup4 pillow
+          pip install pillow beautifulsoup4
 
-      - name: Generate Insta + Threads assets
+      - name: Validate article path
         run: |
           set -euo pipefail
+
+          ARTICLE="${{ github.event.inputs.article_path }}"
+          ARTICLE="$(echo "$ARTICLE" | xargs)"   # trim spaces
+
+          if [ ! -f "$ARTICLE" ]; then
+            echo "❌ Article not found: $ARTICLE"
+            exit 1
+          fi
+
+          echo "Using article: $ARTICLE"
+
+      - name: Generate Instagram assets + threads.json
+        run: |
           python3 scripts/insta_thread.py "${{ github.event.inputs.article_path }}"
 
-      - name: Commit Insta + Threads output
+      - name: Commit Instagram assets and threads.json
         run: |
           set -euo pipefail
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add social insta_thread.json
+          git add social/insta threads.json
 
           if git diff --cached --quiet; then
-            echo "No Insta/Threads changes"
+            echo "No changes to commit"
             exit 0
           fi
 
-          git commit -m "Manual generate Insta + Threads assets"
+          git commit -m "Manual regenerate Instagram assets and Threads JSON"
           git push
