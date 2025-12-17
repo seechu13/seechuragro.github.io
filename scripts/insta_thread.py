@@ -1,182 +1,151 @@
 #!/usr/bin/env python3
-"""
-insta_thread.py — FINAL (legacy-safe)
-
-Supports:
-- /assets/articles/...
-- /images/articles/...
-- full https://seechuragro.in/... URLs
-- single-image articles
-"""
-
-import json
 import sys
+import re
+import json
 import shutil
 from pathlib import Path
-from bs4 import BeautifulSoup
-from PIL import Image
 from urllib.parse import urlparse
-
-# ---------------- CONFIG ----------------
-
-MAX_IG_IMAGES = 10
-MAX_THREADS_IMAGES = 4
-THREADS_CHAR_LIMIT = 500
-IMG_SIZE = (1080, 1080)
+from PIL import Image
+import requests
 
 ROOT = Path(".")
-INSTA_DIR = ROOT / "social" / "insta"
-INSTA_IMG_DIR = INSTA_DIR / "images"
+INSTA_IMG_DIR = ROOT / "social" / "insta" / "images"
+INSTA_CAPTION = ROOT / "social" / "insta" / "caption.txt"
 THREADS_JSON = ROOT / "threads.json"
 
-INSTAGRAM_HASHTAGS = [
-    "microgreens",
-    "urbanfarming",
-    "hydroponics",
-    "smartfarming",
-    "seechuragro",
-]
-
-THREADS_HASHTAGS = [
-    "microgreens",
-    "futurefarming",
-    "agritech",
-]
-
-# ----------------------------------------
+SITE_URL = "https://seechuragro.in"
 
 
-def reset_instagram_dirs():
-    if INSTA_DIR.exists():
-        shutil.rmtree(INSTA_DIR)
-    INSTA_IMG_DIR.mkdir(parents=True, exist_ok=True)
+# ---------- helpers ----------
+
+def clean_dir(p: Path):
+    if p.exists():
+        shutil.rmtree(p)
+    p.mkdir(parents=True, exist_ok=True)
 
 
-def resize_and_save(src: Path, dst: Path):
-    with Image.open(src) as im:
+def download_image(url: str, out: Path):
+    r = requests.get(url, timeout=30)
+    r.raise_for_status()
+    out.write_bytes(r.content)
+
+
+def resize_instagram(img_path: Path):
+    with Image.open(img_path) as im:
         im = im.convert("RGB")
-        im.thumbnail(IMG_SIZE, Image.LANCZOS)
-        canvas = Image.new("RGB", IMG_SIZE, (255, 255, 255))
-        offset = ((IMG_SIZE[0] - im.width) // 2, (IMG_SIZE[1] - im.height) // 2)
-        canvas.paste(im, offset)
-        canvas.save(dst, "JPEG", quality=90, optimize=True)
+        im.thumbnail((1080, 1080), Image.LANCZOS)
+        im.save(img_path, "JPEG", quality=92)
 
 
-def shorten(text: str, limit: int) -> str:
-    if len(text) <= limit:
-        return text
-    cut = text[: limit - 3]
-    return cut.rsplit(" ", 1)[0] + "..."
+def extract_images(html: str):
+    imgs = re.findall(r'<img[^>]+src="([^"]+)"', html)
+    cleaned = []
+    for i in imgs:
+        if i.startswith("//"):
+            i = "https:" + i
+        elif i.startswith("/"):
+            i = SITE_URL + i
+        cleaned.append(i)
+    return cleaned
 
 
-def resolve_image_path(src: str) -> Path | None:
-    """
-    Try all known legacy + new image locations
-    """
-    if not src:
-        return None
-
-    # Strip domain if full URL
-    if src.startswith("http"):
-        src = urlparse(src).path
-
-    candidates = [
-        ROOT / src.lstrip("/"),
-        ROOT / "assets" / src.lstrip("/"),
-        ROOT / "images" / src.lstrip("/"),
-    ]
-
-    for p in candidates:
-        if p.exists():
-            return p
-
-    return None
-
-
-def main(article_path: str):
-    html_file = ROOT / article_path.strip()
-    if not html_file.exists():
-        raise RuntimeError(f"Article not found: {article_path}")
-
-    soup = BeautifulSoup(
-        html_file.read_text(encoding="utf-8", errors="ignore"),
-        "html.parser",
+def extract_meta(html: str, tag: str):
+    m = re.search(
+        rf'<meta name="{tag}" content="([^"]+)"', html, re.IGNORECASE
     )
+    return m.group(1).strip() if m else ""
 
-    # ---------- TITLE ----------
-    title = soup.title.text.replace(" - Seechur Agro", "").strip()
 
-    # ---------- EXCERPT ----------
-    subtitle = soup.select_one("p.subtitle")
-    if not subtitle:
-        raise RuntimeError("Missing <p class='subtitle'>")
-    excerpt = subtitle.get_text(strip=True)
+def extract_title(html: str):
+    m = re.search(r"<title>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    return m.group(1).strip() if m else ""
 
-    # ---------- URL ----------
-    url = f"https://seechuragro.in/articles/{html_file.name}"
 
-    # ---------- IMAGE SOURCES ----------
-    srcs = []
-
-    hero = soup.select_one(".article-hero img")
-    if hero and hero.get("src"):
-        srcs.append(hero["src"])
-
-    for img in soup.select("article img"):
-        s = img.get("src")
-        if s and s not in srcs:
-            srcs.append(s)
-
-    resolved = []
-    for src in srcs:
-        p = resolve_image_path(src)
-        if p:
-            resolved.append(p)
-
-    if not resolved:
-        raise RuntimeError(
-            "No resolvable image files found — check legacy image paths"
-        )
-
-    # ---------- INSTAGRAM ----------
-    reset_instagram_dirs()
-
-    for i, img in enumerate(resolved[:MAX_IG_IMAGES], start=1):
-        resize_and_save(img, INSTA_IMG_DIR / f"{i:02}.jpg")
-
-    insta_caption = (
+def build_instagram_caption(title, excerpt, url, hashtags):
+    return (
         f"{title}\n\n"
         f"{excerpt}\n\n"
         f"Read the full article:\n{url}\n"
-        f"(Link also in bio 👇)\n\n"
-        + " ".join(f"#{h}" for h in INSTAGRAM_HASHTAGS)
+        f"(Link also in bio 👆)\n\n"
+        + " ".join(hashtags)
     )
 
-    (INSTA_DIR / "caption.txt").write_text(insta_caption, encoding="utf-8")
 
-    # ---------- THREADS ----------
-    threads_caption = shorten(
-        f"{title}\n\n{excerpt}\n\nRead more (link in bio).\n\n"
-        + " ".join(f"#{h}" for h in THREADS_HASHTAGS),
-        THREADS_CHAR_LIMIT,
+def build_threads_caption(title, excerpt, url, hashtags):
+    base = f"{title}\n\n{excerpt}\n\nRead more: link in bio"
+    tagline = " ".join(h.lstrip("#") for h in hashtags)
+    full = f"{base}\n\n{tagline}"
+    return full[:430]
+
+
+# ---------- main ----------
+
+def main(article_path: str):
+    html_path = Path(article_path)
+    if not html_path.exists():
+        raise RuntimeError(f"Article not found: {article_path}")
+
+    html = html_path.read_text(encoding="utf-8", errors="ignore")
+
+    title = extract_title(html)
+    excerpt = extract_meta(html, "description")
+    slug = html_path.stem
+    url = f"{SITE_URL}/articles/{html_path.name}"
+
+    hashtags = [
+        "#seecureagro",
+        "#smartfarming",
+        "#sustainableagriculture",
+        "#futureoffarming",
+        "#agritech",
+    ]
+
+    images = extract_images(html)
+    if not images:
+        raise RuntimeError("No images found in article HTML")
+
+    # ---------- INSTAGRAM ----------
+    clean_dir(INSTA_IMG_DIR)
+
+    local_images = []
+    for idx, img_url in enumerate(images, start=1):
+        out = INSTA_IMG_DIR / f"{idx:02d}.jpg"
+        try:
+            download_image(img_url, out)
+            resize_instagram(out)
+            local_images.append(out)
+        except Exception:
+            continue
+
+    if not local_images:
+        raise RuntimeError("No resolvable image files found on disk")
+
+    insta_caption = build_instagram_caption(
+        title, excerpt, url, hashtags
     )
-
-    threads_data = {
-        "title": title,
-        "url": url,
-        "caption": threads_caption,
-        "images": ["/" + p.as_posix() for p in resolved[:MAX_THREADS_IMAGES]],
-    }
-
-    THREADS_JSON.write_text(json.dumps(threads_data, indent=2), encoding="utf-8")
+    INSTA_CAPTION.write_text(insta_caption, encoding="utf-8")
 
     print("✅ Instagram assets generated")
-    print("✅ threads.json generated")
+
+    # ---------- THREADS ----------
+    threads_payload = {
+        "title": title,
+        "caption": build_threads_caption(
+            title, excerpt, url, hashtags
+        ),
+        "images": [str(p) for p in local_images[:4]],
+        "url": url,
+    }
+
+    THREADS_JSON.write_text(
+        json.dumps(threads_payload, indent=2),
+        encoding="utf-8"
+    )
+
+    print("✅ threads.json generated (Threads-ready)")
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python3 insta_thread.py <article_html>")
-        sys.exit(1)
-
+        raise SystemExit("Usage: python insta_thread.py <article.html>")
     main(sys.argv[1])
