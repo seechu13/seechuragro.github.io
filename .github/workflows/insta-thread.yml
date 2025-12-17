@@ -1,0 +1,61 @@
+name: Generate Insta + Threads Assets (Auto)
+
+on:
+  push:
+    paths:
+      - "articles/**/*.html"
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo (staging)
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install beautifulsoup4 pillow
+
+      - name: Resolve latest article
+        id: article
+        run: |
+          set -euo pipefail
+          ARTICLE=$(git diff --name-only HEAD~1 HEAD | grep '^articles/.*\.html$' | tail -n 1 || true)
+          if [ -z "$ARTICLE" ]; then
+            echo "No article HTML found"
+            exit 1
+          fi
+          echo "article=$ARTICLE" >> $GITHUB_OUTPUT
+
+      - name: Generate Insta + Threads assets
+        run: |
+          set -euo pipefail
+          python3 scripts/insta_thread.py "${{ steps.article.outputs.article }}"
+
+      - name: Commit Insta + Threads output
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add social insta_thread.json
+
+          if git diff --cached --quiet; then
+            echo "No Insta/Threads changes"
+            exit 0
+          fi
+
+          git commit -m "Auto generate Insta + Threads assets"
+          git push
