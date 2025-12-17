@@ -23,21 +23,29 @@ jobs:
           ref: staging
           fetch-depth: 1
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
       - name: Validate threads.json
         run: |
-          set -euo pipefail
+          set -e
+          test -f threads.json
 
-          if [ ! -f threads.json ]; then
-            echo "❌ threads.json not found"
-            exit 1
-          fi
-
-      - name: Parse threads.json
-        id: parse
+      - name: Send Threads post to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.THREADS_TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.THREADS_TELEGRAM_CHAT_ID }}
         run: |
-          set -euo pipefail
-          python3 <<'EOF'
+          python3 <<'PYCODE'
           import json
+          import os
+          import requests
+          from pathlib import Path
+
+          BOT_TOKEN = os.environ["BOT_TOKEN"]
+          CHAT_ID = os.environ["CHAT_ID"]
 
           with open("threads.json", "r", encoding="utf-8") as f:
               data = json.load(f)
@@ -45,56 +53,40 @@ jobs:
           caption = data["caption"]
           images = data["images"][:4]
 
-          print(f"caption<<EOF\n{caption}\nEOF")
-          print(f"images={','.join(images)}")
-          EOF
+          files = {}
+          media = []
 
-      - name: Download Threads images
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/threads_images
+          for i, img in enumerate(images):
+              img_path = Path(img.lstrip("/"))
+              if not img_path.exists():
+                  continue
 
-          IFS=',' read -ra IMGS <<< "${{ steps.parse.outputs.images }}"
-          idx=1
-          for img in "${IMGS[@]}"; do
-            clean="${img#/}"
-            if [ -f "$clean" ]; then
-              cp "$clean" "/tmp/threads_images/${idx}.jpg"
-              idx=$((idx+1))
-            else
-              echo "⚠️ Image not found: $clean"
-            fi
-          done
+              key = f"photo{i}"
+              files[key] = img_path.open("rb")
 
-      - name: Send to Telegram (Threads)
-        env:
-          BOT_TOKEN: ${{ secrets.THREADS_TELEGRAM_BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.THREADS_TELEGRAM_CHAT_ID }}
-        run: |
-          set -euo pipefail
+              item = {
+                  "type": "photo",
+                  "media": f"attach://{key}"
+              }
 
-          CAPTION=$(cat <<'EOF'
-${{ steps.parse.outputs.caption }}
-EOF
-)
+              if i == 0:
+                  item["caption"] = caption
 
-          MEDIA_JSON='['
-          first=true
+              media.append(item)
 
-          for img in /tmp/threads_images/*.jpg; do
-            if [ "$first" = true ]; then
-              MEDIA_JSON+='{"type":"photo","media":"attach://'"$(basename "$img")"'","caption":'"$(jq -Rs <<< "$CAPTION")"',"parse_mode":"HTML"}'
-              first=false
-            else
-              MEDIA_JSON+=',{"type":"photo","media":"attach://'"$(basename "$img")"'"}'
-            fi
-          done
+          resp = requests.post(
+              f"https://api.telegram.org/bot{BOT_TOKEN}/sendMediaGroup",
+              data={
+                  "chat_id": CHAT_ID,
+                  "media": json.dumps(media)
+              },
+              files=files,
+              timeout=30
+          )
 
-          MEDIA_JSON+=']'
+          if resp.status_code != 200:
+              print(resp.text)
+              raise SystemExit("Telegram send failed")
 
-          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup" \
-            -F chat_id="${CHAT_ID}" \
-            -F media="${MEDIA_JSON}" \
-            $(for img in /tmp/threads_images/*.jpg; do echo -n "-F $(basename "$img")=@$img "; done)
-
-          echo "✅ Threads post sent to Telegram"
+          print("✅ Threads post sent to Telegram")
+          PYCODE
