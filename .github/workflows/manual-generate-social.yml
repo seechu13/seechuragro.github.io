@@ -4,12 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       article_path:
-        description: "Select an article to regenerate social JSON"
+        description: "Paste article path from social/article_index.txt"
         required: true
-        type: choice
-        options:
-          - articles/aeroponics-farming-the-future-of-high-efficiency-crop-production-20251213-205856.html
-          # NOTE: this list will be auto-filled in next step
 
 permissions:
   contents: write
@@ -30,23 +26,22 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Generate social_new.json from selected article
+      - name: Generate social_new.json
         run: |
           set -euo pipefail
           python3 scripts/generate_social_json.py "${{ github.event.inputs.article_path }}"
 
-      - name: Commit updated social_new.json
+      - name: Commit social_new.json
         run: |
           set -euo pipefail
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
           git add social_new.json
-
           if git diff --cached --quiet; then
-            echo "No changes to social_new.json"
+            echo "No changes"
             exit 0
           fi
 
-          git commit -m "Manual regenerate social_new.json from existing article"
+          git commit -m "Manual regenerate social_new.json"
           git push
