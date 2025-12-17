@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  generate-insta-thread:
+  generate:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,42 +24,40 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      # 🔴 REQUIRED FIX
+      - name: Install Python dependencies
         run: |
-          pip install pillow beautifulsoup4
+          python -m pip install --upgrade pip
+          pip install requests pillow
 
       - name: Resolve latest article HTML
         id: article
         run: |
           set -euo pipefail
-
           ARTICLE=$(git diff --name-only HEAD~1 HEAD | grep '^articles/.*\.html$' | tail -n 1 || true)
-
           if [ -z "$ARTICLE" ]; then
-            echo "❌ No article HTML detected"
+            echo "❌ No article HTML found"
             exit 1
           fi
+          echo "article=$ARTICLE" >> $GITHUB_OUTPUT
 
-          echo "Using article: $ARTICLE"
-          echo "article=$ARTICLE" >> "$GITHUB_OUTPUT"
-
-      - name: Generate Instagram assets + threads.json
-        run: |
-          python3 scripts/insta_thread.py "${{ steps.article.outputs.article }}"
-
-      - name: Commit Instagram assets and threads.json
+      - name: Generate Insta + Threads assets
         run: |
           set -euo pipefail
+          python3 scripts/insta_thread.py "${{ steps.article.outputs.article }}"
 
+      - name: Commit Insta + Threads assets
+        run: |
+          set -euo pipefail
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add social/insta threads.json
+          git add social/insta threads.json || true
 
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No changes"
             exit 0
           fi
 
-          git commit -m "Generate Instagram assets and Threads JSON"
+          git commit -m "Generate Insta + Threads assets"
           git push
