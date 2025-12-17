@@ -1,10 +1,10 @@
-name: Manual Generate Social JSON (Existing Articles)
+name: Manual Generate Social JSON
 
 on:
   workflow_dispatch:
     inputs:
       article_path:
-        description: "Paste article path from social/article_index.txt"
+        description: "Article HTML path (example: articles/xyz.html)"
         required: true
 
 permissions:
@@ -29,6 +29,7 @@ jobs:
       - name: Generate social_new.json
         run: |
           set -euo pipefail
+          echo "Using article: ${{ github.event.inputs.article_path }}"
           python3 scripts/generate_social_json.py "${{ github.event.inputs.article_path }}"
 
       - name: Commit social_new.json
@@ -38,8 +39,9 @@ jobs:
           git config user.email "github-actions@github.com"
 
           git add social_new.json
+
           if git diff --cached --quiet; then
-            echo "No changes"
+            echo "No changes to social_new.json"
             exit 0
           fi
 
