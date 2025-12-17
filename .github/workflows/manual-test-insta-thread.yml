@@ -1,17 +1,18 @@
-name: Manual Test Insta + Threads Generator
+name: Manual Generate Insta + Threads Assets
 
 on:
   workflow_dispatch:
     inputs:
       article_path:
-        description: "Article HTML path (example: articles/dairy-farming-guide-20251122-201040.html)"
+        description: "Article HTML path (e.g. articles/microgreens-basics.html)"
         required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
-  test:
+  generate:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,27 +27,34 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      # 🔴 REQUIRED FIX
+      - name: Install Python dependencies
         run: |
-          pip install beautifulsoup4 pillow
+          python -m pip install --upgrade pip
+          pip install requests pillow
 
-      - name: Run insta_thread.py
+      - name: Validate article exists
+        run: |
+          set -euo pipefail
+          test -f "${{ github.event.inputs.article_path }}"
+
+      - name: Generate Insta + Threads assets
         run: |
           set -euo pipefail
           python3 scripts/insta_thread.py "${{ github.event.inputs.article_path }}"
 
-      - name: Commit Insta + Threads output
+      - name: Commit Insta + Threads assets
         run: |
           set -euo pipefail
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add social insta_thread.json
+          git add social/insta threads.json || true
 
           if git diff --cached --quiet; then
             echo "No changes"
             exit 0
           fi
 
-          git commit -m "Generate Insta + Threads assets"
+          git commit -m "Manual generate Insta + Threads assets"
           git push
