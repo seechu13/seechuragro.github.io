@@ -28,7 +28,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      # 🔴 REQUIRED FIX
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -36,7 +35,7 @@ jobs:
 
       - name: Validate threads.json
         run: |
-          set -e
+          set -euo pipefail
           test -f threads.json
 
       - name: Send Threads post to Telegram
@@ -59,11 +58,14 @@ jobs:
           caption = data["caption"]
           images = data.get("images", [])[:4]
 
-          files = {}
+          if not images:
+              raise SystemExit("❌ No Telegram-safe images found")
+
           media = []
+          files = {}
 
           for i, img in enumerate(images):
-              img_path = Path(img.lstrip("/"))
+              img_path = Path(img)
               if not img_path.exists():
                   continue
 
@@ -81,7 +83,7 @@ jobs:
               media.append(item)
 
           if not media:
-              raise SystemExit("No images found for Threads Telegram post")
+              raise SystemExit("❌ No valid images to send")
 
           resp = requests.post(
               f"https://api.telegram.org/bot{BOT_TOKEN}/sendMediaGroup",
@@ -95,7 +97,7 @@ jobs:
 
           if resp.status_code != 200:
               print(resp.text)
-              raise SystemExit("Telegram send failed")
+              raise SystemExit("❌ Telegram send failed")
 
-          print("✅ Threads post sent to Telegram")
+          print("✅ Threads post sent to Telegram successfully")
           PYCODE
