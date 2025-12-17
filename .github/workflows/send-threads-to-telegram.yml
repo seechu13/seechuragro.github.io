@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows:
-      - "Generate Instagram + Threads Assets (AUTO)"
-      - "Manual Generate Instagram + Threads Assets"
+    - "Generate Instagram + Threads Assets (AUTO)"
+    - "Manual Generate Insta + Threads assets"
     types:
       - completed
 
