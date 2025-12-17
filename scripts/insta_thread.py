@@ -1,19 +1,12 @@
 #!/usr/bin/env python3
 """
-insta_thread.py — FINAL, FIXED
+insta_thread.py — FINAL (legacy-safe)
 
-Instagram:
-- Save up to 10 images
-- Save caption to social/insta/caption.txt
-
-Threads:
-- Max 4 images
-- Caption <= 500 chars
-- Save ONLY to threads.json (repo root)
-
-This file is used by:
-- Auto workflow
-- Manual workflow
+Supports:
+- /assets/articles/...
+- /images/articles/...
+- full https://seechuragro.in/... URLs
+- single-image articles
 """
 
 import json
@@ -22,6 +15,7 @@ import shutil
 from pathlib import Path
 from bs4 import BeautifulSoup
 from PIL import Image
+from urllib.parse import urlparse
 
 # ---------------- CONFIG ----------------
 
@@ -36,19 +30,17 @@ INSTA_IMG_DIR = INSTA_DIR / "images"
 THREADS_JSON = ROOT / "threads.json"
 
 INSTAGRAM_HASHTAGS = [
-    "aeroponics",
+    "microgreens",
+    "urbanfarming",
     "hydroponics",
     "smartfarming",
-    "verticalfarming",
-    "controlledenvironment",
     "seechuragro",
 ]
 
 THREADS_HASHTAGS = [
-    "aeroponics",
+    "microgreens",
     "futurefarming",
     "agritech",
-    "sustainableagriculture",
 ]
 
 # ----------------------------------------
@@ -70,22 +62,46 @@ def resize_and_save(src: Path, dst: Path):
         canvas.save(dst, "JPEG", quality=90, optimize=True)
 
 
-def shorten_for_threads(text: str, limit: int) -> str:
+def shorten(text: str, limit: int) -> str:
     if len(text) <= limit:
         return text
     cut = text[: limit - 3]
     return cut.rsplit(" ", 1)[0] + "..."
 
 
-def main(article_path: str):
-    article_path = article_path.strip()
+def resolve_image_path(src: str) -> Path | None:
+    """
+    Try all known legacy + new image locations
+    """
+    if not src:
+        return None
 
-    html_file = ROOT / article_path
+    # Strip domain if full URL
+    if src.startswith("http"):
+        src = urlparse(src).path
+
+    candidates = [
+        ROOT / src.lstrip("/"),
+        ROOT / "assets" / src.lstrip("/"),
+        ROOT / "images" / src.lstrip("/"),
+    ]
+
+    for p in candidates:
+        if p.exists():
+            return p
+
+    return None
+
+
+def main(article_path: str):
+    html_file = ROOT / article_path.strip()
     if not html_file.exists():
         raise RuntimeError(f"Article not found: {article_path}")
 
-    html = html_file.read_text(encoding="utf-8", errors="ignore")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(
+        html_file.read_text(encoding="utf-8", errors="ignore"),
+        "html.parser",
+    )
 
     # ---------- TITLE ----------
     title = soup.title.text.replace(" - Seechur Agro", "").strip()
@@ -93,14 +109,13 @@ def main(article_path: str):
     # ---------- EXCERPT ----------
     subtitle = soup.select_one("p.subtitle")
     if not subtitle:
-        raise RuntimeError("Missing <p class='subtitle'> in article")
+        raise RuntimeError("Missing <p class='subtitle'>")
     excerpt = subtitle.get_text(strip=True)
 
     # ---------- URL ----------
-    slug = html_file.name
-    url = f"https://seechuragro.in/articles/{slug}"
+    url = f"https://seechuragro.in/articles/{html_file.name}"
 
-    # ---------- COLLECT IMAGE SRCs ----------
+    # ---------- IMAGE SOURCES ----------
     srcs = []
 
     hero = soup.select_one(".article-hero img")
@@ -112,25 +127,22 @@ def main(article_path: str):
         if s and s not in srcs:
             srcs.append(s)
 
-    if not srcs:
-        raise RuntimeError("No image src found in article HTML")
-
-    # ---------- RESOLVE IMAGE FILES ----------
     resolved = []
     for src in srcs:
-        clean = src.lstrip("/")
-        p = ROOT / clean
-        if p.exists():
+        p = resolve_image_path(src)
+        if p:
             resolved.append(p)
 
     if not resolved:
-        raise RuntimeError("No resolvable image files found on disk")
+        raise RuntimeError(
+            "No resolvable image files found — check legacy image paths"
+        )
 
     # ---------- INSTAGRAM ----------
     reset_instagram_dirs()
 
-    for idx, p in enumerate(resolved[:MAX_IG_IMAGES], start=1):
-        resize_and_save(p, INSTA_IMG_DIR / f"{idx:02}.jpg")
+    for i, img in enumerate(resolved[:MAX_IG_IMAGES], start=1):
+        resize_and_save(img, INSTA_IMG_DIR / f"{i:02}.jpg")
 
     insta_caption = (
         f"{title}\n\n"
@@ -143,41 +155,28 @@ def main(article_path: str):
     (INSTA_DIR / "caption.txt").write_text(insta_caption, encoding="utf-8")
 
     # ---------- THREADS ----------
-    threads_caption = (
-        f"{title}\n\n"
-        f"{excerpt}\n\n"
-        f"Read more on our website (link in bio).\n\n"
-        + " ".join(f"#{h}" for h in THREADS_HASHTAGS)
+    threads_caption = shorten(
+        f"{title}\n\n{excerpt}\n\nRead more (link in bio).\n\n"
+        + " ".join(f"#{h}" for h in THREADS_HASHTAGS),
+        THREADS_CHAR_LIMIT,
     )
-
-    threads_caption = shorten_for_threads(
-        threads_caption, THREADS_CHAR_LIMIT
-    )
-
-    threads_images = [
-        "/" + p.as_posix()
-        for p in resolved[:MAX_THREADS_IMAGES]
-    ]
 
     threads_data = {
         "title": title,
         "url": url,
         "caption": threads_caption,
-        "images": threads_images,
+        "images": ["/" + p.as_posix() for p in resolved[:MAX_THREADS_IMAGES]],
     }
 
-    THREADS_JSON.write_text(
-        json.dumps(threads_data, indent=2),
-        encoding="utf-8"
-    )
+    THREADS_JSON.write_text(json.dumps(threads_data, indent=2), encoding="utf-8")
 
     print("✅ Instagram assets generated")
-    print("✅ threads.json generated (Threads-ready)")
+    print("✅ threads.json generated")
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python3 insta_thread.py <article_html_path>")
+        print("Usage: python3 insta_thread.py <article_html>")
         sys.exit(1)
 
     main(sys.argv[1])
