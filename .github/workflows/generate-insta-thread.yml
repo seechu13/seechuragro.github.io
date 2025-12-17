@@ -24,7 +24,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      # 🔴 REQUIRED FIX
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
