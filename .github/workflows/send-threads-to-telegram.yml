@@ -1,0 +1,92 @@
+name: Send Threads Post to Telegram
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+    - "Generate Instagram + Threads Assets (AUTO)"
+    - "Manual Generate Insta + Threads assets"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  send-to-telegram:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo (staging)
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Validate threads.json
+        run: |
+          set -e
+          test -f threads.json
+
+      - name: Send Threads post to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.THREADS_TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.THREADS_TELEGRAM_CHAT_ID }}
+        run: |
+          python3 <<'PYCODE'
+          import json
+          import os
+          import requests
+          from pathlib import Path
+
+          BOT_TOKEN = os.environ["BOT_TOKEN"]
+          CHAT_ID = os.environ["CHAT_ID"]
+
+          with open("threads.json", "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          caption = data["caption"]
+          images = data["images"][:4]
+
+          files = {}
+          media = []
+
+          for i, img in enumerate(images):
+              img_path = Path(img.lstrip("/"))
+              if not img_path.exists():
+                  continue
+
+              key = f"photo{i}"
+              files[key] = img_path.open("rb")
+
+              item = {
+                  "type": "photo",
+                  "media": f"attach://{key}"
+              }
+
+              if i == 0:
+                  item["caption"] = caption
+
+              media.append(item)
+
+          resp = requests.post(
+              f"https://api.telegram.org/bot{BOT_TOKEN}/sendMediaGroup",
+              data={
+                  "chat_id": CHAT_ID,
+                  "media": json.dumps(media)
+              },
+              files=files,
+              timeout=30
+          )
+
+          if resp.status_code != 200:
+              print(resp.text)
+              raise SystemExit("Telegram send failed")
+
+          print("✅ Threads post sent to Telegram")
+          PYCODE
