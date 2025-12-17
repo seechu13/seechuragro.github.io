@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows:
-    - "Generate Instagram + Threads Assets (AUTO)"
-    - "Manual Generate Insta + Threads assets"
+      - "Generate Instagram + Threads Assets (AUTO)"
+      - "Manual Generate Instagram + Threads Assets"
     types:
       - completed
 
@@ -27,6 +27,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+
+      # 🔴 REQUIRED FIX
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
       - name: Validate threads.json
         run: |
@@ -51,7 +57,7 @@ jobs:
               data = json.load(f)
 
           caption = data["caption"]
-          images = data["images"][:4]
+          images = data.get("images", [])[:4]
 
           files = {}
           media = []
@@ -73,6 +79,9 @@ jobs:
                   item["caption"] = caption
 
               media.append(item)
+
+          if not media:
+              raise SystemExit("No images found for Threads Telegram post")
 
           resp = requests.post(
               f"https://api.telegram.org/bot{BOT_TOKEN}/sendMediaGroup",
