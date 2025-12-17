@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       article_path:
-        description: "Path to article HTML (e.g. articles/aeroponics-farming-20251213-205856.html)"
+        description: "Path to article HTML (e.g. articles/aeroponics-farming-the-future-of-high-efficiency-crop-production-20251213-205856.html)"
         required: true
         type: string
 
@@ -27,9 +27,11 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      # 🔴 REQUIRED: install ALL deps used by insta_thread.py
+      - name: Install Python dependencies
         run: |
-          pip install pillow beautifulsoup4
+          python -m pip install --upgrade pip
+          pip install requests pillow beautifulsoup4
 
       - name: Validate article path
         run: |
@@ -47,6 +49,7 @@ jobs:
 
       - name: Generate Instagram assets + threads.json
         run: |
+          set -euo pipefail
           python3 scripts/insta_thread.py "${{ github.event.inputs.article_path }}"
 
       - name: Commit Instagram assets and threads.json
@@ -56,7 +59,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add social/insta threads.json
+          git add social/insta threads.json || true
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
