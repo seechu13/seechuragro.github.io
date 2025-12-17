@@ -1,0 +1,100 @@
+name: Send Threads Post to Telegram
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "Generate Instagram + Threads Assets (AUTO)"
+      - "Manual Generate Instagram + Threads Assets"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  send-to-telegram:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo (staging)
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 1
+
+      - name: Validate threads.json
+        run: |
+          set -euo pipefail
+
+          if [ ! -f threads.json ]; then
+            echo "❌ threads.json not found"
+            exit 1
+          fi
+
+      - name: Parse threads.json
+        id: parse
+        run: |
+          set -euo pipefail
+          python3 <<'EOF'
+          import json
+
+          with open("threads.json", "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          caption = data["caption"]
+          images = data["images"][:4]
+
+          print(f"caption<<EOF\n{caption}\nEOF")
+          print(f"images={','.join(images)}")
+          EOF
+
+      - name: Download Threads images
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/threads_images
+
+          IFS=',' read -ra IMGS <<< "${{ steps.parse.outputs.images }}"
+          idx=1
+          for img in "${IMGS[@]}"; do
+            clean="${img#/}"
+            if [ -f "$clean" ]; then
+              cp "$clean" "/tmp/threads_images/${idx}.jpg"
+              idx=$((idx+1))
+            else
+              echo "⚠️ Image not found: $clean"
+            fi
+          done
+
+      - name: Send to Telegram (Threads)
+        env:
+          BOT_TOKEN: ${{ secrets.THREADS_TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.THREADS_TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+
+          CAPTION=$(cat <<'EOF'
+${{ steps.parse.outputs.caption }}
+EOF
+)
+
+          MEDIA_JSON='['
+          first=true
+
+          for img in /tmp/threads_images/*.jpg; do
+            if [ "$first" = true ]; then
+              MEDIA_JSON+='{"type":"photo","media":"attach://'"$(basename "$img")"'","caption":'"$(jq -Rs <<< "$CAPTION")"',"parse_mode":"HTML"}'
+              first=false
+            else
+              MEDIA_JSON+=',{"type":"photo","media":"attach://'"$(basename "$img")"'"}'
+            fi
+          done
+
+          MEDIA_JSON+=']'
+
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup" \
+            -F chat_id="${CHAT_ID}" \
+            -F media="${MEDIA_JSON}" \
+            $(for img in /tmp/threads_images/*.jpg; do echo -n "-F $(basename "$img")=@$img "; done)
+
+          echo "✅ Threads post sent to Telegram"
