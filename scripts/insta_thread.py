@@ -1,37 +1,40 @@
 #!/usr/bin/env python3
 """
-Generate Instagram + Threads assets from an article HTML.
+insta_thread.py — FINAL (Threads via JSON)
 
-Outputs:
-- insta_thread.json
-- social/insta/images/*.jpg
-- social/insta/caption.txt
-- social/threads/images/*.jpg
-- social/threads/caption.txt
+Instagram:
+- Save up to 10 images
+- Save long caption to social/insta/caption.txt
 
-Rules:
-- Same images for Insta & Threads
-- Max 10 images
-- Extract excerpt from <p class="subtitle">
-- Overwrite old folders every run
+Threads:
+- Generate caption ≤ 500 chars
+- Pick first 4 images
+- Save ONLY to threads.json (no folders, no images written)
+
+Used by:
+- Auto workflow
+- Manual workflow
+- Telegram Threads sender
 """
 
 import json
-import shutil
 import sys
+import shutil
 from pathlib import Path
 from bs4 import BeautifulSoup
 from PIL import Image
 
-MAX_IMAGES = 10
+# ---------------- CONFIG ----------------
+
+MAX_IG_IMAGES = 10
+MAX_THREADS_IMAGES = 4
+THREADS_CHAR_LIMIT = 500
 IMG_SIZE = (1080, 1080)
 
 ROOT = Path(".")
-OUT_BASE = ROOT / "social"
-INSTA_DIR = OUT_BASE / "insta"
-THREADS_DIR = OUT_BASE / "threads"
-JSON_OUT = ROOT / "insta_thread.json"
-
+INSTA_DIR = ROOT / "social" / "insta"
+INSTA_IMG_DIR = INSTA_DIR / "images"
+THREADS_JSON = ROOT / "threads.json"
 
 INSTAGRAM_HASHTAGS = [
     "aeroponics",
@@ -43,19 +46,19 @@ INSTAGRAM_HASHTAGS = [
 ]
 
 THREADS_HASHTAGS = [
-    "Aeroponics",
-    "AgriTech",
-    "SustainableFarming",
-    "FutureOfFarming",
-    "SeechurAgro",
+    "aeroponics",
+    "futurefarming",
+    "agritech",
+    "sustainableagriculture",
 ]
 
+# ----------------------------------------
 
-def clean_dirs():
-    for d in [INSTA_DIR, THREADS_DIR]:
-        if d.exists():
-            shutil.rmtree(d)
-        (d / "images").mkdir(parents=True, exist_ok=True)
+
+def reset_instagram_dirs():
+    if INSTA_DIR.exists():
+        shutil.rmtree(INSTA_DIR)
+    INSTA_IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def resize_and_save(src: Path, dst: Path):
@@ -68,56 +71,56 @@ def resize_and_save(src: Path, dst: Path):
         canvas.save(dst, "JPEG", quality=90, optimize=True)
 
 
+def shorten_for_threads(text: str, limit: int) -> str:
+    if len(text) <= limit:
+        return text
+    cut = text[: limit - 3]
+    return cut.rsplit(" ", 1)[0] + "..."
+
+
 def main(article_path: str):
     article_path = article_path.strip()
     html = Path(article_path).read_text(encoding="utf-8", errors="ignore")
     soup = BeautifulSoup(html, "html.parser")
 
-    # --- TITLE ---
+    # -------- TITLE --------
     title = soup.title.text.replace(" - Seechur Agro", "").strip()
 
-    # --- EXCERPT ---
+    # -------- EXCERPT --------
     subtitle = soup.select_one("p.subtitle")
     if not subtitle:
-        raise RuntimeError("Subtitle <p class='subtitle'> not found")
+        raise RuntimeError("Missing <p class='subtitle'> in article")
     excerpt = subtitle.get_text(strip=True)
 
-    # --- URL ---
+    # -------- URL --------
     slug = Path(article_path).name
     url = f"https://seechuragro.in/articles/{slug}"
 
-    # --- IMAGES ---
-    imgs = []
+    # -------- IMAGES --------
+    images = []
+
     hero = soup.select_one(".article-hero img")
     if hero and hero.get("src"):
-        imgs.append(hero["src"])
+        images.append(hero["src"])
 
     for img in soup.select("article img"):
         src = img.get("src")
-        if src and src not in imgs:
-            imgs.append(src)
+        if src and src not in images:
+            images.append(src)
 
-    imgs = imgs[:MAX_IMAGES]
-    if not imgs:
+    if not images:
         raise RuntimeError("No images found in article")
 
-    clean_dirs()
+    # -------- INSTAGRAM --------
+    reset_instagram_dirs()
 
-    image_names = []
-    for idx, src in enumerate(imgs, start=1):
+    ig_images = images[:MAX_IG_IMAGES]
+    for idx, src in enumerate(ig_images, start=1):
         src_path = ROOT / src.lstrip("/")
         if not src_path.exists():
             continue
+        resize_and_save(src_path, INSTA_IMG_DIR / f"{idx:02}.jpg")
 
-        name = f"{idx:02}.jpg"
-        for platform in [INSTA_DIR, THREADS_DIR]:
-            resize_and_save(
-                src_path,
-                platform / "images" / name
-            )
-        image_names.append(name)
-
-    # --- CAPTIONS ---
     insta_caption = (
         f"{title}\n\n"
         f"{excerpt}\n\n"
@@ -126,30 +129,36 @@ def main(article_path: str):
         + " ".join(f"#{h}" for h in INSTAGRAM_HASHTAGS)
     )
 
+    (INSTA_DIR / "caption.txt").write_text(insta_caption, encoding="utf-8")
+
+    # -------- THREADS --------
     threads_caption = (
         f"{title}\n\n"
         f"{excerpt}\n\n"
-        f"Read the full article:\n{url}\n"
-        f"(Link also in bio 👇)\n\n"
+        f"Read more on our website (link in bio).\n\n"
         + " ".join(f"#{h}" for h in THREADS_HASHTAGS)
     )
 
-    (INSTA_DIR / "caption.txt").write_text(insta_caption, encoding="utf-8")
-    (THREADS_DIR / "caption.txt").write_text(threads_caption, encoding="utf-8")
+    threads_caption = shorten_for_threads(
+        threads_caption, THREADS_CHAR_LIMIT
+    )
 
-    # --- JSON ---
-    data = {
+    threads_images = images[:MAX_THREADS_IMAGES]
+
+    threads_data = {
         "title": title,
-        "excerpt": excerpt,
         "url": url,
-        "images": image_names,
-        "instagram_hashtags": INSTAGRAM_HASHTAGS,
-        "threads_hashtags": THREADS_HASHTAGS,
+        "caption": threads_caption,
+        "images": threads_images,
     }
 
-    JSON_OUT.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    THREADS_JSON.write_text(
+        json.dumps(threads_data, indent=2),
+        encoding="utf-8"
+    )
 
-    print("✅ Insta + Threads assets generated successfully")
+    print("✅ Instagram assets generated")
+    print("✅ threads.json generated (Threads-ready)")
 
 
 if __name__ == "__main__":
