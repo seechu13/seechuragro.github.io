@@ -39,12 +39,12 @@ jobs:
           script: |
             const jsonPath = "social_new.json";
 
+            // Instagram is INTENTIONALLY EXCLUDED
             const workflows = [
-              { file: "telegram.yml",          input: "json_path" },
-              { file: "post-to-fb.yml",        input: "json_path" },
-              { file: "post-to-instagram.yml", input: "ig_json" },
-              { file: "linkedin.yml",          input: "json_path" },
-              { file: "post-to-x.yml",         input: "json_list" }
+              { file: "telegram.yml",   input: "json_path" },
+              { file: "post-to-fb.yml", input: "json_path" },
+              { file: "linkedin.yml",   input: "json_path" },
+              { file: "post-to-x.yml",  input: "json_list" }
             ];
 
             const owner = context.repo.owner;
@@ -65,4 +65,4 @@ jobs:
               console.log(`✅ Dispatched ${wf.file}`);
             }
 
-            console.log("🎉 AUTO dispatch completed.");
+            console.log("🎉 AUTO dispatch completed (Instagram excluded by design).");
