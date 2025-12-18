@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 🔑 REQUIRED: checkout repo so social_new.json exists
+      # 🔑 REQUIRED: checkout repo so social JSON exists
       - name: Checkout repo (force staging)
         uses: actions/checkout@v4
         with:
@@ -43,12 +43,12 @@ jobs:
           script: |
             const jsonPath = "${{ github.event.inputs.json_path }}";
 
+            // Instagram is INTENTIONALLY EXCLUDED
             const workflows = [
-              { file: "telegram.yml",          input: "json_path" },
-              { file: "post-to-fb.yml",        input: "json_path" },
-              { file: "post-to-instagram.yml", input: "ig_json" },
-              { file: "linkedin.yml",          input: "json_path" },
-              { file: "post-to-x.yml",         input: "json_list" }
+              { file: "telegram.yml",   input: "json_path" },
+              { file: "post-to-fb.yml", input: "json_path" },
+              { file: "linkedin.yml",   input: "json_path" },
+              { file: "post-to-x.yml",  input: "json_list" }
             ];
 
             const owner = context.repo.owner;
@@ -69,4 +69,4 @@ jobs:
               console.log(`✅ Dispatched ${wf.file}`);
             }
 
-            console.log("🎉 All social workflows dispatched.");
+            console.log("🎉 All social workflows dispatched (Instagram excluded by design).");
