@@ -5,6 +5,11 @@ on:
     paths:
       - "articles/**/*.html"
 
+# 🔒 Prevent multiple Insta jobs from colliding
+concurrency:
+  group: insta-assets-staging
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -48,15 +53,22 @@ jobs:
       - name: Commit Insta + Threads assets
         run: |
           set -euo pipefail
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
+          # Add only Insta + Threads outputs
           git add social/insta threads.json || true
 
+          # If nothing changed, exit cleanly
           if git diff --cached --quiet; then
-            echo "No changes"
+            echo "No changes to commit"
             exit 0
           fi
 
           git commit -m "Generate Insta + Threads assets"
-          git push
+
+          # 🔒 CRITICAL FIX: rebase before push to avoid non-fast-forward
+          git pull --rebase origin staging
+
+          git push origin staging
