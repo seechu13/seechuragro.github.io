@@ -214,43 +214,66 @@
 
     <!-- Podcast Tile 1 -->
     <div class="card">
-      <h2 style="font-size:1.1rem; margin-bottom:8px;">
-        Cherry Tomato Cultivation in Hydroponic Systems
-      </h2>
+  <h2 style="font-size:1.05rem; margin-bottom:10px;">
+    Cherry Tomato Cultivation in Hydroponic Systems
+  </h2>
 
-      <!-- Responsive YouTube preview (compact tile) -->
-      <div style="position:relative; padding-top:56.25%; border-radius:12px; overflow:hidden;">
-        <iframe
-          src="https://www.youtube.com/embed/PBEyEC7mfkE"
-          frameborder="0"
-          allowfullscreen
-          style="
-            position:absolute;
-            top:0; left:0;
-            width:100%; height:100%;
-            border:0;
-          ">
-        </iframe>
-      </div>
+  <!-- Two-column compact layout -->
+  <div style="
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px;
+    align-items:center;
+  ">
 
-      <!-- Actions -->
-      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-        <span class="pill">Hydroponics</span>
+    <!-- Small YouTube video -->
+    <div style="
+      position:relative;
+      padding-top:56.25%;
+      border-radius:10px;
+      overflow:hidden;
+    ">
+      <iframe
+        src="https://www.youtube.com/embed/PBEyEC7mfkE"
+        frameborder="0"
+        allowfullscreen
+        style="
+          position:absolute;
+          top:0; left:0;
+          width:100%; height:100%;
+          border:0;
+        ">
+      </iframe>
+    </div>
 
-        <a
-          href="https://open.spotify.com/episode/0K6PtF6r0EajHQTL9Ob7fo"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="pill"
-          style="text-decoration:none;">
-          🎧 Listen on Spotify
-        </a>
-      </div>
+    <!-- Spotify actions -->
+    <div style="text-align:center;">
+      <a
+        href="https://open.spotify.com/episode/0K6PtF6r0EajHQTL9Ob7fo"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="pill"
+        style="
+          display:inline-block;
+          padding:10px 16px;
+          font-weight:600;
+          text-decoration:none;
+        ">
+        🎧 Listen on Spotify
+      </a>
 
-      <div style="margin-top:6px; font-size:0.8rem; color:#cfe9d8;">
-        *Full video plays inside the Spotify app
+      <div style="margin-top:8px; font-size:0.8rem; color:#cfe9d8;">
+        Full video plays in the Spotify app
       </div>
     </div>
+
+  </div>
+
+  <!-- Topic tags -->
+  <div style="margin-top:12px;">
+    <span class="pill">Hydroponics</span>
+  </div>
+</div>
 
     <!-- 🔁 FUTURE PODCAST TILE TEMPLATE (COPY FOR NEXT EPISODES)
     <div class="card">
