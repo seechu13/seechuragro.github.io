@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<title>Podcasts — Seechur Agro</title>
-<meta name="description" content="Watch and listen to Seechur Agro podcasts covering hydroponics, protected cultivation, and Lakadong turmeric. Available on Spotify and YouTube." />
-<link rel="canonical" href="https://seechuragro.in/podcasts.html" />
+<title>About Seechur Agro — Lakadong Turmeric, Hydroponics & Protected Cultivation</title>
+<meta name="description" content="Learn about Seechur Agro’s mission, team, and modern protected farming model. From hydroponics to high-curcumin Lakadong turmeric, discover how we build sustainable agri projects in Tamil Nadu." />
+<link rel="canonical" href="https://seechuragro.in/about.html" />
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,16 +40,88 @@
   .pill{display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.12); color:#eafff4; margin-right:8px; font-size:.92rem}
 
   .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px; margin:12px 0}
+  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+
+  .img-box{overflow:hidden; border-radius:14px; background:#0b0b0b22}
+  .img-box img{width:100%; height:auto; display:block}
+
+  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+</style>
+
+<!-- Additional scoped rules for the raising-capital boxes to ensure images fill boxes without stretching -->
+<style>
+  /* target only the three boxes under "Why We're Raising Capital" */
+  .raising-grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+  .raising-grid .card { padding:0; overflow:visible; }
+  .raising-grid .card .img-box { height:160px; border-radius:12px 12px 0 0; }
+  .raising-grid .card p { padding:14px; margin:0; }
+  .raising-grid .img-box img { width:100%; height:100%; object-fit:cover; display:block; -o-object-fit:cover; }
+
+  @media (max-width:720px) {
+    .raising-grid .img-box { height:140px; }
+  }
+  @media (max-width:420px) {
+    .raising-grid .img-box { height:120px; }
+  }
 </style>
 <!-- ================== END INLINE STYLES ================== -->
 
-<!-- ========== JSON-LD: PodcastSeries ========== -->
+<!-- ========== Open Graph ========== -->
+<meta property="og:locale" content="en_IN">
+<meta property="og:type" content="website">
+<meta property="og:title" content="About Seechur Agro — Hydroponics & Lakadong Turmeric">
+<meta property="og:description" content="Seechur Agro is reviving a modern hydroponic farm in Tamil Nadu — focusing on Lakadong turmeric, microgreens, and premium protected cultivation.">
+<meta property="og:url" content="https://seechuragro.in/about.html">
+<meta property="og:site_name" content="Seechur Agro">
+<meta property="og:image" content="https://seechuragro.in/assets/og-lakadong.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Seechur Agro — Hydroponics & Lakadong Turmeric">
+
+<!-- ========== Twitter Card ========== -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About Seechur Agro — Hydroponics & Protected Farming">
+<meta name="twitter:description" content="Hydroponic farming, Lakadong turmeric, microgreens, sustainability and capital-efficient agriculture at Edaiyarpakkam.">
+<meta name="twitter:image" content="https://seechuragro.in/assets/og-lakadong.png">
+
+<link rel="image_src" href="https://seechuragro.in/assets/og-lakadong.png">
+
+<!-- ========== JSON-LD: Organization Schema (added) ========== -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "PodcastSeries",
-  "name": "Seechur Agro Podcasts",
-  "url": "https://seechuragro.in/podcasts.html",
+  "@type": "Organization",
+  "name": "SEECHUR AGRO PRIVATE LIMITED",
+  "url": "https://seechuragro.in",
+  "logo": "https://seechuragro.in/assets/logo.png",
+  "email": "mailto:seechu@seechuragro.in",
+  "sameAs": [
+    "https://www.linkedin.com/in/srivatsan-renga-85219151",
+    "https://www.instagram.com/seechuragro",
+    "https://www.facebook.com/seechuragro",
+    "https://twitter.com/seechuragro",
+    "https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ",
+    "https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p",
+    "https://calendly.com/seechu-seechuragro"
+  ],
+  "contactPoint": [
+    {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "email": "mailto:seechu@seechuragro.in"
+    }
+  ]
+}
+</script>
+
+<!-- ========== JSON-LD: AboutPage (existing) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "name": "About Seechur Agro",
+  "url": "https://seechuragro.in/about.html",
+  "description": "Seechur Agro is reviving a hydroponic farm focused on Lakadong turmeric, microgreens, and protected cultivation in Tamil Nadu.",
   "publisher": {
     "@type": "Organization",
     "name": "Seechur Agro Private Limited",
@@ -57,11 +129,12 @@
       "@type": "ImageObject",
       "url": "https://seechuragro.in/assets/logo.png"
     }
-  }
+  },
+  "image": "https://seechuragro.in/assets/og-lakadong.png"
 }
 </script>
 
-<!-- ========== JSON-LD: BreadcrumbList ========== -->
+<!-- ========== JSON-LD: BreadcrumbList (page-specific) ========== -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -76,74 +149,153 @@
     {
       "@type": "ListItem",
       "position": 2,
-      "name": "Podcasts",
-      "item": "https://seechuragro.in/podcasts.html"
+      "name": "About",
+      "item": "https://seechuragro.in/about.html"
     }
   ]
 }
 </script>
+<head>
+  <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-C9E3YLF81Z"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-C9E3YLF81Z');
-</script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9E3YLF81Z"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-C9E3YLF81Z');
+  </script>
 </head>
 
+</head>
 <body>
 
-<!-- Navbar include -->
+<!-- ✅ Navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
-(function loadNavbar(){
-  fetch('navbar.html', {cache:'no-cache'})
-    .then(r => r.text())
-    .then(html => {
-      const host = document.getElementById('navbar-placeholder');
-      host.innerHTML = html;
-      const scripts = host.querySelectorAll('script');
-      scripts.forEach(oldS => {
-        const s = document.createElement('script');
-        oldS.src ? s.src = oldS.src : s.textContent = oldS.textContent;
-        document.body.appendChild(s);
+  (function loadNavbar(){
+    fetch('navbar.html', {cache:'no-cache'})
+      .then(r => r.text())
+      .then(html => {
+        const host = document.getElementById('navbar-placeholder');
+        host.innerHTML = html;
+
+        // Execute any <script> tags inside navbar.html
+        const scripts = host.querySelectorAll('script');
+        scripts.forEach(oldS => {
+          const s = document.createElement('script');
+          if (oldS.src) { s.src = oldS.src; }
+          else { s.textContent = oldS.textContent; }
+          document.body.appendChild(s);
+        });
+
+        // Fallback active state in case navbar script runs before DOM ready
+        const current = (location.pathname.split('/').pop() || 'about.html').toLowerCase();
+        document.querySelectorAll('.menu a').forEach(a=>{
+          const href=(a.getAttribute('href')||'').toLowerCase();
+          if(href===current){ a.classList.add('active'); }
+        });
+      })
+      .catch(err => {
+        console.error('Navbar load failed:', err);
       });
-    });
-})();
+  })();
 </script>
 
 <main class="container">
-  <h1>Podcasts</h1>
+  <h1>About Seechur Agro</h1>
   <p class="lead">
-    Field-to-screen conversations from Seechur Agro on hydroponics,
-    protected cultivation, and Lakadong turmeric.
+    Seechur Agro is reviving a proven hydroponic & protected-cultivation farm at <b>Edaiyarpakkam, Tamil Nadu</b> —
+    shifting to premium, traceable crops such as <b>Lakadong turmeric</b>, English cucumber and microgreens.
+    We are refurbishing the greenhouse after the 2015 cyclone to restart a capital-efficient, sustainability-first operation.
   </p>
 
+  <!-- BEFORE / AFTER COLLAGES -->
+  <h2>Our Farm: Before and After Cyclone</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="img-box">
+        <img src="edayarpakkam-before.jpg" alt="Edaiyarpakkam Farm at full potential before cyclone">
+      </div>
+      <p><span class="pill">Before Cyclone</span>
+        Fully functional polyhouse operations with dense basil and cucumber beds; steady supply to modern trade.
+      </p>
+    </div>
+    <div class="card">
+      <div class="img-box">
+        <img src="edayarpakkam-after.jpg" alt="Edaiyarpakkam Farm condition after cyclone — requires refurbishment">
+      </div>
+      <p><span class="pill" style="background:#8a1f1fb8">Post Cyclone</span>
+        Structure damage and degraded beds — <b>refurbishment</b> (cladding, irrigation, fertigation, benches) is underway with investor capital.
+      </p>
+    </div>
+  </div>
+
+  <!-- Mission graphic -->
+  <h2>Our Mission</h2>
+  <p>
+    To establish a <b>resource-efficient hydroponic farm</b> that uses ~80% less water than traditional cultivation, delivers ~3× yield density,
+    and enables <b>365-day</b> premium produce.
+  </p>
+  <div class="card" style="text-align:center">
+    <img src="mission-hydroponic.png" alt="Mission: Resource-efficient hydroponic farm — water saving, premium produce, year-round harvest"
+         style="max-width:860px; width:100%; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,.35);">
+  </div>
+
+  <!-- Why raising -->
+  <h2>Why We’re Raising Capital</h2>
   <div class="card">
-    <h2>Cherry Tomato — Hydroponic Cultivation</h2>
-    <p class="pill">Video Podcast</p>
-    <p class="pill">Protected Farming</p>
+    <p>
+      The site already has ~5.25 acres of polyhouse, high-capacity borewell (17,700 L/hr) and 38KW solar support.
+      Funding accelerates: (1) structural refurbishment, (2) fertigation & benches, (3) Lakadong nursery & microgreens benches,
+      (4) working capital for the first crop cycle.
+    </p>
 
-    <iframe width="100%" height="360"
-      src="https://www.youtube.com/embed/VIDEO_ID"
-      frameborder="0"
-      allowfullscreen
-      style="border-radius:12px;margin-top:12px;"></iframe>
+    <!-- Three boxes with images (images added per your instruction, from staging branch root) -->
+    <div class="raising-grid" role="list">
+      <div class="card" role="listitem">
+        <div class="img-box">
+          <!-- 1st box image: microgreens-tray.jpg (staging branch root) -->
+          <img src="/microgreens-tray.jpg" alt="Microgreens trays — Seechur Agro">
+        </div>
+        <p><b>0–3 months:</b> Refurbish & recommission. Microgreens start by Day-30.</p>
+      </div>
 
-    <iframe
-      src="https://open.spotify.com/embed/show/5k9iuE97zvmwpqjxFZvYWs"
-      width="100%"
-      height="152"
-      frameborder="0"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      style="border-radius:12px;margin-top:16px;"></iframe>
+      <div class="card" role="listitem">
+        <div class="img-box">
+          <!-- 2nd box image: cucumber-harvest.jpg -->
+          <img src="/cucumber-harvest.jpg" alt="Cucumber harvest — Seechur Agro">
+        </div>
+        <p><b>Month 4–6:</b> Vegetables stabilise; Lakadong nursery in progress.</p>
+      </div>
+
+      <div class="card" role="listitem">
+        <div class="img-box">
+          <!-- 3rd box image: lakadong-rhizome.jpg -->
+          <img src="/lakadong-rhizome.jpg" alt="Lakadong rhizome — Seechur Agro">
+        </div>
+        <p><b>~Month 7:</b> First Lakadong production cheque; steady multi-crop revenue thereafter.</p>
+      </div>
+    </div>
+    <!-- end raising-grid -->
+
+  </div>
+
+  <!-- Values -->
+  <h2>What Guides Us</h2>
+  <div class="card">
+    <p class="pill">Water & Energy Efficiency</p>
+    <p class="pill">Residue-safe, traceable produce</p>
+    <p class="pill">Capital efficiency & quick payback</p>
+    <p class="pill">Modern trade & export readiness</p>
   </div>
 </main>
 
-<!-- ===== CONSISTENT FOOTER (CLONED EXACTLY + SPOTIFY LAST) ===== -->
+<!-- ===== CONSISTENT FOOTER (matches financials.html / articles.html) ===== -->
 <style>
+  /* scoped footer styles — specific selectors & !important to beat global rules */
   footer.footer-wrap { text-align:center; color:#d9ffe6; padding:28px 12px 40px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:28px; position:relative; z-index:10; }
   footer.footer-wrap .footer-top { display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; max-width:1100px; margin-left:auto; margin-right:auto; padding:6px 8px; }
   footer.footer-wrap .footer-logo{ display:inline-flex; align-items:center; gap:10px; justify-content:center; }
@@ -153,65 +305,81 @@
   footer.footer-wrap .footer-socials a:hover{ transform:translateY(-3px) !important; background:rgba(0,0,0,.24) !important; }
   footer.footer-wrap .footer-socials svg{ width:18px !important; height:18px !important; fill:#eafff4 !important; display:block !important; }
   footer.footer-wrap .footer-copy{ font-size:.95rem; margin-top:10px; color:#d9ffe6 }
+
+  @media (max-width:520px){ footer.footer-wrap .footer-socials a{ width:34px !important; height:34px !important } footer.footer-wrap .footer-socials svg{ width:16px !important; height:16px !important } footer.footer-wrap .footer-logo img{ width:40px !important; height:40px !important } }
+  /* final defensive rules */
+  footer.footer-wrap .footer-socials a svg{ max-width:100% !important; max-height:100% !important; }
+  footer.footer-wrap img{ display:block; image-rendering:auto !important; }
 </style>
 
 <footer class="footer-wrap" role="contentinfo">
   <div class="footer-top">
-    <div class="footer-logo">
+    <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
       <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo">
     </div>
 
-    <div class="footer-socials">
-      <a href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp">
-        <svg viewBox="0 0 24 24"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4z"/></svg>
+    <div class="footer-socials" aria-label="Seechur Agro social links">
+      <a href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
-      <a href="mailto:seechu@seechuragro.in" target="_blank" title="Email">
-        <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg>
+
+      <a href="mailto:seechu@seechuragro.in" target="_blank" rel="noopener noreferrer" title="Email" aria-label="Email">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
       </a>
-      <a href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" title="LinkedIn">
-        <svg viewBox="0 0 24 24"><path d="M4.98 3.5A2.5 2.5 0 100 3.5a2.5 2.5 0 004.98 0z"/></svg>
+
+      <a href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.9 3.87 6 2.48 6S0 4.9 0 3.5 1.11 1 2.5 1 4.98 2.1 4.98 3.5zM0 8h4.96v13H0V8zm7.5 0H12v1.8h.07c.57-1.08 1.96-2.22 4.03-2.22 4.31 0 5.11 2.84 5.11 6.54V21h-4.96v-5.3c0-1.27-.02-2.9-1.77-2.9-1.78 0-2.05 1.39-2.05 2.82V21H7.5V8z"/></svg>
       </a>
-      <a href="https://www.instagram.com/seechur_agro" target="_blank" title="Instagram">
-        <svg viewBox="0 0 24 24"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5z"/></svg>
+
+      <a href="https://www.instagram.com/seechur_agro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 6.5A4.5 4.5 0 1016.5 13 4.5 4.5 0 0012 8.5zm6.8-3.7a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2z"/></svg>
       </a>
-      <a href="https://www.facebook.com/SeechurAgroPrivateLimited" target="_blank" title="Facebook">
-        <svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.2z"/></svg>
+
+      <a href="https://www.facebook.com/SeechurAgroPrivateLimited" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.2c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12H20l-.5 2.9h-2v7A10 10 0 0022 12z"/></svg>
       </a>
-      <a href="https://x.com/seechuragro" target="_blank" title="X">
-        <svg viewBox="0 0 24 24"><path d="M22.46 6z"/></svg>
+
+      <a href="https://x.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.46 6c-.77.34-1.6.57-2.46.67a4.26 4.26 0 001.88-2.35 8.6 8.6 0 01-2.7 1.03 4.22 4.22 0 00-7.2 3.85A12 12 0 013 4.79a4.2 4.2 0 001.3 5.63c-.66-.02-1.28-.2-1.82-.5v.05a4.22 4.22 0 003.38 4.13c-.6.16-1.24.2-1.9.08a4.22 4.22 0 003.94 2.93A8.47 8.47 0 012 19.5a11.95 11.95 0 006.29 1.84c7.55 0 11.68-6.27 11.68-11.7v-.53A8.36 8.36 0 0024 5.1a8.3 8.3 0 01-2.4.66z"/></svg>
       </a>
-      <a href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" title="YouTube">
-        <svg viewBox="0 0 24 24"><path d="M23.5 6.2z"/></svg>
+
+      <a href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2s-.2-1.7-.8-2.4c-.7-.9-1.5-.9-1.9-1-2.7-.2-6.8-.2-6.8-.2s-4.1 0-6.8.2c-.4.1-1.2.1-1.9 1-.6.7-.8 2.4-.8 2.4S1 8 1 9.8v1.4C1 13.9 1.6 15.6 1.6 15.6s.2 1.7.8 2.4c.7.9 1.6.9 2 1 1.4.1 6.1.2 6.1.2s4.1 0 6.8-.2c.4-.1 1.2-.1 1.9-1 .6-.7.8-2.4.8-2.4s.6-1.7.6-3.5V9.8c0-1.8-.6-3.6-.6-3.6zM9.8 14.6v-5l4.8 2.5-4.8 2.5z"/></svg>
       </a>
-      <a href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" title="WhatsApp Channel">
-        <svg viewBox="0 0 24 24"><path d="M20.5 3.5z"/></svg>
+
+      <a href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
       </a>
-      <a href="https://calendly.com/seechu-seechuragro" target="_blank" title="Calendly">
-        <svg viewBox="0 0 24 24"><path d="M7 11z"/></svg>
+
+      <a href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h5v5H7zM19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 14H5V9h14v9z"/></svg>
       </a>
-      <a href="https://www.threads.net/@seechur_agro" target="_blank" title="Threads">
-        <svg viewBox="0 0 24 24"><path d="M12 2.5z"/></svg>
+      <!-- Threads in footer -->
+      <a href="https://www.threads.net/@seechur_agro" target="_blank" rel="noopener noreferrer" title="Threads" aria-label="Threads (@seechuragro)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-4 0-7.25 3.25-7.25 7.25 0 3.68 2.63 6.73 6.16 7.15.2.03.36.2.36.4v1.2c0 .28.22.5.5.5s.5-.22.5-.5v-1.2c0-.2.16-.37.36-.4 3.53-.42 6.16-3.47 6.16-7.15C19.25 5.75 16 2.5 12 2.5zM11 7.5h2v6.5h-2V7.5z" /></svg>
       </a>
-      <a href="https://t.me/seechuragro" target="_blank" title="Telegram">
-        <svg viewBox="0 0 24 24"><path d="M22 2z"/></svg>
-      </a>
-      <!-- Spotify LAST -->
-      <a href="https://open.spotify.com/show/5k9iuE97zvmwpqjxFZvYWs" target="_blank" title="Spotify Podcast">
-        <svg viewBox="0 0 24 24"><path d="M12 1.8z"/></svg>
+
+      <!-- Telegram in footer -->
+      <a href="https://t.me/seechuragro" target="_blank" rel="noopener noreferrer" title="Telegram" aria-label="Telegram (@seechuragro)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2L2 9l6.5 2.3L10 21l3.2-3.1L19.6 22 22 2zM7.5 11.3L20 4 11.3 12.1 7.5 11.3z"/></svg>
       </a>
     </div>
   </div>
 
   <div class="footer-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
   <div style="margin-top:8px; font-size:0.85rem; color:#cfe9d8;">
-    <a href="privacy.html" style="color:#cfe9d8; text-decoration:underline; margin-right:12px;">Privacy Policy</a>
-    <a href="disclaimer.html" style="color:#cfe9d8; text-decoration:underline;">Disclaimer</a>
-  </div>
+  <a href="privacy.html" style="color:#cfe9d8; text-decoration:underline; margin-right:12px;">Privacy Policy</a>
+  <a href="disclaimer.html" style="color:#cfe9d8; text-decoration:underline;">Disclaimer</a>
+</div>
+
 </footer>
+<!-- ======= END CONSISTENT FOOTER ======= -->
 
 <script>
-document.getElementById('year').textContent=new Date().getFullYear();
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+})();
 </script>
-
 </body>
 </html>
