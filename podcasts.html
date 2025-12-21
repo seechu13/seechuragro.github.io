@@ -205,32 +205,92 @@
 <main class="container">
   <h1>Podcasts</h1>
   <p class="lead">
-    Field-to-screen conversations from Seechur Agro on hydroponics,
-    protected cultivation, and Lakadong turmeric.
+    Educational video and audio podcasts from Seechur Agro on hydroponics,
+    protected cultivation, and sustainable agriculture.
   </p>
 
-  <div class="card">
-    <h2>Cherry Tomato — Hydroponic Cultivation</h2>
-    <p class="pill">Video Podcast</p>
-    <p class="pill">Protected Farming</p>
+  <!-- Podcast Grid -->
+  <div class="grid">
 
-    <iframe
-  width="100%"
-  height="360"
-  src="https://www.youtube.com/embed/PBEyEC7mfkE"
-  frameborder="0"
-  allowfullscreen
-  style="border-radius:12px;margin-top:12px;">
-</iframe>
+    <!-- Podcast Tile 1 -->
+    <div class="card">
+      <h2 style="font-size:1.1rem; margin-bottom:8px;">
+        Cherry Tomato Cultivation in Hydroponic Systems
+      </h2>
 
-    <iframe
-  src="https://open.spotify.com/embed/episode/0K6PtF6r0EajHQTL9Ob7fo"
-  width="100%"
-  height="152"
-  frameborder="0"
-  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-  style="border-radius:12px;margin-top:16px;">
-</iframe>
+      <!-- Responsive YouTube preview (compact tile) -->
+      <div style="position:relative; padding-top:56.25%; border-radius:12px; overflow:hidden;">
+        <iframe
+          src="https://www.youtube.com/embed/PBEyEC7mfkE"
+          frameborder="0"
+          allowfullscreen
+          style="
+            position:absolute;
+            top:0; left:0;
+            width:100%; height:100%;
+            border:0;
+          ">
+        </iframe>
+      </div>
+
+      <!-- Actions -->
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <span class="pill">Hydroponics</span>
+
+        <a
+          href="https://open.spotify.com/episode/0K6PtF6r0EajHQTL9Ob7fo"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="pill"
+          style="text-decoration:none;">
+          🎧 Listen on Spotify
+        </a>
+      </div>
+
+      <div style="margin-top:6px; font-size:0.8rem; color:#cfe9d8;">
+        *Full video plays inside the Spotify app
+      </div>
+    </div>
+
+    <!-- 🔁 FUTURE PODCAST TILE TEMPLATE (COPY FOR NEXT EPISODES)
+    <div class="card">
+      <h2 style="font-size:1.1rem; margin-bottom:8px;">
+        EPISODE TITLE HERE
+      </h2>
+
+      <div style="position:relative; padding-top:56.25%; border-radius:12px; overflow:hidden;">
+        <iframe
+          src="https://www.youtube.com/embed/YOUTUBE_VIDEO_ID"
+          frameborder="0"
+          allowfullscreen
+          style="
+            position:absolute;
+            top:0; left:0;
+            width:100%; height:100%;
+            border:0;
+          ">
+        </iframe>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <span class="pill">TOPIC</span>
+
+        <a
+          href="https://open.spotify.com/episode/SPOTIFY_EPISODE_ID"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="pill"
+          style="text-decoration:none;">
+          🎧 Listen on Spotify
+        </a>
+      </div>
+
+      <div style="margin-top:6px; font-size:0.8rem; color:#cfe9d8;">
+        *Full video plays inside the Spotify app
+      </div>
+    </div>
+    -->
+
   </div>
 </main>
 
