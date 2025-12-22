@@ -226,12 +226,7 @@
     </h2>
 
     <!-- TWO SMALL TILES -->
-    <div style="
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:20px;
-      justify-content:center;
-    ">
+    <div class="podcast-tiles">
 
       <!-- YOUTUBE TILE -->
       <div style="width:260px; text-align:center;">
@@ -421,5 +416,21 @@
   if(y) y.textContent=new Date().getFullYear();
 })();
 </script>
+  <style>
+/* Podcast tiles responsive fix */
+.podcast-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 260px);
+  gap: 20px;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .podcast-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
 </body>
 </html>
