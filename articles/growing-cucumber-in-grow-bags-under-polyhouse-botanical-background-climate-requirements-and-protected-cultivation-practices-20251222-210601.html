@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Growing cucumber in grow bags under polyhouse: botanical background, climate requirements, and protected cultivation practices - Seechur Agro</title>
+<meta name="description" content="This article presents a scientific and practical guide to growing cucumber (Cucumis sativus L.) in grow bags under polyhouse conditions. It covers botanical characteristics, climate and light requirements, grow bag media selection, planting density, fertigation strategy, training and pruning, pest and disease management, and yield expectations. The article also provides verified research resources and a separate economics spreadsheet model for professional decision-making">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+
+:root{ --text:#f3fff6; --muted:#cfe9d8; --nav-bg:rgba(10,25,10,0.7); --nav-solid:#1b4332; --glass:rgba(255,255,255,.12); --max:1100px; --accent:#2dbb7f; }
+*{box-sizing:border-box;margin:0;padding:0}
+body.article-page::before{display:none!important;}
+body.article-page{ font-family:'Poppins',system-ui,-apple-system,"Segoe UI",Roboto,Arial; color:var(--text); min-height:100vh; background:#0e1914; }
+.container{max-width:var(--max); margin:0 auto; padding:20px 18px 40px;}
+.hero, .article-hero { margin-top:16px; border-radius:18px; overflow:hidden; background:rgba(255,255,255,.08); box-shadow:0 8px 30px rgba(0,0,0,.45); }
+.hero img, .article-hero img { display:block; width:100%; height:320px; object-fit:cover; }
+@media (max-width:640px){ .hero img, .article-hero img { height:220px } }
+h1{font-size:2rem;font-weight:700;margin:16px 0 6px;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.meta{display:flex;flex-wrap:wrap;gap:10px;color:#dcffe9;font-size:.95rem;opacity:.95}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.16);font-size:.84rem}
+.byline{margin-left:auto}
+.article, .article-card { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:18px; margin-top:16px; box-shadow:0 4px 20px rgba(0,0,0,.4); }
+.article h2, .article-card h2 { font-size:1.3rem;margin:18px 0 8px;text-shadow:0 2px 6px rgba(0,0,0,.5) }
+.article p, .article li, .article-card p, .article-card li { color:var(--muted); line-height:1.85; }
+.callout{margin:14px 0;padding:12px 14px;border-radius:14px;background:rgba(45,187,127,.14); border:1px solid rgba(45,187,127,.35);color:#eafff6}
+.share{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:#eafff4;transition:.2s}
+.btn:hover{transform:translateY(-1px);background:rgba(0,0,0,.35)}
+footer{text-align:center;color:#d9ffe6;padding:40px 12px 60px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);margin-top:30px}
+.thumb { height:190px; overflow:hidden; background:#f3f7f4; }
+.thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+
+/* Inline/article images: force-fit and cap display height so layout isn't broken */
+.article-card img,
+.article img,
+.article p img,
+.article-card p img {
+  max-width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: cover;
+  display: block;
+  margin: 16px auto;
+  border-radius: 10px;
+}
+
+/* NAV layout: left / right (ensures All articles is on left and Next is on right) */
+.meta-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  width: 100%;
+}
+.meta-nav .left { order: 1; }
+.meta-nav .right { order: 2; text-align: right; }
+
+/* ensure the compact Next button uses your .btn styles but stays small */
+.meta-nav .right .next-compact,
+.meta-nav .left .btn {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* responsive: stack on tiny screens */
+@media (max-width:560px){
+  .meta-nav { flex-direction: column; align-items: stretch; gap:10px; }
+  .meta-nav .right { text-align: left; }
+}
+
+</style>
+<link rel="stylesheet" href="https://raw.githubusercontent.com/seechu13/seechuragro.github.io/staging/assets/style.css">
+</head>
+<body class="article-page">
+<!-- navbar.html -->
+<nav class="site-nav" id="siteNav" role="navigation" aria-label="Main">
+  <div class="nav-inner">
+    <a class="brand" href="/" aria-label="Seechur Agro home">
+      <!-- absolute path to ensure it resolves from any page -->
+      <img src="/logo.png?v=27" alt="Seechur Agro logo">
+    </a>
+
+    <!-- Mobile hamburger -->
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open Menu">
+      ☰ Menu
+    </button>
+
+    <!-- Menu (drawer on mobile) -->
+    <div class="menu" id="mobileMenu" role="navigation" aria-label="Primary">
+      <a href="/index.html">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/why-lakadong.html">Why Lakadong</a>
+      <a href="/portfolio.html">Portfolio</a>
+      <a href="/market.html">Market</a>
+      <a href="/financials.html">Financials</a>
+      <a href="/team.html">Team</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/advisors.html">Advisors</a>
+      <a href="/articles.html">Articles</a>
+      <a href="/podcasts.html">Podcasts</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/investor-pack.html">Investor Pack</a>
+    </div>
+  </div>
+</nav>
+
+<!-- overlay -->
+<div class="nav-overlay" id="navOverlay" hidden aria-hidden="true"></div>
+
+<style>
+  :root{
+    --nav-bg: rgba(10,25,10,0.75);
+    --nav-solid: #16382d;
+    --nav-height: 84px;
+  }
+
+  /* navbar container */
+  .site-nav{
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+    background: var(--nav-bg);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .nav-inner{
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 18px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    min-height: var(--nav-height);
+  }
+
+  /* brand */
+  .brand{ display:flex; align-items:center; text-decoration:none; }
+  .brand img{
+    width: 110px;
+    height: auto;
+    object-fit: contain;
+    display:block;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  }
+
+  /* desktop menu */
+  .menu{
+    margin-left:auto;
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .menu a{
+    color:#ffffff;
+    text-decoration:none;
+    padding:8px 12px;
+    border-radius:999px;
+    transition: background .18s ease, transform .12s;
+    font-weight:600;
+    display:inline-block;
+    cursor:pointer;
+  }
+  .menu a:hover{ background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+  .menu a.active{ background: rgba(255,255,255,0.14); }
+
+  /* hamburger toggle (hidden desktop) */
+  .nav-toggle{
+    display:none;
+    margin-left:auto;
+    border:1px solid rgba(255,255,255,.18);
+    background: rgba(0,0,0,.25);
+    color:#eafff5;
+    padding:8px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+    position: relative;
+  }
+
+  .nav-overlay{ display:none; }
+
+  /* --------------------
+     MOBILE / SMALL SCREENS
+     -------------------- */
+  @media (max-width: 768px){
+    .brand img{ width: 84px; } /* smaller on mobile */
+
+    .nav-toggle{ display:inline-block; z-index: 1304; }
+
+    /* drawer menu: slide from right, pill buttons stacked */
+    .menu{
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: min(84%, 360px);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 26px 18px;
+      align-items: center;
+      background: var(--nav-solid);
+      border-left: 1px solid rgba(255,255,255,.06);
+      box-shadow: -8px 0 30px rgba(0,0,0,.45);
+      transition: right .28s cubic-bezier(.2,.9,.3,1);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      z-index: 1302; /* mobile drawer sits above overlay and page */
+      pointer-events: auto;
+    }
+
+    /* pill style full */
+    .menu a{
+      width: 86%;
+      text-align: center;
+      padding: 12px 10px; /* slightly reduced padding to fit more items */
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.03);
+      border-radius: 999px;
+      color: #eaf7ef;
+      font-size: 1.0rem; /* slightly smaller for better fit */
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.01);
+      line-height:1.2;
+    }
+    .menu a:hover{ background: rgba(255,255,255,.06); transform:none; }
+
+    /* show drawer when .open */
+    .site-nav.open .menu{ right: 0; }
+
+    /* overlay */
+    .nav-overlay{
+      position: fixed;
+      inset: 0;
+      z-index: 1300; /* sits below drawer but above page */
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(2px);
+      display: none;
+      pointer-events: auto;
+    }
+    .site-nav.open + .nav-overlay{ display: block; }
+
+    /* ensure brand & toggle remain visible above drawer */
+    .site-nav .brand,
+    .site-nav .nav-toggle { position: relative; z-index: 1305; }
+  }
+
+  /* small tweak for very small screens */
+  @media (max-width:420px){
+    .menu a{ width:90%; padding:10px 8px; font-size:.95rem; }
+  }
+</style>
+
+<script>
+(function(){
+  if (window.__SEECHUR_NAVBAR_FINAL_FIX__) return;
+  window.__SEECHUR_NAVBAR_FINAL_FIX__ = true;
+
+  // mobile-only guard
+  if (!(window.matchMedia && window.matchMedia('(max-width:768px)').matches)) return;
+
+  // element lists
+  const navs = () => Array.from(document.querySelectorAll('.site-nav'));
+  const menus = () => Array.from(document.querySelectorAll('.menu, #mobileMenu'));
+  const toggles = () => Array.from(document.querySelectorAll('.nav-toggle, #navToggle'));
+  const overlays = () => Array.from(document.querySelectorAll('.nav-overlay, #navOverlay'));
+
+  // set ordering so menu is always above overlay and not blurred
+  function enforceZAndVisuals(){
+    menus().forEach(menu=>{
+      menu.style.position = 'fixed';
+      menu.style.top = '0';
+      menu.style.right = menu.classList.contains('open') || document.querySelector('.site-nav.open') ? '0' : '-100%';
+      menu.style.height = '100vh';
+      menu.style.zIndex = '20010';        // menu MUST be higher than overlay
+      menu.style.pointerEvents = 'auto';
+      // ensure menu itself is not blurred by a parent overlay
+      try { menu.style.backdropFilter = 'none'; menu.style.webkitBackdropFilter = 'none'; } catch(e){}
+    });
+
+    overlays().forEach(ov=>{
+      ov.style.position = 'fixed';
+      ov.style.inset = '0';
+      ov.style.zIndex = '20000';          // lower than menu? (make lower than 20010)
+      // remove any backdrop filter that would blur menu — we'll simulate simple dark overlay
+      try { ov.style.backdropFilter = 'none'; ov.style.webkitBackdropFilter = 'none'; } catch(e){}
+      // keep background dark but non-blurring
+      ov.style.background = 'rgba(0,0,0,0.35)';
+      // hidden state defaults
+      if (!ov.classList.contains('hidden') && !ov.hasAttribute('hidden')) {
+        // visible overlay remains pointer-events:auto; hidden is blocked below via hideOverlay
+      }
+    });
+  }
+
+  // show/hide helpers (force inline style so external CSS cant mis-order)
+  function showOverlay(ov){ if(!ov) return; ov.classList.remove('hidden'); ov.removeAttribute('hidden'); ov.style.display='block'; ov.style.pointerEvents='auto'; ov.setAttribute('aria-hidden','false'); }
+  function hideOverlay(ov){ if(!ov) return; ov.classList.add('hidden'); try{ ov.setAttribute('hidden',''); }catch(e){} ov.style.display='none'; ov.style.pointerEvents='none'; ov.setAttribute('aria-hidden','true'); }
+
+  function openAll(){
+    navs().forEach(n=> n.classList.add('open'));
+    menus().forEach(menu=> { menu.style.right = '0'; });
+    overlays().forEach(showOverlay);
+    toggles().forEach(t=> t.setAttribute('aria-expanded','true'));
+    document.body.classList.add('nav-open');
+    enforceZAndVisuals();
+  }
+
+  function closeAll(){
+    navs().forEach(n=> n.classList.remove('open'));
+    menus().forEach(menu=> { menu.style.right = '-100%'; });
+    overlays().forEach(hideOverlay);
+    toggles().forEach(t=> t.setAttribute('aria-expanded','false'));
+    document.body.classList.remove('nav-open');
+    enforceZAndVisuals();
+    // return focus to first toggle for accessibility
+    try { (document.querySelector('.nav-toggle, #navToggle')||{}).focus(); } catch(e){}
+  }
+
+  // attach toggles safely
+  toggles().forEach(toggle => {
+    if (toggle.__seechur_final_toggle) return;
+    toggle.__seechur_final_toggle = true;
+    toggle.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      const anyOpen = navs().some(n => n.classList.contains('open'));
+      anyOpen ? closeAll() : openAll();
+    }, {passive:false});
+  });
+
+  // overlay click closes everything (only when clicking overlay element itself)
+  overlays().forEach(ov=>{
+    if (ov.__seechur_final_overlay) return;
+    ov.__seechur_final_overlay = true;
+    ov.addEventListener('click', function(e){
+      if (e.target === ov) { e.preventDefault(); e.stopPropagation(); closeAll(); }
+    }, {passive:false});
+  });
+
+  // ESC closes
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeAll();
+  });
+
+  // VERY IMPORTANT: intercept clicks on menu links in capture phase so we run BEFORE any other listeners
+  function patchLinksCapture(){
+    menus().forEach(menu=>{
+      const anchors = Array.from(menu.querySelectorAll('a'));
+      anchors.forEach(a=>{
+        if (a.__seechur_final_patched) return;
+        a.__seechur_final_patched = true;
+
+        // capture-phase handler
+        a.addEventListener('click', function(ev){
+          // allow modifier-click to open new tab
+          if (ev.metaKey || ev.ctrlKey || ev.button === 1) return;
+          try { ev.preventDefault(); ev.stopImmediatePropagation && ev.stopImmediatePropagation(); ev.stopPropagation(); } catch(e){}
+          // hide overlays & close everything
+          closeAll();
+
+          const href = (a.getAttribute('href') || a.href || '').trim();
+          // immediate navigate (tiny timeout to allow UI to update)
+          setTimeout(()=>{
+            if (!href) return;
+            if (href.startsWith('#')) { location.hash = href.slice(1); return; }
+            try { location.href = new URL(href, location.href).href; } catch(e) { location.href = href; }
+          }, 40);
+        }, {capture:true, passive:false});
+      });
+    });
+  }
+
+  patchLinksCapture();
+
+  // Observe DOM changes (CMS may rewrite items) and reapply
+  if (window.MutationObserver){
+    const mo = new MutationObserver(()=> {
+      enforceZAndVisuals();
+      patchLinksCapture();
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+  }
+
+  // initial enforcement
+  enforceZAndVisuals();
+
+  // safety: ensure overlays hidden if no nav is open after short delay
+  setTimeout(() => {
+    if (!navs().some(n => n.classList.contains('open'))) {
+      overlays().forEach(hideOverlay);
+      menus().forEach(m => m.style.right = '-100%');
+    }
+  }, 300);
+
+  // debug helper
+  window.__seechur_nav_final_debug = () => ({ siteNavs: navs().length, menus: menus().length, overlays: overlays().length });
+
+})();
+</script>
+
+<!-- Permanent mobile overlay forwarder & link robustness (install once) -->
+<script>
+(function(){
+  // Only run on mobile viewports — desktop untouched
+  if (!(window.matchMedia && window.matchMedia('(max-width:768px)').matches)) return;
+
+  // Idempotent guard
+  if (window.__seechur_forwarder_v2_installed_permanent) return;
+  window.__seechur_forwarder_v2_installed_permanent = true;
+
+  // Ensure overlay visually present but not blocking — CSS should cover, enforce inline as fallback
+  function ensureOverlayStyles(){
+    document.querySelectorAll('.nav-overlay, #navOverlay').forEach(ov=>{
+      if(!ov) return;
+      try { if(!ov.style.zIndex) ov.style.zIndex = '30000'; } catch(e){}
+      // intentionally keep pointerEvents none (so it won't block) — if some pages re-enable, forwarder will handle it
+      try { ov.style.pointerEvents = 'none'; } catch(e){}
+    });
+  }
+  ensureOverlayStyles();
+
+  // Bring menu and links forward as a defensive measure
+  function ensureMenuLinkZ(){
+    document.querySelectorAll('.menu, #mobileMenu').forEach(m=>{
+      if(!m) return;
+      if(!m.style.position) m.style.position = 'fixed';
+      if(!m.style.zIndex) m.style.zIndex = '40000';
+      m.style.pointerEvents = 'auto';
+    });
+    document.querySelectorAll('.menu a, #mobileMenu a').forEach(a=>{
+      if(!a) return;
+      if(!a.style.position) a.style.position = 'relative';
+      if(!a.style.zIndex) a.style.zIndex = '40001';
+      a.style.pointerEvents = 'auto';
+    });
+  }
+  ensureMenuLinkZ();
+
+  // Robust forwarder v2: hides overlay briefly, locates underlying link and navigates.
+  function installForwarder(ov){
+    if (!ov || ov.__seechurF2perm) return;
+    ov.__seechurF2perm = true;
+
+    const handler = function(ev){
+      try {
+        if (ev.metaKey || ev.ctrlKey || ev.button === 1) return;
+        // prevent double handling
+        if (ev.__seechurHandled) return;
+        ev.__seechurHandled = true;
+
+        const cx = ev.touches && ev.touches[0] ? ev.touches[0].clientX : ev.clientX;
+        const cy = ev.touches && ev.touches[0] ? ev.touches[0].clientY : ev.clientY;
+
+        // Temporarily hide overlay to hit-test
+        const prevDisplay = ov.style.display;
+        const prevPointer = ov.style.pointerEvents;
+        ov.style.display = 'none';
+        ov.style.pointerEvents = 'none';
+
+        const under = document.elementFromPoint(cx, cy);
+
+        // Restore overlay immediately
+        ov.style.display = prevDisplay === '' ? '' : prevDisplay;
+        ov.style.pointerEvents = prevPointer === '' ? prevPointer : prevPointer;
+
+        const anchor = under ? (under.closest ? under.closest('a') : (under.tagName === 'A' ? under : null)) : null;
+
+        if (anchor) {
+          try { ev.stopImmediatePropagation && ev.stopImmediatePropagation(); } catch(e){}
+          try { ev.preventDefault && ev.preventDefault(); } catch(e){}
+          // close UI
+          document.querySelectorAll('.site-nav').forEach(n=> n.classList.remove('open'));
+          document.querySelectorAll('.menu, #mobileMenu').forEach(m=> m.style.right = '-100%');
+          document.querySelectorAll('.nav-overlay, #navOverlay').forEach(o => { o.classList.add('hidden'); try{o.setAttribute('hidden','');}catch(e){} o.style.display='none'; o.style.pointerEvents='none'; });
+          document.body.classList.remove('nav-open');
+
+          const href = (anchor.getAttribute('href') || anchor.href || '').trim();
+          // small guaranteed delay then navigate
+          setTimeout(()=> {
+            if (!href) return;
+            if (href.startsWith('#')) { location.hash = href.slice(1); return; }
+            try { location.assign(new URL(href, location.href).href); } catch(err){ location.href = href; }
+          }, 35);
+          return;
+        }
+
+        // Not a link — close menu (outside click)
+        document.querySelectorAll('.site-nav').forEach(n=> n.classList.remove('open'));
+        document.querySelectorAll('.menu, #mobileMenu').forEach(m=> m.style.right = '-100%');
+        document.querySelectorAll('.nav-overlay, #navOverlay').forEach(o => { o.classList.add('hidden'); try{o.setAttribute('hidden','');}catch(e){} o.style.display='none'; o.style.pointerEvents='none'; });
+        document.body.classList.remove('nav-open');
+      } catch(ex) {
+        console.error('seechur forwarder perm error', ex);
+      }
+    };
+
+    ov.addEventListener('pointerdown', handler, {capture:true, passive:false});
+    ov.addEventListener('touchstart', handler, {capture:true, passive:false});
+    ov.addEventListener('click', handler, {capture:true, passive:false});
+  }
+
+  // Install forwarder on existing overlays and ensure menu/link z
+  document.querySelectorAll('.nav-overlay, #navOverlay').forEach(installForwarder);
+  ensureMenuLinkZ();
+
+  // Watch for DOM changes (CMS may rewrite overlays) and re-install/ensure styles
+  if (window.MutationObserver) {
+    const mo = new MutationObserver(()=> {
+      ensureOverlayStyles();
+      ensureMenuLinkZ();
+      document.querySelectorAll('.nav-overlay, #navOverlay').forEach(installForwarder);
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+
+
+<main class="container">
+  <!-- HERO -->
+  <header class="article-hero">
+    <img src="/assets/articles/growing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601/cover-cucumber-polyhouse-srivatsan-renga-1.jpg" alt="Growing cucumber in grow bags under polyhouse: botanical background, climate requirements, and protected cultivation practices">
+    <div class="article-hero__meta">
+      <span class="pill">Hydroponics</span>
+      <time datetime="2025-12-22">2025-12-22</time>
+    </div>
+    <h1>Growing cucumber in grow bags under polyhouse: botanical background, climate requirements, and protected cultivation practices</h1>
+    <p class="subtitle">This article presents a scientific and practical guide to growing cucumber (Cucumis sativus L.) in grow bags under polyhouse conditions. It covers botanical characteristics, climate and light requirements, grow bag media selection, planting density, fertigation strategy, training and pruning, pest and disease management, and yield expectations. The article also provides verified research resources and a separate economics spreadsheet model for professional decision-making</p>
+  </header>
+
+  <!-- META -->
+  <div class="meta" style="margin-top:8px">
+    <span id="rt" class="badge">Reading: 4 min</span>
+    <span class="byline">By <b>Seechur Agro Editorial Team</b></span>
+  </div>
+
+  <!-- ARTICLE -->
+  <article class="article-card" id="article">
+    <p>Cucumber (Cucumis sativus L.) is one of the most widely cultivated cucurbit crops under protected cultivation due to its fast growth, high productivity, and continuous harvesting potential. Polyhouse cultivation using grow bags enables precise control of the root zone environment, irrigation, and nutrient supply, resulting in uniform fruit quality and higher marketable yields compared to open-field cultivation.</p>
+<p><img alt="Cucumber grown under polyhouse conditions" src="/assets/articles/growing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601/cover-cucumber-polyhouse-srivatsan-renga-1.jpg"></p>
+<p>Botanical and scientific background<br>Botanical name: Cucumis sativus L.  <br>Family: Cucurbitaceae  <br>Growth habit: Annual climbing vine  <br>Pollination: Monoecious; parthenocarpic hybrids preferred for polyhouse cultivation  </p>
+<p>Parthenocarpic cucumber hybrids are particularly suitable for polyhouse systems because they set fruit without pollination, ensuring consistent yield even in enclosed structures with limited insect activity.</p>
+<p>Climate and environmental requirements<br>Cucumber performs best under warm and moderately humid conditions.</p>
+<p>Temperature: Optimal day temperature is 22–30 °C and night temperature is 16–20 °C. Sustained temperatures above 35 °C may reduce fruit quality and increase bitterness.  <br>Relative humidity: Ideal range is 60–80%. Excess humidity promotes fungal diseases.  <br>Light: High light intensity is required for vigorous growth and proper fruit development.  <br>Ventilation: Adequate ventilation is essential to regulate temperature and humidity inside the polyhouse.</p>
+<p>Why grow cucumber in grow bags under polyhouse<br>Grow bags provide uniform root aeration, excellent drainage, and protection from soil-borne pathogens. Combined with polyhouse cultivation, grow bags allow efficient fertigation, better nutrient uptake, and reduced disease pressure, leading to higher productivity per unit area.</p>
+<p><img alt="Grow bag system for cucumber cultivation" src="/assets/articles/growing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601/photo-1-grow-bag-cucumber-srivatsan-renga.jpg"></p>
+<p>Variety selection and nursery management<br>Use parthenocarpic cucumber hybrids specifically developed for protected cultivation. Seedlings are raised in plug trays filled with sterile coco peat and transplanted at the 2–3 true leaf stage (12–15 days after sowing).</p>
+<p><img alt="Transplanting cucumber seedlings into grow bags" src="/assets/articles/growing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601/photo-2-transplanting-cucumber.jpg"></p>
+<p>Grow bag media composition and layout<br>An ideal grow bag medium consists of coco peat, perlite, and vermiculite in a 70:20:10 ratio. Each grow bag typically supports one plant. Arrange grow bags in double rows with adequate spacing for airflow, ease of movement, and efficient harvesting.</p>
+<p>Plant spacing, training, and pruning<br>Maintain spacing of 45–60 cm between plants and 1.0–1.2 m between rows. Train cucumber plants vertically using trellis wires and nylon strings. Remove lateral shoots up to 40–50 cm from the base and regulate side shoots above this height to maintain a balanced canopy.</p>
+<p><img alt="Vertical trellising of cucumber plants" src="/assets/articles/growing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601/photo-3-trellising-cucumber-srivatsan-renga.jpg"></p>
+<p>Nutrient and fertigation management<br>Cucumber is a heavy feeder and responds strongly to precise fertigation management.</p>
+<p>Recommended ranges:<br>Vegetative stage: EC 1.8–2.2 mS/cm; pH 5.8–6.5  <br>Flowering and fruiting stage: EC 2.5–3.5 mS/cm; pH 5.8–6.5  </p>
+<p>Potassium and calcium are particularly important for fruit quality and to prevent physiological disorders. Apply fertigation daily in split doses through drip irrigation.</p>
+<p><img alt="Flowering and fruiting stage of cucumber" src="/assets/articles/growing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601/photo-4-flowering-fruiting-cucumber-srivatsan-renga.jpg"></p>
+<p>Irrigation scheduling<br>Young plants require frequent, low-volume irrigation. As plants mature and fruit load increases, irrigation volume should be increased while ensuring free drainage to prevent root zone saturation.</p>
+<p>Pest and disease management<br>Common pests include thrips, aphids, whiteflies, and mites. Diseases such as powdery mildew and downy mildew may occur under high humidity conditions.</p>
+<p>Integrated pest management practices include:<br>Use of insect-proof nets  <br>Regular monitoring with sticky traps  <br>Biological control agents  <br>Need-based application of selective pesticides  </p>
+<p>Expected yield and harvest<br>Harvesting generally begins 35–40 days after transplanting. Under well-managed polyhouse grow bag systems, yields of 10–18 kg per plant are achievable depending on hybrid, climate, and management practices.</p>
+<p><img alt="Drip fertigation system inside polyhouse" src="/assets/articles/growing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601/photo-5-fertigation-cucumber-srivatsan-renga.jpg"></p>
+<p>Economics and cost–return analysis</p>
+<p>Detailed economics covering fixed costs, operating expenses, yield assumptions, revenue scenarios, cash flow, and key financial indicators are based on below     <br>                                <br>Cost Structure – Cucumber Grow Bag Polyhouse</p>
+<p>Polyhouse structure and basic infrastructure</p>
+<p>Grow bags, cocopeat, and planting material</p>
+<p>Drip irrigation and fertigation system</p>
+<p>Labour, inputs, and routine crop management</p>
+<p>Yield and Revenue Assumptions</p>
+<p>Continuous harvesting over the crop cycle</p>
+<p>Yield depends on hybrid, climate control, and fertigation</p>
+<p>Market price varies with season and quality</p>
+<p>Revenue improves with consistent grade and supply</p>
+<p>Financial Perspective</p>
+<p>Costs are mostly upfront and operational</p>
+<p>Returns depend on yield stability and market access</p>
+<p>Cash flow improves with good crop planning</p>
+<p>Scenario-based evaluation is essential before investment</p>
+<p>Post-harvest handling<br>Harvest fruits at the appropriate size and colour preferred by the market. Handle gently to avoid mechanical damage. Store cucumbers at 10–12 °C with high relative humidity to maintain freshness and shelf life.</p>
+<p>References and further reading<br>For detailed scientific and extension-based guidance, refer to the following resources:<br>- FAO Protected Cultivation Manual: https://www.fao.org/home/en<br>- Indian Council of Agricultural Research (ICAR): https://icar.org.in<br>- University of California Greenhouse Cucumber Guide: https://ucanr.edu<br>- Wageningen University Greenhouse Horticulture: https://www.wur.nl</p>
+<p>Checklist before starting<br>Select parthenocarpic cucumber hybrids  <br>Ensure good ventilation in polyhouse  <br>Prepare uniform grow bag media  <br>Install reliable drip fertigation system  <br>Monitor EC, pH, temperature, and humidity daily</p>
+<p></p>
+
+    <div class="share" style="margin-top:18px">
+      <a class="btn" href="mailto:?subject=Growing%20cucumber%20in%20grow%20bags%20under%20polyhouse%3A%20botanical%20background%2C%20climate%20requirements%2C%20and%20protected%20cultivation%20practices&body=Growing%20cucumber%20in%20grow%20bags%20under%20polyhouse%3A%20botanical%20background%2C%20climate%20requirements%2C%20and%20protected%20cultivation%20practices%20-%20https%3A%2F%2Fseechuragro.in%2Farticles%2Fgrowing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601.html">Share via Email</a>
+      <a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=Growing%20cucumber%20in%20grow%20bags%20under%20polyhouse%3A%20botanical%20background%2C%20climate%20requirements%2C%20and%20protected%20cultivation%20practices%20-%20https%3A%2F%2Fseechuragro.in%2Farticles%2Fgrowing-cucumber-in-grow-bags-under-polyhouse-botanical-background-climate-requirements-and-protected-cultivation-practices-20251222-210601.html">Share on WhatsApp</a>
+    </div>
+  </article>
+
+  <!-- NAV -->
+  <div class="meta-nav">
+    <div class="left"><a class="btn" href="../articles.html">← All articles</a></div>
+    <div class="right"><a class="btn next-compact" href="/articles/ginger-zingiber-officinale-cultivation-under-polyhouse-systems-agronomic-practices-disease-management-and-yield-potential-20251220-134217.html" aria-label="Next article">Next →</a></div>
+  </div>
+</main>
+
+<footer>© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</footer>
+
+<script>
+  try{ (function(){ var y=new Date().getFullYear(); var el=document.getElementById('year'); if(el) el.textContent=y; })(); }catch(e){console.log(e);}
+</script>
+</body>
+</html>
