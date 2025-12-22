@@ -203,163 +203,117 @@
 </script>
 
 <main class="container">
+
   <h1>Podcasts</h1>
   <p class="lead">
-    Educational video and audio podcasts from Seechur Agro on hydroponics,
-    protected cultivation, and sustainable agriculture.
+    Educational video podcasts from Seechur Agro on hydroponics,
+    protected cultivation, spices, and sustainable agriculture.
   </p>
 
-  <div class="grid">
+  <!-- ===================== PODCAST TILE ===================== -->
+  <div class="card">
 
-    <!-- PODCAST CARD -->
-    <div class="card">
-      <h2 style="font-size:1.15rem; margin-bottom:16px;">
-        Cherry Tomato Cultivation in Hydroponic Systems
-      </h2>
+    <h2 style="font-size:1.25rem; margin-bottom:14px;">
+      Cherry Tomato Cultivation in Hydroponic Systems
+    </h2>
 
-      <!-- 3-column platform layout -->
-      <div style="
-        display:grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap:24px;
-      ">
+    <!-- Two-corner layout -->
+    <div style="
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:24px;
+      align-items:start;
+    ">
 
-        <!-- YouTube -->
-        <div style="text-align:center;">
-          <div style="
-            text-align:center;
-            font-weight:700;
-            font-size:1.05rem;
-            color:#ffffff;
-            margin-bottom:10px;
-          ">
-            YouTube
-          </div>
-
-          <div style="
-            position:relative;
-            padding-top:56.25%;
-            border-radius:10px;
-            overflow:hidden;
-          ">
-            <iframe
-              src="https://www.youtube.com/embed/PBEyEC7mfkE"
-              frameborder="0"
-              allowfullscreen
-              style="
-                position:absolute;
-                inset:0;
-                width:100%;
-                height:100%;
-                border:0;
-                display:block;
-              ">
-            </iframe>
-          </div>
-
-          <div style="margin-top:8px; font-size:0.8rem; color:#cfe9d8;">
-            ▶ Click to watch video podcast
-          </div>
+      <!-- LEFT: YouTube -->
+      <div style="text-align:center;">
+        <div style="
+          font-weight:700;
+          font-size:1rem;
+          margin-bottom:8px;
+          color:#ffffff;
+        ">
+          YouTube
         </div>
 
-        <!-- Spotify -->
-        <div style="text-align:center;">
-          <div style="
-            text-align:center;
-            font-weight:700;
-            font-size:1.05rem;
-            color:#ffffff;
-            margin-bottom:10px;
-          ">
-            Spotify
-          </div>
-
-          <div style="
-            position:relative;
-            padding-top:56.25%;
-            border-radius:10px;
-            overflow:hidden;
-          ">
-            <a
-              href="https://open.spotify.com/episode/0K6PtF6r0EajHQTL9Ob7fo"
-              target="_blank"
-              rel="noopener noreferrer"
-              style="
-                position:absolute;
-                inset:0;
-                display:block;
-              "
-            >
-              <img
-                src="https://img.youtube.com/vi/PBEyEC7mfkE/hqdefault.jpg"
-                alt="Cherry Tomato podcast on Spotify"
-                style="
-                  width:100%;
-                  height:100%;
-                  object-fit:cover;
-                  display:block;
-                ">
-            </a>
-          </div>
-
-          <div style="margin-top:8px; font-size:0.8rem; color:#cfe9d8;">
-            🎧 Click image to open in Spotify app<br>
-            <span style="font-size:0.75rem; opacity:0.9;">
-              (video available in app)
-            </span>
-          </div>
+        <div style="
+          position:relative;
+          padding-top:56.25%;
+          border-radius:12px;
+          overflow:hidden;
+        ">
+          <iframe
+            src="https://www.youtube.com/embed/PBEyEC7mfkE"
+            frameborder="0"
+            allowfullscreen
+            style="
+              position:absolute;
+              top:0; left:0;
+              width:100%; height:100%;
+              border:0;
+            ">
+          </iframe>
         </div>
 
-        <!-- Apple Podcasts -->
-        <div style="text-align:center;">
-          <div style="
-            text-align:center;
-            font-weight:700;
-            font-size:1.05rem;
-            color:#ffffff;
-            margin-bottom:10px;
-          ">
-            Apple Podcasts
-          </div>
-
-          <div style="
-            position:relative;
-            padding-top:56.25%;
-            border-radius:10px;
-            overflow:hidden;
-          ">
-            <a
-              href="https://podcasts.apple.com/us/podcast/seechur-agro-|-controlled-environment-agriculture/id1863353041"
-              target="_blank"
-              rel="noopener noreferrer"
-              style="
-                position:absolute;
-                inset:0;
-                display:block;
-              "
-            >
-              <img
-                src="https://img.youtube.com/vi/PBEyEC7mfkE/hqdefault.jpg"
-                alt="Cherry Tomato podcast on Apple Podcasts"
-                style="
-                  width:100%;
-                  height:100%;
-                  object-fit:cover;
-                  display:block;
-                ">
-            </a>
-          </div>
-
-          <div style="margin-top:8px; font-size:0.8rem; color:#cfe9d8;">
-            🍎 Click image to listen on Apple Podcasts
-          </div>
+        <div style="margin-top:8px; font-size:0.85rem; color:#cfe9d8;">
+          ▶ Click to watch video podcast
         </div>
-
       </div>
+
+      <!-- RIGHT: Spotify -->
+      <div style="text-align:center;">
+        <div style="
+          font-weight:700;
+          font-size:1rem;
+          margin-bottom:8px;
+          color:#ffffff;
+        ">
+          Spotify
+        </div>
+
+        <a
+          href="https://open.spotify.com/episode/0K6PtF6r0EajHQTL9Ob7fo"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="
+            display:block;
+            position:relative;
+            padding-top:56.25%;
+            border-radius:12px;
+            overflow:hidden;
+            text-decoration:none;
+          "
+        >
+          <img
+            src="https://seechuragro.in/assets/logo.png"
+            alt="Listen on Spotify"
+            style="
+              position:absolute;
+              top:0; left:0;
+              width:100%;
+              height:100%;
+              object-fit:contain;
+              background:rgba(0,0,0,0.35);
+            "
+          />
+        </a>
+
+        <div style="margin-top:8px; font-size:0.85rem; color:#cfe9d8;">
+          🎧 Click to open in Spotify app (video available)
+        </div>
+      </div>
+
     </div>
-    <!-- END PODCAST CARD -->
+
+    <!-- Tags -->
+    <div style="margin-top:14px;">
+      <span class="pill">Hydroponics</span>
+      <span class="pill">Protected Cultivation</span>
+    </div>
 
   </div>
+  <!-- ===================== END PODCAST TILE ===================== -->
+
 </main>
 
 <!-- ===== CONSISTENT FOOTER (matches financials.html / articles.html) ===== -->
