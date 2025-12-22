@@ -210,30 +210,35 @@
     protected cultivation, spices, and sustainable agriculture.
   </p>
 
-  <!-- PODCAST EPISODE -->
-  <div class="card">
+  <!-- PODCAST CARD -->
+  <div class="card" style="
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 18px;
+  ">
 
-    <h2 style="margin-bottom:12px;">
+    <!-- CENTERED EPISODE TITLE -->
+    <h2 style="
+      text-align:center;
+      margin-bottom:14px;
+    ">
       Cherry Tomato Cultivation in Hydroponic Systems
     </h2>
 
-    <!-- SMALL TILE LAYOUT -->
+    <!-- TWO SMALL TILES -->
     <div style="
       display:grid;
-      grid-template-columns: auto auto;
+      grid-template-columns: 1fr 1fr;
       gap:20px;
-      align-items:start;
-      justify-content:start;
+      justify-content:center;
     ">
 
-      <!-- YOUTUBE SMALL TILE -->
-      <div style="width:280px;">
-
+      <!-- YOUTUBE TILE -->
+      <div style="width:260px; text-align:center;">
         <div style="
           font-weight:700;
           color:#ffffff;
           margin-bottom:6px;
-          text-align:center;
         ">
           YouTube
         </div>
@@ -250,22 +255,29 @@
             allowfullscreen
             style="
               position:absolute;
-              top:0; left:0;
-              width:100%; height:100%;
+              inset:0;
+              width:100%;
+              height:100%;
               border:0;
             ">
           </iframe>
         </div>
+
+        <div style="
+          margin-top:6px;
+          font-size:0.8rem;
+          color:#d7eadf;
+        ">
+          ▶ Click to watch video podcast
+        </div>
       </div>
 
-      <!-- SPOTIFY SMALL TILE (SAME SIZE) -->
-      <div style="width:280px;">
-
+      <!-- SPOTIFY TILE (SAME IMAGE, SAME SIZE) -->
+      <div style="width:260px; text-align:center;">
         <div style="
           font-weight:700;
           color:#ffffff;
           margin-bottom:6px;
-          text-align:center;
         ">
           Spotify
         </div>
@@ -286,13 +298,20 @@
             "
           />
         </a>
+
+        <div style="
+          margin-top:6px;
+          font-size:0.8rem;
+          color:#d7eadf;
+        ">
+          🎧 Click image to open in Spotify app (video available)
+        </div>
       </div>
 
     </div>
-
   </div>
 
-  <!-- DUPLICATE THE ABOVE .card FOR FUTURE EPISODES -->
+  <!-- DUPLICATE THE CARD ABOVE FOR FUTURE EPISODES -->
 
 </main>
 
