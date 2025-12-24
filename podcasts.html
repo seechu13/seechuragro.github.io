@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-<!-- Global stylesheet (UNCHANGED) -->
+<!-- Global stylesheet -->
 <link rel="stylesheet" href="assets/style.css">
 
 <!-- ================== KEEP YOUR EXISTING INLINE STYLES ================== -->
@@ -31,159 +31,414 @@
       url('hydroponic-bg.jpg?v=15') center/cover no-repeat;
     filter:saturate(1.08) brightness(.97);
   }
+
   .container{max-width:var(--max); margin:0 auto; padding:32px 18px;}
   h1{font-size:2.2rem; font-weight:700; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.55)}
+  h2{font-size:1.4rem; margin-top:28px; margin-bottom:10px; text-shadow:0 2px 6px rgba(0,0,0,.5)}
   p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
+  .lead{font-size:1.05rem}
+  .pill{display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.12); color:#eafff4; margin-right:8px; font-size:.92rem}
+
   .card{background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:16px; margin:12px 0}
+  .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+
+  .img-box{overflow:hidden; border-radius:14px; background:#0b0b0b22}
+  .img-box img{width:100%; height:auto; display:block}
+
+  footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
+</style>
+
+<!-- Additional scoped rules for the raising-capital boxes to ensure images fill boxes without stretching -->
+<style>
+  /* target only the three boxes under "Why We're Raising Capital" */
+  .raising-grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+  .raising-grid .card { padding:0; overflow:visible; }
+  .raising-grid .card .img-box { height:160px; border-radius:12px 12px 0 0; }
+  .raising-grid .card p { padding:14px; margin:0; }
+  .raising-grid .img-box img { width:100%; height:100%; object-fit:cover; display:block; -o-object-fit:cover; }
+
+  @media (max-width:720px) {
+    .raising-grid .img-box { height:140px; }
+  }
+  @media (max-width:420px) {
+    .raising-grid .img-box { height:120px; }
+  }
 </style>
 <!-- ================== END INLINE STYLES ================== -->
+
+<!-- ========== Open Graph ========== -->
+<meta property="og:locale" content="en_IN">
+<meta property="og:type" content="website">
+<meta property="og:title" content="About Seechur Agro — Hydroponics & Lakadong Turmeric">
+<meta property="og:description" content="Seechur Agro is reviving a modern hydroponic farm in Tamil Nadu — focusing on Lakadong turmeric, microgreens, and premium protected cultivation.">
+<meta property="og:url" content="https://seechuragro.in/about.html">
+<meta property="og:site_name" content="Seechur Agro">
+<meta property="og:image" content="https://seechuragro.in/assets/og-lakadong.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Seechur Agro — Hydroponics & Lakadong Turmeric">
+
+<!-- ========== Twitter Card ========== -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About Seechur Agro — Hydroponics & Protected Farming">
+<meta name="twitter:description" content="Hydroponic farming, Lakadong turmeric, microgreens, sustainability and capital-efficient agriculture at Edaiyarpakkam.">
+<meta name="twitter:image" content="https://seechuragro.in/assets/og-lakadong.png">
+
+<link rel="image_src" href="https://seechuragro.in/assets/og-lakadong.png">
+
+<!-- ========== JSON-LD: Organization Schema (added) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "SEECHUR AGRO PRIVATE LIMITED",
+  "url": "https://seechuragro.in",
+  "logo": "https://seechuragro.in/assets/logo.png",
+  "email": "mailto:seechu@seechuragro.in",
+  "sameAs": [
+    "https://www.linkedin.com/in/srivatsan-renga-85219151",
+    "https://www.instagram.com/seechuragro",
+    "https://www.facebook.com/seechuragro",
+    "https://twitter.com/seechuragro",
+    "https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ",
+    "https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p",
+    "https://calendly.com/seechu-seechuragro"
+  ],
+  "contactPoint": [
+    {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "email": "mailto:seechu@seechuragro.in"
+    }
+  ]
+}
+</script>
+
+<!-- ========== JSON-LD: AboutPage (existing) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "PodcastSeries",
+  "name": "Seechur Agro Podcasts",
+  "url": "https://seechuragro.in/podcasts.html",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Seechur Agro Private Limited",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://seechuragro.in/assets/logo.png"
+    }
+  }
+}
+</script>
+
+<!-- ========== JSON-LD: BreadcrumbList (page-specific) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://seechuragro.in/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Podcasts",
+      "item": "https://seechuragro.in/podcasts.html"
+    }
+  ]
+}
+</script>
+<head>
+  <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9E3YLF81Z"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-C9E3YLF81Z');
+  </script>
 </head>
 
+</head>
 <body>
 
-<!-- Navbar include (UNCHANGED) -->
+<!-- ✅ Navbar include -->
 <div id="navbar-placeholder"></div>
 <script>
-(function loadNavbar(){
-  fetch('navbar.html',{cache:'no-cache'})
-    .then(r=>r.text())
-    .then(html=>{
-      const host=document.getElementById('navbar-placeholder');
-      host.innerHTML=html;
-      host.querySelectorAll('script').forEach(oldS=>{
-        const s=document.createElement('script');
-        if(oldS.src){s.src=oldS.src}else{s.textContent=oldS.textContent}
-        document.body.appendChild(s);
+  (function loadNavbar(){
+    fetch('navbar.html', {cache:'no-cache'})
+      .then(r => r.text())
+      .then(html => {
+        const host = document.getElementById('navbar-placeholder');
+        host.innerHTML = html;
+
+        // Execute any <script> tags inside navbar.html
+        const scripts = host.querySelectorAll('script');
+        scripts.forEach(oldS => {
+          const s = document.createElement('script');
+          if (oldS.src) { s.src = oldS.src; }
+          else { s.textContent = oldS.textContent; }
+          document.body.appendChild(s);
+        });
+
+        // Fallback active state in case navbar script runs before DOM ready
+        const current = (location.pathname.split('/').pop() || 'about.html').toLowerCase();
+        document.querySelectorAll('.menu a').forEach(a=>{
+          const href=(a.getAttribute('href')||'').toLowerCase();
+          if(href===current){ a.classList.add('active'); }
+        });
+      })
+      .catch(err => {
+        console.error('Navbar load failed:', err);
       });
-    });
-})();
+  })();
 </script>
 
 <main class="container">
 
-  <!-- ========== PODCAST PAGE LOCAL STYLES (SAFE) ========== -->
-  <style>
-    .podcast-episode{margin-top:48px}
-    .podcast-episode h2{
-      text-align:center;margin-bottom:14px;color:#fff;
-      font-size:1.35rem;white-space:nowrap;
-      overflow:hidden;text-overflow:ellipsis
-    }
-    .podcast-tiles{
-      display:grid;
-      grid-template-columns:repeat(2,260px);
-      gap:20px;
-      justify-content:center
-    }
-    @media(max-width:640px){
-      .podcast-tiles{grid-template-columns:1fr}
-    }
-    .podcast-tile{text-align:center}
-    .podcast-label{font-weight:700;margin-bottom:6px}
-    .youtube-frame{
-      position:relative;padding-top:56.25%;
-      border-radius:8px;overflow:hidden;background:#000
-    }
-    .youtube-frame iframe{
-      position:absolute;inset:0;width:100%;height:100%;border:0
-    }
-    .spotify-frame{
-    position:relative;
-    padding-top:56.25%; /* 16:9 */
-    border-radius:8px;
-    overflow:hidden;
-    background:#000;
-    }
-
-    .spotify-frame img{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
-    }
-    .podcast-caption{
-      margin-top:6px;font-size:.8rem;color:#d7eadf
-    }
-  </style>
-
   <h1>Podcasts</h1>
-  <p>
+  <p class="lead">
     Educational video podcasts from Seechur Agro on hydroponics,
     protected cultivation, spices, and sustainable agriculture.
   </p>
 
-  <div class="card" style="max-width:640px;margin:0 auto;padding:18px">
-
-    <!-- ===== PODCAST LIST RENDER TARGET ===== -->
-    <div id="podcast-list"></div>
-
-  </div>
-
-  <!-- ========== PODCAST DATA (EDIT ONLY THIS) ========== -->
-  <script type="application/json" id="podcast-data">
-  [
-    {
-      "title": "Cherry Tomato Cultivation in Hydroponic Systems",
-      "youtube": "PBEyEC7mfkE",
-      "spotify": "https://open.spotify.com/episode/0K6PtF6r0EajHQTL9Ob7fo"
-    },
-    {
-      "title": "Cucumber Cultivation in Grow Bags under Polyhouse",
-      "youtube": "hkn7OAx1cOA",
-      "spotify": "https://open.spotify.com/episode/6Adk6211z87HMNjTBgSqRi"
-    },
-    {
-      "title": "Glass House Cultivation of Anthurium",
-      "youtube": "uoeMjZhzfDA",
-      "spotify": "https://open.spotify.com/episode/3rHKlxIdhfJMo3ghY7A5SM"
-    },
-    {
-      "title": "Arugula (Rocket) Cultivation under NFT",
-      "youtube": "lqzv2t7J_ek",
-      "spotify": "https://open.spotify.com/episode/6Bz3MCzSY61PyUiJa9VQv0"
-    }
-  ]
-  </script>
-
-  <!-- ========== PODCAST RENDER SCRIPT (WRITE ONCE) ========== -->
-  <script>
-    const data = JSON.parse(
-      document.getElementById("podcast-data").textContent
-    );
-    const list = document.getElementById("podcast-list");
-
-    data.forEach(p => {
-      const el = document.createElement("div");
-      el.className = "podcast-episode";
-      el.innerHTML = `
-        <h2>${p.title}</h2>
-        <div class="podcast-tiles">
-
-          <div class="podcast-tile">
-            <div class="podcast-label">YouTube</div>
-            <div class="youtube-frame">
-              <iframe src="https://www.youtube.com/embed/${p.youtube}" allowfullscreen></iframe>
-            </div>
-            <div class="podcast-caption">▶ Click to watch video podcast</div>
-          </div>
-
-          <div class="podcast-tile">
-            <div class="podcast-label">Spotify</div>
-            <a class="spotify-thumb" href="${p.spotify}" target="_blank" rel="noopener noreferrer">
-              <img src="https://img.youtube.com/vi/${p.youtube}/hqdefault.jpg" alt="${p.title}">
-            </a>
-            <div class="podcast-caption">🎧 Click image to open in Spotify app</div>
-          </div>
-
-        </div>`;
-      list.appendChild(el);
-    });
-  </script>
+  <div id="podcast-list"></div>
 
 </main>
 
-<!-- Footer + year script remain unchanged below -->
+<!-- ===== CONSISTENT FOOTER (matches financials.html / articles.html) ===== -->
+<style>
+  /* scoped footer styles — specific selectors & !important to beat global rules */
+  footer.footer-wrap { text-align:center; color:#d9ffe6; padding:28px 12px 40px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); margin-top:28px; position:relative; z-index:10; }
+  footer.footer-wrap .footer-top { display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; max-width:1100px; margin-left:auto; margin-right:auto; padding:6px 8px; }
+  footer.footer-wrap .footer-logo{ display:inline-flex; align-items:center; gap:10px; justify-content:center; }
+  footer.footer-wrap .footer-logo img{ width:44px !important; height:44px !important; object-fit:contain; border-radius:6px; display:block; }
+  footer.footer-wrap .footer-socials{ display:flex !important; gap:10px !important; justify-content:center !important; align-items:center !important; margin-top:4px !important; flex-wrap:wrap !important; }
+  footer.footer-wrap .footer-socials a{ display:inline-flex !important; align-items:center !important; justify-content:center !important; width:36px !important; height:36px !important; border-radius:8px !important; background:rgba(0,0,0,.12) !important; border:1px solid rgba(255,255,255,.04) !important; text-decoration:none !important; transition:transform .12s ease, background .12s ease !important; overflow:hidden !important; }
+  footer.footer-wrap .footer-socials a:hover{ transform:translateY(-3px) !important; background:rgba(0,0,0,.24) !important; }
+  footer.footer-wrap .footer-socials svg{ width:18px !important; height:18px !important; fill:#eafff4 !important; display:block !important; }
+  footer.footer-wrap .footer-copy{ font-size:.95rem; margin-top:10px; color:#d9ffe6 }
+
+  @media (max-width:520px){ footer.footer-wrap .footer-socials a{ width:34px !important; height:34px !important } footer.footer-wrap .footer-socials svg{ width:16px !important; height:16px !important } footer.footer-wrap .footer-logo img{ width:40px !important; height:40px !important } }
+  /* final defensive rules */
+  footer.footer-wrap .footer-socials a svg{ max-width:100% !important; max-height:100% !important; }
+  footer.footer-wrap img{ display:block; image-rendering:auto !important; }
+</style>
+
+<footer class="footer-wrap" role="contentinfo">
+  <div class="footer-top">
+    <div class="footer-logo" role="img" aria-label="Seechur Agro logo">
+      <img src="https://seechuragro.in/assets/logo.png" alt="Seechur Agro logo">
+    </div>
+
+    <div class="footer-socials" aria-label="Seechur Agro social links">
+      <a href="https://wa.me/918056021869" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
+      </a>
+
+      <a href="mailto:seechu@seechuragro.in" target="_blank" rel="noopener noreferrer" title="Email" aria-label="Email">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      </a>
+
+      <a href="https://www.linkedin.com/in/srivatsan-renga-85219151" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5C4.98 4.9 3.87 6 2.48 6S0 4.9 0 3.5 1.11 1 2.5 1 4.98 2.1 4.98 3.5zM0 8h4.96v13H0V8zm7.5 0H12v1.8h.07c.57-1.08 1.96-2.22 4.03-2.22 4.31 0 5.11 2.84 5.11 6.54V21h-4.96v-5.3c0-1.27-.02-2.9-1.77-2.9-1.78 0-2.05 1.39-2.05 2.82V21H7.5V8z"/></svg>
+      </a>
+
+      <a href="https://www.instagram.com/seechur_agro" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 6.5A4.5 4.5 0 1016.5 13 4.5 4.5 0 0012 8.5zm6.8-3.7a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2z"/></svg>
+      </a>
+
+      <a href="https://www.facebook.com/SeechurAgroPrivateLimited" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.2c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12H20l-.5 2.9h-2v7A10 10 0 0022 12z"/></svg>
+      </a>
+
+      <a href="https://x.com/seechuragro" target="_blank" rel="noopener noreferrer" title="X / Twitter" aria-label="X / Twitter">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.46 6c-.77.34-1.6.57-2.46.67a4.26 4.26 0 001.88-2.35 8.6 8.6 0 01-2.7 1.03 4.22 4.22 0 00-7.2 3.85A12 12 0 013 4.79a4.2 4.2 0 001.3 5.63c-.66-.02-1.28-.2-1.82-.5v.05a4.22 4.22 0 003.38 4.13c-.6.16-1.24.2-1.9.08a4.22 4.22 0 003.94 2.93A8.47 8.47 0 012 19.5a11.95 11.95 0 006.29 1.84c7.55 0 11.68-6.27 11.68-11.7v-.53A8.36 8.36 0 0024 5.1a8.3 8.3 0 01-2.4.66z"/></svg>
+      </a>
+
+      <a href="https://www.youtube.com/channel/UCfHau7Dyp4cJmQ4qCVWHHwQ" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2s-.2-1.7-.8-2.4c-.7-.9-1.5-.9-1.9-1-2.7-.2-6.8-.2-6.8-.2s-4.1 0-6.8.2c-.4.1-1.2.1-1.9 1-.6.7-.8 2.4-.8 2.4S1 8 1 9.8v1.4C1 13.9 1.6 15.6 1.6 15.6s.2 1.7.8 2.4c.7.9 1.6.9 2 1 1.4.1 6.1.2 6.1.2s4.1 0 6.8-.2c.4-.1 1.2-.1 1.9-1 .6-.7.8-2.4.8-2.4s.6-1.7.6-3.5V9.8c0-1.8-.6-3.6-.6-3.6zM9.8 14.6v-5l4.8 2.5-4.8 2.5z"/></svg>
+      </a>
+
+      <a href="https://whatsapp.com/channel/0029Vb6zvmm0lwgwVvyhkj0p" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel" aria-label="WhatsApp Channel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0012 1C6 1 1.3 5.7 1.3 11.6c0 2 .5 3.8 1.5 5.5L1 23l6-1.7c1.6.9 3.4 1.4 5.2 1.4 6 0 10.7-4.7 10.7-10.6 0-2.8-1.1-5.5-3-7.4zM12.2 21c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3.5 1 1-3.4-.2-.3A9.2 9.2 0 1121.4 12a9.2 9.2 0 01-9.2 9zm5.3-6.8c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.1-.4.1-.7 0c-.3-.2-1.2-.5-2.3-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.2.2 1.8 2.8 4.4 3.9 2.7 1.2 2.7.8 3.2.8.5 0 1.6-.7 1.8-1.3.2-.6.2-1.1.1-1.3-.1-.2-.3-.2-.6-.4z"/></svg>
+      </a>
+
+      <a href="https://calendly.com/seechu-seechuragro" target="_blank" rel="noopener noreferrer" title="Book a meeting" aria-label="Calendly">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h5v5H7zM19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 14H5V9h14v9z"/></svg>
+      </a>
+      <!-- Threads in footer -->
+      <a href="https://www.threads.net/@seechur_agro" target="_blank" rel="noopener noreferrer" title="Threads" aria-label="Threads (@seechuragro)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-4 0-7.25 3.25-7.25 7.25 0 3.68 2.63 6.73 6.16 7.15.2.03.36.2.36.4v1.2c0 .28.22.5.5.5s.5-.22.5-.5v-1.2c0-.2.16-.37.36-.4 3.53-.42 6.16-3.47 6.16-7.15C19.25 5.75 16 2.5 12 2.5zM11 7.5h2v6.5h-2V7.5z" /></svg>
+      </a>
+
+      <!-- Telegram in footer -->
+      <a href="https://t.me/seechuragro" target="_blank" rel="noopener noreferrer" title="Telegram" aria-label="Telegram (@seechuragro)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2L2 9l6.5 2.3L10 21l3.2-3.1L19.6 22 22 2zM7.5 11.3L20 4 11.3 12.1 7.5 11.3z"/></svg>
+      </a>
+      <a href="https://open.spotify.com/show/5k9iuE97zvmwpqjxFZvYWs"
+   target="_blank"
+   rel="noopener noreferrer"
+   title="Spotify Podcast"
+   aria-label="Spotify Podcast">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 1.8A10.2 10.2 0 1022.2 12 10.2 10.2 0 0012 1.8zm4.7 14.7a.7.7 0 01-1 .2c-2.7-1.6-6.1-2-10.1-1.1a.7.7 0 11-.3-1.4c4.3-1 8.1-.6 11.1 1.3a.7.7 0 01.3 1zm1.4-3.2a.9.9 0 01-1.2.3c-3.1-1.9-7.8-2.5-11.5-1.3a.9.9 0 11-.5-1.7c4.1-1.2 9.3-.6 12.8 1.6a.9.9 0 01.4 1.1zm.1-3.3c-3.6-2.1-9.5-2.3-12.9-1.3a1 1 0 11-.6-1.9c3.9-1.2 10.4-1 14.5 1.5a1 1 0 01-1 1.7z"/>
+  </svg>
+</a>
+    </div>
+  </div>
+
+  <div class="footer-copy">© <span id="year"></span> Seechur Agro Private Limited • Human by Chance, Farmer by Choice</div>
+  <div style="margin-top:8px; font-size:0.85rem; color:#cfe9d8;">
+  <a href="privacy.html" style="color:#cfe9d8; text-decoration:underline; margin-right:12px;">Privacy Policy</a>
+  <a href="disclaimer.html" style="color:#cfe9d8; text-decoration:underline;">Disclaimer</a>
+</div>
+
+</footer>
+<!-- ======= END CONSISTENT FOOTER ======= -->
+
+<script>
+(function(){
+  const y=document.getElementById('year');
+  if(y) y.textContent=new Date().getFullYear();
+})();
+</script>
+  <style>
+/* Podcast tiles responsive fix */
+.podcast-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 260px);
+  gap: 20px;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .podcast-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+<style>
+/* ================= PODCAST-ONLY STYLES ================= */
+.podcast-card {
+  max-width: 640px;
+  margin: 32px auto;
+  padding: 18px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+
+.podcast-title {
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.podcast-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 260px);
+  gap: 20px;
+  justify-content: center;
+}
+
+.podcast-tile {
+  text-align: center;
+}
+
+.podcast-tile-label {
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.podcast-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.podcast-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.podcast-caption {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #d7eadf;
+}
+
+/* MOBILE: STACK ONE BELOW OTHER */
+@media (max-width: 640px) {
+  .podcast-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+<script>
+fetch('podcasts.json', { cache: 'no-store' })
+  .then(res => res.json())
+  .then(data => {
+    const host = document.getElementById('podcast-list');
+
+    data.forEach(ep => {
+      const ytThumb = `https://img.youtube.com/vi/${ep.youtube_id}/maxresdefault.jpg`;
+      const ytEmbed = `https://www.youtube.com/embed/${ep.youtube_id}`;
+
+      host.insertAdjacentHTML('beforeend', `
+        <div class="podcast-card">
+          <div class="podcast-title">${ep.title}</div>
+
+          <div class="podcast-tiles">
+
+            <!-- YOUTUBE -->
+            <div class="podcast-tile">
+              <div class="podcast-tile-label">YouTube</div>
+              <a href="${ytEmbed}" target="_blank" rel="noopener">
+                <div class="podcast-thumb">
+                  <img src="${ytThumb}" alt="${ep.title} on YouTube">
+                </div>
+              </a>
+              <div class="podcast-caption">▶ Click to watch video podcast</div>
+            </div>
+
+            <!-- SPOTIFY -->
+            <div class="podcast-tile">
+              <div class="podcast-tile-label">Spotify</div>
+              <a href="${ep.spotify_url}" target="_blank" rel="noopener">
+                <div class="podcast-thumb">
+                  <img src="${ytThumb}" alt="${ep.title} on Spotify">
+                </div>
+              </a>
+              <div class="podcast-caption">🎧 Click image to open in Spotify app</div>
+            </div>
+
+          </div>
+        </div>
+      `);
+    });
+  })
+  .catch(err => {
+    console.error('Podcast JSON load failed:', err);
+  });
+</script>
+
 </body>
 </html>
