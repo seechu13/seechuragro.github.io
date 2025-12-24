@@ -399,7 +399,7 @@ fetch('podcasts.json', { cache: 'no-store' })
     const host = document.getElementById('podcast-list');
 
     data.forEach(ep => {
-      const ytThumb = `https://img.youtube.com/vi/${ep.youtube_id}/maxresdefault.jpg`;
+      const ytThumb = `https://img.youtube.com/vi/${ep.youtube_id}/hqdefault.jpg`;
       const ytEmbed = `https://www.youtube.com/embed/${ep.youtube_id}`;
 
       host.insertAdjacentHTML('beforeend', `
