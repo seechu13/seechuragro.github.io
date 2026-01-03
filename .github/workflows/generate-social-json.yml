@@ -1,12 +1,14 @@
 name: Generate Social JSON (HTML → social_new.json)
 
 on:
-  # AUTO: when a new article HTML is merged
+  # AUTO: ONLY when article HTML is merged into STAGING
   push:
+    branches:
+      - staging
     paths:
       - 'articles/**/*.html'
 
-  # MANUAL: regenerate from any past article
+  # MANUAL: regenerate from any past article (unchanged)
   workflow_dispatch:
     inputs:
       article_path:
@@ -18,6 +20,8 @@ permissions:
 
 jobs:
   generate:
+    # Extra safety: never run unless staging
+    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
     steps:
@@ -26,7 +30,6 @@ jobs:
         with:
           ref: staging
           fetch-depth: 0
-
 
       - name: Set up Python
         uses: actions/setup-python@v4
