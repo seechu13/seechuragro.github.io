@@ -1,7 +1,10 @@
 name: Generate Instagram + Threads Assets (AUTO)
 
 on:
+  # AUTO: ONLY when article HTML is merged into STAGING
   push:
+    branches:
+      - staging
     paths:
       - "articles/**/*.html"
 
@@ -15,6 +18,8 @@ permissions:
 
 jobs:
   generate:
+    # Extra safety: never run unless staging
+    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
     steps:
@@ -38,11 +43,20 @@ jobs:
         id: article
         run: |
           set -euo pipefail
+
           ARTICLE=$(git diff --name-only HEAD~1 HEAD | grep '^articles/.*\.html$' | tail -n 1 || true)
+
           if [ -z "$ARTICLE" ]; then
             echo "❌ No article HTML found"
             exit 1
           fi
+
+          if [ ! -f "$ARTICLE" ]; then
+            echo "❌ Article not found: $ARTICLE"
+            exit 1
+          fi
+
+          echo "Using article: $ARTICLE"
           echo "article=$ARTICLE" >> $GITHUB_OUTPUT
 
       - name: Generate Insta + Threads assets
@@ -68,7 +82,7 @@ jobs:
 
           git commit -m "Generate Insta + Threads assets"
 
-          # 🔒 CRITICAL FIX: rebase before push to avoid non-fast-forward
+          # 🔒 Rebase before push to avoid non-fast-forward
           git pull --rebase origin staging
 
           git push origin staging
