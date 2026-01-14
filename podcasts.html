@@ -337,16 +337,23 @@
   box-shadow: 0 4px 20px rgba(0,0,0,.4);
 }
 
-.podcast-title {
+..podcast-title {
   text-align: center;
   font-size: 1.35rem;
   font-weight: 600;
   color: #fff;
   margin-bottom: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+
+  /* ✅ FIX */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;        /* show up to 3 lines */
+  -webkit-box-orient: vertical;
 }
+
 
 .podcast-tiles {
   display: grid;
