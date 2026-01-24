@@ -289,7 +289,7 @@
   const grid = document.getElementById('grid');
   const fallback = document.getElementById('fallback');
 
-  fetch('/staging/articles.json?v=' + Date.now(), { cache: 'no-cache' })
+  fetch('/articles.json?ver=3', {cache:'no-cache'})
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(list => {
       if(!Array.isArray(list) || !list.length){ fallback.style.display='block'; grid.setAttribute('aria-busy','false'); return; }
@@ -342,6 +342,7 @@
 </script>
 </body>
 </html>
+
 
 
 
