@@ -78,6 +78,26 @@
   footer{text-align:center; color:#d9ffe6; padding:40px 12px 60px; background:rgba(0,0,0,.4); backdrop-filter:blur(4px)}
 
   @media (max-width:720px){ .row{grid-template-columns:1fr} }
+  /* Make SEND button visible only on this page */
+.send {
+  background: #2ecc71 !important;   /* bright green */
+  color: #ffffff !important;
+  font-weight: 600;
+  padding: 12px 24px !important;
+  border-radius: 12px !important;
+  border: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px;
+  font-size: 1rem;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.45);
+}
+
+.send:hover {
+  background: #27ae60 !important;
+  transform: translateY(-2px);
+}
+
 </style>
 <!-- ---- END ORIGINAL STYLES ---- -->
 
