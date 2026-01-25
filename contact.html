@@ -39,6 +39,14 @@
   p{line-height:1.8; color:var(--muted); margin-bottom:16px;}
 
   .grid{display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+  /* Make both cards equal height */
+.grid { 
+    align-items: stretch; 
+}
+.card { 
+    display: flex; 
+    flex-direction: column; 
+}
   .card{
     background:var(--glass); border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,.4); padding:18px;
     opacity:0; transform:translateY(14px); transition:opacity .7s ease, transform .7s ease;
