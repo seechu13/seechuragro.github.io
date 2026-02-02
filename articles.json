@@ -1,5 +1,21 @@
 [
   {
+    "id": "sweet-chilli-cultivation-in-grow-bags-under-polyhouse-scientific-principles-crop-management-and-productivity-20260202-164729",
+    "title": "Sweet chilli cultivation in grow bags under polyhouse: scientific principles, crop management, and productivity",
+    "subtitle": "",
+    "date": "2026-02-02",
+    "category": "Polyhouse",
+    "image": "/assets/articles/sweet-chilli-cultivation-in-grow-bags-under-polyhouse-scientific-principles-crop-management-and-productivity-20260202-164729/cover-sweet-chilli-polyhouse-srivatsan-renga-1.jpg",
+    "url": "/articles/sweet-chilli-cultivation-in-grow-bags-under-polyhouse-scientific-principles-crop-management-and-productivity-20260202-164729.html",
+    "excerpt": "This article presents a scientific and practical guide to cultivating sweet chilli (Capsicum annuum) in grow bags under polyhouse conditions. It explains botanical characteristics, climate and light requirements, grow bag media selection, planting density, fertigation strategy, training and pruning, pest and disease management, harvesting practices, and indicative economics. The guide is intended for professional growers aiming for consistent fruit quality, uniform mild pungency, extended harvest periods, and predictable profitability under protected cultivation systems.",
+    "author": {
+      "name": "Seechur Agro Editorial Team",
+      "org": "",
+      "role": "",
+      "url": ""
+    }
+  },
+  {
     "id": "strawberry-polyhouse-cultivation-varietal-characteristics-climate-management-and-commercial-production-systems-20260131-212255",
     "title": "Strawberry Polyhouse Cultivation: Varietal Characteristics, Climate Management, and Commercial Production Systems",
     "subtitle": "",
@@ -780,22 +796,6 @@
       "name": "Dr. A. Technical",
       "org": "Hydroponics Lab",
       "role": "Advisor",
-      "url": ""
-    }
-  },
-  {
-    "id": "lakadong-curcumin-basics",
-    "title": "Lakadong Turmeric: Curcumin Basics for Buyers",
-    "subtitle": "How curcumin % links to pricing and applications.",
-    "date": "2025-11-01",
-    "category": "Lakadong",
-    "image": "/images/articles/lakadong-curcumin-basics/hero.jpg",
-    "url": "/articles/lakadong-curcumin-basics.html",
-    "excerpt": "Understanding curcumin ranges, testing norms, and what buyers look for in premium Lakadong lots.",
-    "author": {
-      "name": "Editorial Team",
-      "org": "Seechur Agro",
-      "role": "Content",
       "url": ""
     }
   }
